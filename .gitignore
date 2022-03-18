@@ -1,2 +1,12 @@
+__pycache__
+.history
+.hypothesis/
+build/
+reports/
+.env
+
+node_modules/
+
+# foundry
 cache/
 out/
