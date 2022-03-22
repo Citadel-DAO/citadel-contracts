@@ -34,7 +34,7 @@ contract SupplySchedule is GlobalAccessControlManaged {
     
     function initialize(address _gac) public initializer {
         __GlobalAccessControlManaged_init(_gac);
-        _setTestepochRate();
+        _setEpochRates();
     }
 
     function getMintable() external view returns (uint256) {
@@ -66,12 +66,15 @@ contract SupplySchedule is GlobalAccessControlManaged {
         emit MintingStartTimeSet(_globalStartTimestamp);
     }
 
-    function setepochRate(uint _epoch, uint _rate) external onlyRole(CONTRACT_GOVERNANCE_ROLE) gacPausable {
+    function setEpochRate(uint _epoch, uint _rate) external onlyRole(CONTRACT_GOVERNANCE_ROLE) gacPausable {
+        require(epochRate[_epoch] == 0, "epoch rate already set");
+        // TODO: Require this epoch is in the future. What happens if no data is set? (It just fails to mint until set)
         epochRate[_epoch] = _rate;
         emit EpochSupplyRateSet(_epoch, _rate);
     }
 
-    function _setTestepochRate() internal {
+    // @dev Set rates for the initial epochs
+    function _setEpochRates() internal {
         epochRate[0] = 593962000000000000000000 / epochLength;
         epochRate[1] = 591445000000000000000000 / epochLength;
         epochRate[2] = 585021000000000000000000 / epochLength;

@@ -14,7 +14,7 @@ import "./lib/SettAccessControl.sol";
 import {IVault} from "./interfaces/badger/IVault.sol";
 import {IVesting} from "./interfaces/citadel/IVesting.sol";
 import {IStrategy} from "./interfaces/badger/IStrategy.sol";
-import {IERC20Detailed} from "./interfaces/erc20/IERC20Detailed.sol";
+import {IERC20} from "./interfaces/erc20/IERC20.sol";
 import {IBadgerGuestlist} from "./interfaces/badger/IBadgerGuestlist.sol";
 
 /*
@@ -211,7 +211,7 @@ contract StakedCitadel is
 
         // If they are non empty string we'll use the custom names
         // Else just add the default prefix
-        IERC20Detailed namedToken = IERC20Detailed(_token);
+        IERC20 namedToken = IERC20(_token);
 
         if (keccak256(abi.encodePacked(_name)) != keccak256("")) {
             name = _name;

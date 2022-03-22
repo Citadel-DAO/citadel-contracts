@@ -57,6 +57,9 @@ contract GlobalAccessControl is
         __AccessControlEnumerable_init();
         __Pausable_init();
 
+        // Set this for assumptions and clarity
+        _setupRole(DEFAULT_ADMIN_ROLE, _initialContractGovernance);
+        
         _setupRole(CONTRACT_GOVERNANCE_ROLE, _initialContractGovernance);
 
         // All roles are managed by CONTRACT_GOVERNANCE_ROLE

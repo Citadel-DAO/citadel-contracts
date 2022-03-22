@@ -31,4 +31,13 @@ interface IVault {
 
     // External
     function deposit(uint256 _amount) external;
+
+    function depositFor(address _recipient, uint256 _amount) external;
+
+    // View
+    function balanceOf(address account) external returns (uint256);
+
+    function totalSupply() external returns (uint256);
+
+    function getPricePerFullShare() external returns (uint256);
 }

@@ -31,9 +31,9 @@ contract KnightingRound is GlobalAccessControlManaged {
     /// token to take in WBTC / bibbtc LP / CVX / bveCVX
     ERC20Upgradeable public tokenIn;
     /// time when tokens can be first purchased
-    uint64 public saleStart;
+    uint256 public saleStart;
     /// duration of the token sale, cannot purchase afterwards
-    uint64 public saleDuration;
+    uint256 public saleDuration;
     /// address receiving the proceeds of the sale - will be citadel multisig
     address public saleRecipient;
     /// whether the sale has been finalized
@@ -80,8 +80,8 @@ contract KnightingRound is GlobalAccessControlManaged {
     event Claim(address indexed claimer, uint256 amount);
     event Finalized();
 
-    event SaleStartUpdated(uint64 saleStart);
-    event SaleDurationUpdated(uint64 saleDuration);
+    event SaleStartUpdated(uint256 saleStart);
+    event SaleDurationUpdated(uint256 saleDuration);
     event TokenOutPriceUpdated(uint256 tokenOutPrice);
     event SaleRecipientUpdated(address indexed recipient);
     event GuestlistUpdated(address indexed guestlist);
@@ -108,8 +108,8 @@ contract KnightingRound is GlobalAccessControlManaged {
         address _globalAccessControl,
         address _tokenOut,
         address _tokenIn,
-        uint64 _saleStart,
-        uint64 _saleDuration,
+        uint256 _saleStart,
+        uint256 _saleDuration,
         uint256 _tokenOutPrice,
         address _saleRecipient,
         address _guestlist,
@@ -279,7 +279,10 @@ contract KnightingRound is GlobalAccessControlManaged {
      * @notice Update the sale start time. Can only be called by owner
      * @param _saleStart New start time
      */
-    function setSaleStart(uint64 _saleStart) external onlyRole(CONTRACT_GOVERNANCE_ROLE) {
+    function setSaleStart(uint256 _saleStart)
+        external
+        onlyRole(CONTRACT_GOVERNANCE_ROLE)
+    {
         require(
             _saleStart >= block.timestamp,
             "TokenSale: start date may not be in the past"
@@ -295,7 +298,10 @@ contract KnightingRound is GlobalAccessControlManaged {
      * @notice Update sale duration. Can only be called by owner
      * @param _saleDuration New duration
      */
-    function setSaleDuration(uint64 _saleDuration) external onlyRole(CONTRACT_GOVERNANCE_ROLE) {
+    function setSaleDuration(uint256 _saleDuration)
+        external
+        onlyRole(CONTRACT_GOVERNANCE_ROLE)
+    {
         require(
             _saleDuration > 0,
             "TokenSale: the sale duration must not be zero"
@@ -311,7 +317,10 @@ contract KnightingRound is GlobalAccessControlManaged {
      * @notice Modify the tokenOut price in. Can only be called by owner
      * @param _tokenOutPrice New tokenOut price
      */
-    function setTokenOutPrice(uint256 _tokenOutPrice) external onlyRole(CONTRACT_GOVERNANCE_ROLE) {
+    function setTokenOutPrice(uint256 _tokenOutPrice)
+        external
+        onlyRole(CONTRACT_GOVERNANCE_ROLE)
+    {
         require(_tokenOutPrice > 0, "TokenSale: the price must not be zero");
 
         tokenOutPrice = _tokenOutPrice;
@@ -323,7 +332,10 @@ contract KnightingRound is GlobalAccessControlManaged {
      * @notice Update the `tokenIn` receipient address. Can only be called by owner
      * @param _saleRecipient New recipient address
      */
-    function setSaleRecipient(address _saleRecipient) external onlyRole(CONTRACT_GOVERNANCE_ROLE) {
+    function setSaleRecipient(address _saleRecipient)
+        external
+        onlyRole(CONTRACT_GOVERNANCE_ROLE)
+    {
         require(
             _saleRecipient != address(0),
             "TokenSale: sale recipient should not be zero"
@@ -338,7 +350,10 @@ contract KnightingRound is GlobalAccessControlManaged {
      * @notice Update the guestlist address. Can only be called by owner
      * @param _guestlist New guestlist address
      */
-    function setGuestlist(address _guestlist) external onlyRole(TECH_OPERATIONS_ROLE) {
+    function setGuestlist(address _guestlist)
+        external
+        onlyRole(TECH_OPERATIONS_ROLE)
+    {
         guestlist = IBadgerVipGuestlist(_guestlist);
 
         emit GuestlistUpdated(_guestlist);
@@ -348,7 +363,10 @@ contract KnightingRound is GlobalAccessControlManaged {
      * @notice Modify the max tokenIn that this contract can take. Can only be called by owner
      * @param _tokenInLimit New max amountIn
      */
-    function setTokenInLimit(uint256 _tokenInLimit) external onlyRole(TECH_OPERATIONS_ROLE) {
+    function setTokenInLimit(uint256 _tokenInLimit)
+        external
+        onlyRole(TECH_OPERATIONS_ROLE)
+    {
         require(!finalized, "TokenSale: already finalized");
 
         tokenInLimit = _tokenInLimit;

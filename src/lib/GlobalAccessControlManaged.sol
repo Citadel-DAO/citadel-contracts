@@ -29,8 +29,16 @@ contract GlobalAccessControlManaged is PausableUpgradeable {
         gac = IGac(_globalAccessControl);
     }
 
+    // @dev only holders of the given role on the GAC can call
     modifier onlyRole(bytes32 role) {
         require(gac.hasRole(role, msg.sender), "invalid-caller-role");
+        _;
+    }
+
+    // @dev only holders of the given role on the GAC can call, or a specified address
+    // @dev used to faciliate extra contract-specific permissioned accounts
+    modifier onlyRoleOrAddress(bytes32 role, address account) {
+        require(gac.hasRole(role, msg.sender) || msg.sender == account, "invalid-caller-role-or-address");
         _;
     }
 
