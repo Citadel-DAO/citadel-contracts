@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: UNLICENSED
-pragma solidity 0.8.10;
+pragma solidity 0.8.12;
 
 import {BaseFixture} from "./BaseFixture.sol";
 import {SupplySchedule} from "../SupplySchedule.sol";
@@ -10,7 +10,7 @@ contract SetupAndKnightingRoundTest is BaseFixture {
         BaseFixture.setUp();
     }
 
-    fucntion testFundingOraclesFlow() public {
+    function testFundingOraclesFlow() public {
         /*
             - update CTDL/USD
             - update ASSET/USD

@@ -1,14 +1,14 @@
 // SPDX-License-Identifier: UNLICENSED
-pragma solidity 0.8.10;
+pragma solidity 0.8.12;
 
 import "ds-test/test.sol";
 import {Vm} from "forge-std/Vm.sol";
 import {stdCheats} from "forge-std/stdlib.sol";
 import {Utils} from "./utils/Utils.sol";
 import {ERC20Utils} from "./utils/ERC20Utils.sol";
+import {SnapshotComparator} from "./utils/SnapshotUtils.sol";
 
 import {SafeMathUpgradeable} from "openzeppelin-contracts-upgradeable/utils/math/SafeMathUpgradeable.sol";
-
 import {GlobalAccessControl} from "../GlobalAccessControl.sol";
 
 import {CitadelToken} from "../CitadelToken.sol";
@@ -26,6 +26,8 @@ import "../interfaces/erc20/IERC20.sol";
 contract BaseFixture is DSTest, Utils {
     using SafeMathUpgradeable for uint256;
     Vm constant vm = Vm(HEVM_ADDRESS);
+    ERC20Utils immutable erc20utils = new ERC20Utils();
+    SnapshotComparator comparator;
 
     bytes32 public constant CONTRACT_GOVERNANCE_ROLE =
         keccak256("CONTRACT_GOVERNANCE_ROLE");
@@ -71,8 +73,11 @@ contract BaseFixture is DSTest, Utils {
     address immutable shrimp = getAddress("shrimp");
     address immutable shark = getAddress("shark");
 
-    IERC20 wbtc = IERC20(0x2260FAC5E5542a773Aa44fBCfeDf7C193bc2C599);
-    IERC20 cvx = IERC20(0x4e3FBD56CD56c3e72c1403e103b45Db9da5B9D2B);
+    address constant wbtc_address = 0x2260FAC5E5542a773Aa44fBCfeDf7C193bc2C599;
+    address constant cvx_address = 0x4e3FBD56CD56c3e72c1403e103b45Db9da5B9D2B;
+
+    IERC20 wbtc = IERC20(wbtc_address);
+    IERC20 cvx = IERC20(cvx_address);
 
     GlobalAccessControl gac = new GlobalAccessControl();
 
@@ -97,6 +102,10 @@ contract BaseFixture is DSTest, Utils {
 
     KnightingRoundParams knightingRoundParams;
 
+    function getSelector(string memory _func) public pure returns (bytes4) {
+        return bytes4(keccak256(bytes(_func)));
+    }
+
     function setUp() public virtual {
         // Labels
         vm.label(address(this), "this");
@@ -112,9 +121,9 @@ contract BaseFixture is DSTest, Utils {
         vm.label(address(schedule), "schedule");
         vm.label(address(gac), "gac");
 
-        vm.label(whale, "whale");
-        vm.label(shrimp, "shrimp");
-        vm.label(shark, "shark");
+        vm.label(whale, "whale"); // whale attempts large token actions, testing upper bounds
+        vm.label(shrimp, "shrimp"); // shrimp attempts small token actions, testing lower bounds
+        vm.label(shark, "shark"); // shark attempts malicious actions
 
         // Initialization
         gac.initialize(governance);
@@ -190,5 +199,79 @@ contract BaseFixture is DSTest, Utils {
         gac.grantRole(PAUSER_ROLE, guardian);
         gac.grantRole(UNPAUSER_ROLE, techOps);
         vm.stopPrank();
+
+        // Deposit initial assets to users
+        erc20utils.forceMintTo(whale, wbtc_address, 1000e8);
+        erc20utils.forceMintTo(shrimp, wbtc_address, 10e8);
+        erc20utils.forceMintTo(shark, wbtc_address, 100e8);
+
+        erc20utils.forceMintTo(whale, cvx_address, 1000000e18);
+        erc20utils.forceMintTo(shrimp, cvx_address, 1000e18);
+        erc20utils.forceMintTo(shark, cvx_address, 10000e18);
+
+        // Setup balance tracking
+        comparator = new SnapshotComparator();
+        address[] memory accounts_to_track = new address[](4);
+        string[] memory accounts_to_track_names = new string[](4);
+
+        accounts_to_track[0] = whale;
+        accounts_to_track_names[0] = "whale";
+        accounts_to_track[1] = shrimp;
+        accounts_to_track_names[1] = "shrimp";
+        accounts_to_track[2] = shark;
+        accounts_to_track_names[2] = "shark";
+        accounts_to_track[3] = address(knightingRound);
+        accounts_to_track_names[3] = "knightingRound";
+
+        accounts_to_track[1] = shrimp;
+        accounts_to_track[2] = shark;
+        accounts_to_track[3] = address(knightingRound);
+
+        // Track balances for all tokens + entities
+        for (uint i = 0; i < 4; i++) {
+
+            // wBTC
+            string memory wbtc_key = concatenate(concatenate("wbtc.balanceOf(", accounts_to_track_names[i]),")");
+            comparator.addCall(
+                wbtc_key,
+                wbtc_address,
+                abi.encodeWithSignature("balanceOf(address)", accounts_to_track[i])
+            );
+
+            // Citadel
+            string memory citadel_key = concatenate(concatenate("citadel.balanceOf(", accounts_to_track_names[i]),")");
+            comparator.addCall(
+                citadel_key,
+                address(citadel),
+                abi.encodeWithSignature("balanceOf(address)", accounts_to_track[i])
+            );
+
+            // CVX
+            string memory cvx_key = concatenate(concatenate("cvx.balanceOf(", accounts_to_track_names[i]),")");
+            comparator.addCall(
+                cvx_key,
+                cvx_address,
+                abi.encodeWithSignature("balanceOf(address)", accounts_to_track[i])
+            );
+
+            // Knighting Round Purchases
+            string memory knighting_round_key = concatenate(concatenate("knightingRound.boughtAmounts(", accounts_to_track_names[i]),")");
+            comparator.addCall(
+                knighting_round_key,
+                address(knightingRound),
+                abi.encodeWithSignature("boughtAmounts(address)", accounts_to_track[i])
+            );
+
+            // emit log(wbtc_key);
+            // emit log(citadel_key);
+        }
+
+        comparator.addCall(
+            "citadel.totalSupply()",
+            address(citadel),
+            abi.encodeWithSignature("totalSupply()")
+        );
+
+        
     }
 }
