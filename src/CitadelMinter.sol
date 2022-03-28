@@ -39,10 +39,15 @@ contract CitadelMinter is GlobalAccessControlManaged, ReentrancyGuardUpgradeable
     uint256 constant MAX_BPS = 10000;
 
     EnumerableSetUpgradeable.AddressSet internal fundingPools;
-    mapping (address => uint) fundingPoolWeights;
-    uint totalFundingPoolWeight;
+    mapping (address => uint) public fundingPoolWeights;
+    uint public totalFundingPoolWeight;
 
-    event FundingPoolWeightSet(uint weight, bool increased, uint diff, uint totalFundingPoolWeight);
+    uint public fundingBps;
+    uint public stakingBps;
+    uint public lockingBps;
+    
+    event FundingPoolWeightSet(address pool, uint weight, uint totalFundingPoolWeight);
+    event CitadelDistributionSplitSet(uint fundingBps, uint stakingBps, uint lockingBps);
 
     function initialize(
         address _gac,
@@ -79,51 +84,71 @@ contract CitadelMinter is GlobalAccessControlManaged, ReentrancyGuardUpgradeable
         bool poolExists = fundingPools.contains(_pool);
         // Remove existing pool on 0 weight
         if (_weight == 0 && poolExists) {
-            _setFundingPoolWeight(_pool, 0);
+            fundingPoolWeights[_pool] = 0;
+            totalFundingPoolWeight = totalFundingPoolWeight - fundingPoolWeights[_pool];
             _removeFundingPool(_pool);
+
+            emit FundingPoolWeightSet(_pool, _weight, totalFundingPoolWeight);
         } else {
+            // Add new pool or modify existing pool
             require(_weight <= 10000, "exceed max funding pool weight");
             if (!poolExists) {
                 _addFundingPool(_pool);
             }
-            _setFundingPoolWeight(_pool, _weight);
+            uint _newTotalWeight = totalFundingPoolWeight;
+            _newTotalWeight = _newTotalWeight - fundingPoolWeights[_pool];
+            fundingPoolWeights[_pool] = _weight;
+            _newTotalWeight = _newTotalWeight + _weight;
+            totalFundingPoolWeight = _newTotalWeight;
+
+            emit FundingPoolWeightSet(_pool, _weight, _newTotalWeight);
         }
     }
 
-    /// @dev Auto-compound staker amount into xCTDL
-    function mintAndDistribute(
+    function setCitadelDistributionSplit(
         uint256 _fundingBps,
         uint256 _stakingBps,
         uint256 _lockingBps
     ) external onlyRole(POLICY_OPERATIONS_ROLE) gacPausable nonReentrant {
-        require(_fundingBps.add(_stakingBps).add(_lockingBps) == MAX_BPS);
+        require(_fundingBps.add(_stakingBps).add(_lockingBps) == MAX_BPS, "Sum of split values must be 10000 bps");
+        fundingBps = _fundingBps;
+        stakingBps = _stakingBps;
+        lockingBps = _lockingBps;
 
-        uint mintable = ISupplySchedule(supplySchedule).getMintable();
+        emit CitadelDistributionSplitSet(_fundingBps, _stakingBps, _lockingBps);
+    }
+
+    /// @dev Auto-compound staker amount into xCTDL
+    function mintAndDistribute() external onlyRole(POLICY_OPERATIONS_ROLE) gacPausable nonReentrant {
+        uint mintable = 1e18;
+        // ISupplySchedule(supplySchedule).getMintable();
+        // uint mintable = ISupplySchedule(supplySchedule).getMintable();
         ICitadelToken(citadelToken).mint(address(this), mintable);
 
-        if (_lockingBps != 0) {
-            uint lockingAmount = mintable.mul(_lockingBps).div(MAX_BPS);
-            uint256 beforeAmount = IERC20Upgradeable(xCitadel).balanceOf(
-                address(this)
-            );
+        if (lockingBps != 0) {
+            // uint lockingAmount = mintable.mul(lockingBps).div(MAX_BPS);
+            // uint256 beforeAmount = IERC20Upgradeable(xCitadel).balanceOf(
+            //     address(this)
+            // );
 
-            IxCitadel(xCitadel).deposit(lockingAmount);
+            // IERC20Upgradeable(citadelToken).approve(xCitadel, lockingAmount);
+            // IxCitadel(xCitadel).deposit(lockingAmount);
 
-            uint256 afterAmount = IERC20Upgradeable(xCitadel).balanceOf(
-                address(this));
+            // uint256 afterAmount = IERC20Upgradeable(xCitadel).balanceOf(
+            //     address(this));
 
-            xCitadelLocker.notifyRewardAmount(
-                xCitadel,
-                afterAmount.sub(beforeAmount));
+            // xCitadelLocker.notifyRewardAmount(
+            //     xCitadel,
+            //     afterAmount.sub(beforeAmount));
         }
 
-        if (_stakingBps != 0) {
-            uint stakingAmount = mintable.mul(_stakingBps).div(MAX_BPS);
+        if (stakingBps != 0) {
+            uint stakingAmount = mintable.mul(stakingBps).div(MAX_BPS);
             IERC20Upgradeable(citadelToken).transfer(xCitadel, stakingAmount);
         }
 
-        if (_fundingBps != 0) {
-            uint fundingAmount = mintable.mul(_fundingBps).div(MAX_BPS);
+        if (fundingBps != 0) {
+            uint fundingAmount = mintable.mul(fundingBps).div(MAX_BPS);
             _transferToFundingPools(fundingAmount);
         }
     }
@@ -132,7 +157,7 @@ contract CitadelMinter is GlobalAccessControlManaged, ReentrancyGuardUpgradeable
 
     // === Funding Pool Management ===
     function _transferToFundingPools(uint _citadelAmount) internal {
-        require(fundingPools.length() > 0, "no funding pools");
+        require(fundingPools.length() > 0, "CitadelMinter: no funding pools");
         for (uint i = 0; i < fundingPools.length(); i++) {
             address pool = fundingPools.at(i);
             uint weight = fundingPoolWeights[pool];
@@ -146,28 +171,18 @@ contract CitadelMinter is GlobalAccessControlManaged, ReentrancyGuardUpgradeable
         }
     }
 
-    function _setFundingPoolWeight(address _pool, uint _weight) internal {
-        uint existingWeight = fundingPoolWeights[_pool];
+    function getFundingPoolWeights() external view returns (address[] memory pools, uint[] memory weights) {
+        uint numPools = fundingPools.length();
+        pools = new address[](numPools);
+        weights = new uint[](numPools);
 
-        // Decreasing Weight
-        if (existingWeight > _weight) {
-            uint diff = existingWeight.sub(_weight);
+        for (uint i = 0; i < numPools; i++) {
+            address pool = fundingPools.at(i);
+            uint weight = fundingPoolWeights[pool];
 
-            fundingPoolWeights[_pool] = _weight;
-            totalFundingPoolWeight = totalFundingPoolWeight.sub(diff);
-            emit FundingPoolWeightSet(_weight, false, diff, totalFundingPoolWeight);
+            pools[i] = pool;
+            weights[i] = weight;
         }
-
-        // Increasing Weight
-        else if (existingWeight < _weight) {
-            uint diff = _weight.sub(existingWeight);
-            
-            fundingPoolWeights[_pool] = _weight;
-            totalFundingPoolWeight = totalFundingPoolWeight.sub(diff);
-            emit FundingPoolWeightSet(_weight, true, diff, totalFundingPoolWeight);
-        }
-
-        // If weight values are the same, no action is needed
     }
 
     function _removeFundingPool(address _pool) internal {
