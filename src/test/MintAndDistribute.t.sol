@@ -5,12 +5,12 @@ import {BaseFixture} from "./BaseFixture.sol";
 import {SupplySchedule} from "../SupplySchedule.sol";
 import {GlobalAccessControl} from "../GlobalAccessControl.sol";
 
-contract SetupAndKnightingRoundTest is BaseFixture {
+contract MintAndDistributeTest is BaseFixture {
     function setUp() public override {
         BaseFixture.setUp();
     }
 
-    fucntion testMintAndDistribute() public {
+    function testMintAndDistribute() public {
         /*
             Flow:
             - policy ops pings minter with the proportions to go to funding, locking, staking (decided off-chain for now)
@@ -29,5 +29,33 @@ contract SetupAndKnightingRoundTest is BaseFixture {
 
             There unfortunately is the daily manual step of the initial mint destination propotions, we can automate this via contract with some work and oracles.
         */
+
+        vm.startPrank(policyOps);
+        citadelMinter.setCitadelDistributionSplit(4000,3000,3000);
+        // confirm only policy ops can call
+        // bps between three positions must add up to 10000 (100%)
+
+        // can't mint before start
+        // vm.expectRevert("SupplySchedule: minting not started");
+
+        // can't mint without funding pools setup
+        vm.expectRevert("CitadelMinter: no funding pools");
+        citadelMinter.mintAndDistribute();
+
+        citadelMinter.setFundingPoolWeight(address(fundingWbtc), 8000);
+        citadelMinter.setFundingPoolWeight(address(fundingCvx), 2000);
+        
+        // policy ops should not be able to start minting schedule
+        vm.expectRevert("invalid-caller-role");
+        schedule.setMintingStart(block.timestamp);
+
+        vm.prank(governance);
+        schedule.setMintingStart(block.timestamp);
+
+        vm.warp(1000);
+
+        vm.startPrank(policyOps);
+        citadelMinter.mintAndDistribute();
+        vm.stopPrank();
     }
 }
