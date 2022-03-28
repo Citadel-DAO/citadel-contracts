@@ -117,16 +117,16 @@ contract KnightingRound is GlobalAccessControlManaged {
     ) external initializer {
         require(
             _saleStart >= block.timestamp,
-            "TokenSale: start date may not be in the past"
+            "KnightingRound: start date may not be in the past"
         );
         require(
             _saleDuration > 0,
-            "TokenSale: the sale duration must not be zero"
+            "KnightingRound: the sale duration must not be zero"
         );
-        require(_tokenOutPrice > 0, "TokenSale: the price must not be zero");
+        require(_tokenOutPrice > 0, "KnightingRound: the price must not be zero");
         require(
             _saleRecipient != address(0),
-            "TokenSale: sale recipient should not be zero"
+            "KnightingRound: sale recipient should not be zero"
         );
 
         __GlobalAccessControlManaged_init(_globalAccessControl);
@@ -157,10 +157,10 @@ contract KnightingRound is GlobalAccessControlManaged {
         uint8 _daoId,
         bytes32[] calldata _proof
     ) external gacPausable returns (uint256 tokenOutAmount_) {
-        require(saleStart <= block.timestamp, "TokenSale: not started");
+        require(saleStart <= block.timestamp, "KnightingRound: not started");
         require(
             block.timestamp < saleStart + saleDuration,
-            "TokenSale: already ended"
+            "KnightingRound: already ended"
         );
         require(_tokenInAmount > 0, "_tokenInAmount should be > 0");
         require(
@@ -263,11 +263,11 @@ contract KnightingRound is GlobalAccessControlManaged {
        @dev Ensure contract has enough `tokenOut` before calling
      */
     function finalize() external onlyRole(CONTRACT_GOVERNANCE_ROLE) {
-        require(!finalized, "TokenSale: already finalized");
-        require(saleEnded(), "TokenSale: not finished");
+        require(!finalized, "KnightingRound: already finalized");
+        require(saleEnded(), "KnightingRound: not finished");
         require(
             tokenOut.balanceOf(address(this)) >= totalTokenOutBought,
-            "TokenSale: not enough balance"
+            "KnightingRound: not enough balance"
         );
 
         finalized = true;
@@ -285,9 +285,9 @@ contract KnightingRound is GlobalAccessControlManaged {
     {
         require(
             _saleStart >= block.timestamp,
-            "TokenSale: start date may not be in the past"
+            "KnightingRound: start date may not be in the past"
         );
-        require(!finalized, "TokenSale: already finalized");
+        require(!finalized, "KnightingRound: already finalized");
 
         saleStart = _saleStart;
 
@@ -304,9 +304,9 @@ contract KnightingRound is GlobalAccessControlManaged {
     {
         require(
             _saleDuration > 0,
-            "TokenSale: the sale duration must not be zero"
+            "KnightingRound: the sale duration must not be zero"
         );
-        require(!finalized, "TokenSale: already finalized");
+        require(!finalized, "KnightingRound: already finalized");
 
         saleDuration = _saleDuration;
 
@@ -321,7 +321,7 @@ contract KnightingRound is GlobalAccessControlManaged {
         external
         onlyRole(CONTRACT_GOVERNANCE_ROLE)
     {
-        require(_tokenOutPrice > 0, "TokenSale: the price must not be zero");
+        require(_tokenOutPrice > 0, "KnightingRound: the price must not be zero");
 
         tokenOutPrice = _tokenOutPrice;
 
@@ -338,7 +338,7 @@ contract KnightingRound is GlobalAccessControlManaged {
     {
         require(
             _saleRecipient != address(0),
-            "TokenSale: sale recipient should not be zero"
+            "KnightingRound: sale recipient should not be zero"
         );
 
         saleRecipient = _saleRecipient;
@@ -367,7 +367,7 @@ contract KnightingRound is GlobalAccessControlManaged {
         external
         onlyRole(TECH_OPERATIONS_ROLE)
     {
-        require(!finalized, "TokenSale: already finalized");
+        require(!finalized, "KnightingRound: already finalized");
 
         tokenInLimit = _tokenInLimit;
 
