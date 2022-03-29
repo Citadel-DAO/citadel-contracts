@@ -4,6 +4,7 @@ pragma solidity 0.8.12;
 import {BaseFixture} from "./BaseFixture.sol";
 import {SupplySchedule} from "../SupplySchedule.sol";
 import {GlobalAccessControl} from "../GlobalAccessControl.sol";
+import {Funding} from "../Funding.sol";
 
 import {FixedPointMathLib} from "solmate/utils/FixedPointMathLib.sol";
 contract FundingTest is BaseFixture {
@@ -32,16 +33,25 @@ contract FundingTest is BaseFixture {
     }
 
     function testBuy() public {
+        _testBuy(fundingCvx, 100e18, 100e18);
+    }
+
+    function testBuyDifferentDecimals() public {
+        // wBTC is an 8 decimal example
+        // TODO: Fix comparator calls in inner function as per that functions comment
+        // _testBuy(fundingWbtc, 2e8, 2e8);
+        assertTrue(true);
+    }
+
+    function _testBuy(Funding fundingContract, uint assetIn, uint citadelPrice) internal {
         // just make citadel appear rather than going through minting flow here
-        erc20utils.forceMintTo(address(fundingCvx), address(citadel), 100000e18);
+        erc20utils.forceMintTo(address(fundingContract), address(citadel), 100000e18);
         
         vm.prank(eoaOracle);
-        uint citadelPrice = 100e18;
 
         // CVX funding contract gives us an 18 decimal example
-        fundingCvx.updateCitadelPriceInAsset(citadelPrice);
+        fundingContract.updateCitadelPriceInAsset(citadelPrice);
 
-        uint assetIn = 100e18;
         uint expectedAssetOut = assetIn.divWadUp(citadelPrice);
         
         emit log_named_uint("Citadel Price", citadelPrice);
@@ -49,12 +59,12 @@ contract FundingTest is BaseFixture {
         vm.startPrank(whale);
 
         require(cvx.balanceOf(whale) >= assetIn, "buyer has insufficent assets for specified buy amount");
-        require(citadel.balanceOf(address(fundingCvx)) >= expectedAssetOut, "funding has insufficent citadel for specified buy amount");
+        require(citadel.balanceOf(address(fundingContract)) >= expectedAssetOut, "funding has insufficent citadel for specified buy amount");
 
         comparator.snapPrev();
-        cvx.approve(address(fundingCvx), cvx.balanceOf(whale));
+        cvx.approve(address(fundingContract), cvx.balanceOf(whale));
 
-        fundingCvx.deposit(assetIn, 0);
+        fundingContract.deposit(assetIn, 0);
         comparator.snapCurr();
 
         uint expectedAssetLost = assetIn;
@@ -66,13 +76,13 @@ contract FundingTest is BaseFixture {
         assertEq(comparator.negDiff("cvx.balanceOf(whale)"), assetIn);
         
         // funding contract loses citadel and sends asset to saleRecipient. should never hold an xCitadel balance (deposited for each user) (gas costs?)
+
+        // TODO: Improve comparator to easily add new entity for all balance calls.
         assertEq(comparator.negDiff("citadel.balanceOf(fundingCvx)"), expectedAssetOut);
         assertEq(comparator.diff("cvx.balanceOf(treasuryVault)"), assetIn);
         
-        assertEq(xCitadel.balanceOf(address(fundingCvx)), 0);
+        assertEq(xCitadel.balanceOf(address(fundingContract)), 0);
 
         vm.stopPrank();
-
-        // wBTC is an 8 decimal example
     }
-}
+ }
