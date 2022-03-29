@@ -99,11 +99,12 @@ contract Funding is GlobalAccessControlManaged, ReentrancyGuardUpgradeable {
         address _asset,
         address _xCitadel,
         address _saleRecipient,
+        address _citadelPriceInAssetOracle,
         uint256 _assetCap
     ) external initializer {
         require(
             _saleRecipient != address(0),
-            "TokenSale: sale recipient should not be zero"
+            "Funding: sale recipient should not be zero"
         );
 
         __GlobalAccessControlManaged_init(_gac);
@@ -114,6 +115,8 @@ contract Funding is GlobalAccessControlManaged, ReentrancyGuardUpgradeable {
         asset = IERC20(_asset);
         saleRecipient = _saleRecipient;
 
+        citadelPriceInAssetOracle = _citadelPriceInAssetOracle;
+
         funding = FundingParams(
             0,
             0,
@@ -122,6 +125,9 @@ contract Funding is GlobalAccessControlManaged, ReentrancyGuardUpgradeable {
             0,
             _assetCap
         );
+
+        // Allow to deposit in vault
+        citadel.approve(address(xCitadel), type(uint256).max);
     }
     
 
@@ -152,9 +158,9 @@ contract Funding is GlobalAccessControlManaged, ReentrancyGuardUpgradeable {
 
         // Deposit xCitadel and send to user
         // TODO: Check gas costs. How does this relate to market buying if you do want to deposit to xCTDL?
-        uint xCitadelBeforeDeposit = xCitadel.balanceOf(address(this));
+        uint xCitadelBeforeDeposit = xCitadel.balanceOf(msg.sender);
         xCitadel.depositFor(msg.sender, citadelAmount_);
-        uint xCitadelAfterDeposit = xCitadel.balanceOf(address(this));
+        uint xCitadelAfterDeposit = xCitadel.balanceOf(msg.sender);
         uint xCitadelGained = xCitadelAfterDeposit - xCitadelBeforeDeposit;
 
         emit Deposit(msg.sender, _assetAmountIn, xCitadelGained, citadelAmount_);
@@ -259,7 +265,7 @@ contract Funding is GlobalAccessControlManaged, ReentrancyGuardUpgradeable {
     function setSaleRecipient(address _saleRecipient) external gacPausable onlyRole(CONTRACT_GOVERNANCE_ROLE) {
         require(
             _saleRecipient != address(0),
-            "TokenSale: sale recipient should not be zero"
+            "Funding: sale recipient should not be zero"
         );
 
         saleRecipient = _saleRecipient;

@@ -14,6 +14,7 @@ import {GlobalAccessControl} from "../GlobalAccessControl.sol";
 import {CitadelToken} from "../CitadelToken.sol";
 import {StakedCitadel} from "../StakedCitadel.sol";
 import {StakedCitadelVester} from "../StakedCitadelVester.sol";
+import {StakedCitadelLocker} from "../StakedCitadelLocker.sol";
 
 import {SupplySchedule} from "../SupplySchedule.sol";
 import {CitadelMinter} from "../CitadelMinter.sol";
@@ -22,6 +23,7 @@ import {KnightingRound} from "../KnightingRound.sol";
 import {Funding} from "../Funding.sol";
 
 import "../interfaces/erc20/IERC20.sol";
+import "../interfaces/badger/IEmptyStrategy.sol";
 
 contract BaseFixture is DSTest, Utils {
     using SafeMathUpgradeable for uint256;
@@ -73,6 +75,10 @@ contract BaseFixture is DSTest, Utils {
     address immutable shrimp = getAddress("shrimp");
     address immutable shark = getAddress("shark");
 
+    address immutable eoaOracle = getAddress("eoaOracle");
+
+    address immutable xCitadelStrategy_address = getAddress("xCitadelStrategy");
+
     address constant wbtc_address = 0x2260FAC5E5542a773Aa44fBCfeDf7C193bc2C599;
     address constant cvx_address = 0x4e3FBD56CD56c3e72c1403e103b45Db9da5B9D2B;
 
@@ -84,6 +90,7 @@ contract BaseFixture is DSTest, Utils {
     CitadelToken citadel = new CitadelToken();
     StakedCitadel xCitadel = new StakedCitadel();
     StakedCitadelVester xCitadelVester = new StakedCitadelVester();
+    StakedCitadelLocker xCitadelLocker = new StakedCitadelLocker();
 
     SupplySchedule schedule = new SupplySchedule();
     CitadelMinter citadelMinter = new CitadelMinter();
@@ -125,7 +132,10 @@ contract BaseFixture is DSTest, Utils {
         vm.label(shrimp, "shrimp"); // shrimp attempts small token actions, testing lower bounds
         vm.label(shark, "shark"); // shark attempts malicious actions
 
+        vm.label(eoaOracle, "eoaOracle"); // oracle EOA for testing oracle-based values simply
+
         // Initialization
+        vm.startPrank(governance);
         gac.initialize(governance);
 
         uint256[4] memory xCitadelFees = [
@@ -150,18 +160,35 @@ contract BaseFixture is DSTest, Utils {
             xCitadelFees
         );
 
+        // vm.etch(xCitadelStrategy_address, staticCode.getEmptyStrategyCode());
+
+        // emit log_address(xCitadelStrategy_address);
+
+        // IEmptyStrategy xCitadelStrategy = IEmptyStrategy(xCitadelStrategy_address);
+        // emit log(xCitadelStrategy.getName());
+        // xCitadelStrategy.initialize(address(xCitadel), address(citadel));
+
+        // xCitadel.setStrategy(xCitadelStrategy_address);
+
         xCitadelVester.initialize(
             address(gac),
             address(citadel),
             address(xCitadel)
         );
 
+        xCitadelLocker.initialize(
+            address(xCitadel),
+            "Vote Locked xCitadel",
+            "vlCTDL"
+        );
+        xCitadelLocker.addReward(address(xCitadel), address(citadelMinter));
+
         schedule.initialize(address(gac));
         citadelMinter.initialize(
             address(gac),
             address(citadel),
             address(xCitadel),
-            address(xCitadel),
+            address(xCitadelLocker),
             address(schedule)
         );
 
@@ -183,6 +210,28 @@ contract BaseFixture is DSTest, Utils {
             address(treasuryVault),
             address(0), // TODO: Add guest list and test with it
             knightingRoundParams.wbtcLimit
+        );
+        vm.stopPrank();
+
+        // Funding
+
+        fundingWbtc.initialize(
+            address(gac),
+            address(citadel),
+            address(wbtc),
+            address(xCitadel),
+            treasuryVault,
+            eoaOracle,
+            100e8
+        );
+        fundingCvx.initialize(
+            address(gac),
+            address(citadel),
+            address(cvx),
+            address(xCitadel),
+            treasuryVault,
+            eoaOracle,
+            100000e18
         );
 
         // Grant roles
@@ -211,55 +260,105 @@ contract BaseFixture is DSTest, Utils {
 
         // Setup balance tracking
         comparator = new SnapshotComparator();
-        address[] memory accounts_to_track = new address[](4);
-        string[] memory accounts_to_track_names = new string[](4);
+
+        uint numAddressesToTrack = 7;
+        address[] memory accounts_to_track = new address[](numAddressesToTrack);
+        string[] memory accounts_to_track_names = new string[](numAddressesToTrack);
 
         accounts_to_track[0] = whale;
         accounts_to_track_names[0] = "whale";
+
         accounts_to_track[1] = shrimp;
         accounts_to_track_names[1] = "shrimp";
+
         accounts_to_track[2] = shark;
         accounts_to_track_names[2] = "shark";
+
         accounts_to_track[3] = address(knightingRound);
         accounts_to_track_names[3] = "knightingRound";
 
-        accounts_to_track[1] = shrimp;
-        accounts_to_track[2] = shark;
-        accounts_to_track[3] = address(knightingRound);
+        accounts_to_track[4] = address(fundingCvx);
+        accounts_to_track_names[4] = "fundingCvx";
+
+        accounts_to_track[5] = address(fundingWbtc);
+        accounts_to_track_names[5] = "fundingWbtc";
+
+        accounts_to_track[6] = treasuryVault;
+        accounts_to_track_names[6] = "treasuryVault";
 
         // Track balances for all tokens + entities
-        for (uint i = 0; i < 4; i++) {
-
+        for (uint256 i = 0; i < numAddressesToTrack; i++) {
             // wBTC
-            string memory wbtc_key = concatenate(concatenate("wbtc.balanceOf(", accounts_to_track_names[i]),")");
+            string memory wbtc_key = concatenate(
+                concatenate("wbtc.balanceOf(", accounts_to_track_names[i]),
+                ")"
+            );
             comparator.addCall(
                 wbtc_key,
                 wbtc_address,
-                abi.encodeWithSignature("balanceOf(address)", accounts_to_track[i])
+                abi.encodeWithSignature(
+                    "balanceOf(address)",
+                    accounts_to_track[i]
+                )
             );
 
             // Citadel
-            string memory citadel_key = concatenate(concatenate("citadel.balanceOf(", accounts_to_track_names[i]),")");
+            string memory citadel_key = concatenate(
+                concatenate("citadel.balanceOf(", accounts_to_track_names[i]),
+                ")"
+            );
             comparator.addCall(
                 citadel_key,
                 address(citadel),
-                abi.encodeWithSignature("balanceOf(address)", accounts_to_track[i])
+                abi.encodeWithSignature(
+                    "balanceOf(address)",
+                    accounts_to_track[i]
+                )
             );
 
             // CVX
-            string memory cvx_key = concatenate(concatenate("cvx.balanceOf(", accounts_to_track_names[i]),")");
+            string memory cvx_key = concatenate(
+                concatenate("cvx.balanceOf(", accounts_to_track_names[i]),
+                ")"
+            );
             comparator.addCall(
                 cvx_key,
                 cvx_address,
-                abi.encodeWithSignature("balanceOf(address)", accounts_to_track[i])
+                abi.encodeWithSignature(
+                    "balanceOf(address)",
+                    accounts_to_track[i]
+                )
+            );
+
+            // xCitadel
+            string memory xcitadel_key = concatenate(
+                concatenate("xCitadel.balanceOf(", accounts_to_track_names[i]),
+                ")"
+            );
+            comparator.addCall(
+                xcitadel_key,
+                address(xCitadel),
+                abi.encodeWithSignature(
+                    "balanceOf(address)",
+                    accounts_to_track[i]
+                )
             );
 
             // Knighting Round Purchases
-            string memory knighting_round_key = concatenate(concatenate("knightingRound.boughtAmounts(", accounts_to_track_names[i]),")");
+            string memory knighting_round_key = concatenate(
+                concatenate(
+                    "knightingRound.boughtAmounts(",
+                    accounts_to_track_names[i]
+                ),
+                ")"
+            );
             comparator.addCall(
                 knighting_round_key,
                 address(knightingRound),
-                abi.encodeWithSignature("boughtAmounts(address)", accounts_to_track[i])
+                abi.encodeWithSignature(
+                    "boughtAmounts(address)",
+                    accounts_to_track[i]
+                )
             );
 
             // emit log(wbtc_key);
@@ -271,7 +370,5 @@ contract BaseFixture is DSTest, Utils {
             address(citadel),
             abi.encodeWithSignature("totalSupply()")
         );
-
-        
     }
 }
