@@ -60,6 +60,8 @@ contract KnightingRound is GlobalAccessControlManaged {
     /// Max tokenIn that can be taken by the contract (defines the cap for tokenOut sold)
     uint256 public tokenInLimit;
 
+    uint256 public tokenInNormalizationValue;
+
     /// Whitelist
     IBadgerVipGuestlist public guestlist;
 
@@ -139,6 +141,8 @@ contract KnightingRound is GlobalAccessControlManaged {
         saleRecipient = _saleRecipient;
         guestlist = IBadgerVipGuestlist(_guestlist);
         tokenInLimit = _tokenInLimit;
+
+        tokenInNormalizationValue = 10**tokenIn.decimals();
     }
 
     /// ==========================
@@ -229,9 +233,7 @@ contract KnightingRound is GlobalAccessControlManaged {
         view
         returns (uint256 tokenOutAmount_)
     {
-        tokenOutAmount_ = (_tokenInAmount.mul(10**tokenOut.decimals())).div(
-            tokenOutPrice
-        );
+        tokenOutAmount_ = (_tokenInAmount * tokenOutPrice) / tokenInNormalizationValue;
     }
 
     /**

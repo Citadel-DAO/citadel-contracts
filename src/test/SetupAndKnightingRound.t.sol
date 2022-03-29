@@ -5,7 +5,7 @@ import {BaseFixture} from "./BaseFixture.sol";
 import {SupplySchedule} from "../SupplySchedule.sol";
 import {GlobalAccessControl} from "../GlobalAccessControl.sol";
 
-contract SetupAndKnightingRoundTest is BaseFixture {
+contract KnightingRoundTest is BaseFixture {
     function setUp() public override {
         BaseFixture.setUp();
     }
@@ -32,7 +32,7 @@ contract SetupAndKnightingRoundTest is BaseFixture {
         comparator.snapCurr();
 
         assertEq(comparator.negDiff("wbtc.balanceOf(shrimp)"), 1e8);
-        assertEq(comparator.diff("knightingRound.boughtAmounts(shrimp)"), 21e8);
+        assertEq(comparator.diff("knightingRound.boughtAmounts(shrimp)"), 21e18);
 
         vm.stopPrank();
         
