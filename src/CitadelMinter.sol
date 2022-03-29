@@ -48,6 +48,7 @@ contract CitadelMinter is GlobalAccessControlManaged, ReentrancyGuardUpgradeable
     
     event FundingPoolWeightSet(address pool, uint weight, uint totalFundingPoolWeight);
     event CitadelDistributionSplitSet(uint fundingBps, uint stakingBps, uint lockingBps);
+    event CitadelDistribution(uint fundingAmount, uint stakingAmount, uint lockingAmount);
 
     function initialize(
         address _gac,
@@ -72,9 +73,9 @@ contract CitadelMinter is GlobalAccessControlManaged, ReentrancyGuardUpgradeable
         supplySchedule = _supplySchedule;
 
         // Approve xCitadel vault for use of citadel tokens
-        IERC20Upgradeable(citadelToken).approve(xCitadel, 2**256 - 1);
+        IERC20Upgradeable(citadelToken).approve(xCitadel, type(uint256).max);
         // Approve xCitadel for locker to use
-        IERC20Upgradeable(xCitadel).approve(_xCitadelLocker, 2**256 - 1);
+        IERC20Upgradeable(xCitadel).approve(_xCitadelLocker, type(uint256).max);
     }
 
     // @dev Set the funding weight for a given address. 
@@ -125,32 +126,37 @@ contract CitadelMinter is GlobalAccessControlManaged, ReentrancyGuardUpgradeable
         // uint mintable = ISupplySchedule(supplySchedule).getMintable();
         ICitadelToken(citadelToken).mint(address(this), mintable);
 
+        uint lockingAmount = 0;
+        uint stakingAmount = 0;
+        uint fundingAmount = 0;
+
         if (lockingBps != 0) {
-            // uint lockingAmount = mintable.mul(lockingBps).div(MAX_BPS);
-            // uint256 beforeAmount = IERC20Upgradeable(xCitadel).balanceOf(
-            //     address(this)
-            // );
+            lockingAmount = mintable.mul(lockingBps).div(MAX_BPS);
+            uint256 beforeAmount = IERC20Upgradeable(xCitadel).balanceOf(
+                address(this)
+            );
 
-            // IERC20Upgradeable(citadelToken).approve(xCitadel, lockingAmount);
-            // IxCitadel(xCitadel).deposit(lockingAmount);
+            IxCitadel(xCitadel).deposit(lockingAmount);
 
-            // uint256 afterAmount = IERC20Upgradeable(xCitadel).balanceOf(
-            //     address(this));
+            uint256 afterAmount = IERC20Upgradeable(xCitadel).balanceOf(
+                address(this));
 
-            // xCitadelLocker.notifyRewardAmount(
-            //     xCitadel,
-            //     afterAmount.sub(beforeAmount));
+            xCitadelLocker.notifyRewardAmount(
+                xCitadel,
+                afterAmount.sub(beforeAmount));
         }
 
         if (stakingBps != 0) {
-            uint stakingAmount = mintable.mul(stakingBps).div(MAX_BPS);
+            stakingAmount = mintable.mul(stakingBps).div(MAX_BPS);
             IERC20Upgradeable(citadelToken).transfer(xCitadel, stakingAmount);
         }
 
         if (fundingBps != 0) {
-            uint fundingAmount = mintable.mul(fundingBps).div(MAX_BPS);
+            fundingAmount = mintable.mul(fundingBps).div(MAX_BPS);
             _transferToFundingPools(fundingAmount);
         }
+
+        emit CitadelDistribution(fundingAmount, stakingAmount, lockingAmount);
     }
 
     // ===== Internal Functions =====
