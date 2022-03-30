@@ -31,11 +31,14 @@ contract Funding is GlobalAccessControlManaged, ReentrancyGuardUpgradeable {
     uint public citadelPriceInAsset; /// asset per citadel price eg. 1 WBTC (8 decimals) = 40,000 CTDL ==> price = 10^8 / 40,000
     uint public minCitadelPriceInAsset; /// Lower bound on expected citadel price in asset terms. Used as circuit breaker oracle.
     uint public maxCitadelPriceInAsset; /// Upper bound on expected citadel price in asset terms. Used as circuit breaker oracle.
+    bool public citadelPriceFlag; /// Flag citadel price for review by guardian if it exceeds min and max bounds;
 
     uint public xCitadelPriceInCitadel; /// xCitadel price per share
 
     // TODO: This will be calculated LIVE from cached ppfs
     uint public xCitadelPriceInAsset; /// citadel price modified by xCitadel pricePerShare
+
+    uint public assetDecimalsNormalizationValue;
 
     address public citadelPriceInAssetOracle;
     address public saleRecipient;
@@ -65,6 +68,10 @@ contract Funding is GlobalAccessControlManaged, ReentrancyGuardUpgradeable {
 
     event CitadelPriceInAssetUpdated(uint256 citadelPrice);
     event xCitadelPriceInCitadelUpdated(uint256 xCitadelPrice);
+
+    event CitadelPriceBoundsSet(uint minPrice, uint maxPrice);
+    event CitadelPriceFlag(uint price, uint minPrice, uint maxPrice);
+
     event SaleRecipientUpdated(address indexed recipient);
     event AssetCapUpdated(uint256 assetCap);
 
@@ -79,7 +86,7 @@ contract Funding is GlobalAccessControlManaged, ReentrancyGuardUpgradeable {
     event DiscountLimitsSet(uint minDiscount, uint maxDiscount);
     event DiscountSet(uint discount);
     event DiscountManagerSet(address discountManager);
-
+    
     /// =======================
     /// ===== Initializer =====
     /// =======================
@@ -128,6 +135,17 @@ contract Funding is GlobalAccessControlManaged, ReentrancyGuardUpgradeable {
 
         // Allow to deposit in vault
         citadel.approve(address(xCitadel), type(uint256).max);
+
+        assetDecimalsNormalizationValue = 10**asset.decimals();
+
+        // No circuit breaker on price by default
+        minCitadelPriceInAsset = 0;
+        maxCitadelPriceInAsset = type(uint256).max;
+    }
+
+    modifier onlyWhenPriceNotFlagged() {
+        require(citadelPriceFlag == false, "Funding: citadel price from oracle flagged and pending review");
+        _;
     }
     
 
@@ -144,7 +162,7 @@ contract Funding is GlobalAccessControlManaged, ReentrancyGuardUpgradeable {
     function deposit(
         uint256 _assetAmountIn,
         uint256 _minCitadelOut
-    ) external gacPausable returns (uint256 citadelAmount_) {
+    ) external onlyWhenPriceNotFlagged gacPausable returns (uint256 citadelAmount_) {
         require(_assetAmountIn > 0, "_assetAmountIn must not be 0");
         require(
             funding.assetCumulativeFunded.add(_assetAmountIn) <= funding.assetCap,
@@ -180,9 +198,7 @@ contract Funding is GlobalAccessControlManaged, ReentrancyGuardUpgradeable {
         view
         returns (uint256 citadelAmount_)
     {
-        citadelAmount_ = (_assetAmountIn.mul(10**citadel.decimals())).div(
-            citadelPriceInAsset
-        );
+        citadelAmount_ = (_assetAmountIn * citadelPriceInAsset) / assetDecimalsNormalizationValue;
     }
 
     /**
@@ -239,6 +255,17 @@ contract Funding is GlobalAccessControlManaged, ReentrancyGuardUpgradeable {
         emit DiscountManagerSet(_discountManager);
     }
 
+    function setCitadelAssetPriceBounds(uint _minPrice, uint _maxPrice) external gacPausable onlyRole(POLICY_OPERATIONS_ROLE) {
+        minCitadelPriceInAsset = _minPrice;
+        maxCitadelPriceInAsset = _maxPrice;
+
+        emit CitadelPriceBoundsSet(_minPrice, _maxPrice);
+    }
+
+    function clearCitadelPriceFlag() external gacPausable onlyRole(POLICY_OPERATIONS_ROLE) {
+        citadelPriceFlag = false;
+    }
+
     /// ==========================
     /// ===== Oracle actions =====
     /// ==========================
@@ -247,9 +274,14 @@ contract Funding is GlobalAccessControlManaged, ReentrancyGuardUpgradeable {
     /// @dev Note that the oracle mechanics are abstracted to the oracle address
     function updateCitadelPriceInAsset(uint _citadelPriceInAsset) external gacPausable onlyCitadelPriceInAssetOracle {
         require(_citadelPriceInAsset > 0, "citadel price must not be zero");
-        citadelPriceInAsset = _citadelPriceInAsset;
 
-        emit CitadelPriceInAssetUpdated(_citadelPriceInAsset);
+        if (_citadelPriceInAsset < minCitadelPriceInAsset || _citadelPriceInAsset > maxCitadelPriceInAsset) {
+            citadelPriceFlag = true;
+            emit CitadelPriceFlag(_citadelPriceInAsset, minCitadelPriceInAsset, maxCitadelPriceInAsset);
+        } else {
+            citadelPriceInAsset = _citadelPriceInAsset;
+            emit CitadelPriceInAssetUpdated(_citadelPriceInAsset);    
+        }
     }
 
     /// @notice Cache xCitadel value in citatdel terms by reading pricePerShare
