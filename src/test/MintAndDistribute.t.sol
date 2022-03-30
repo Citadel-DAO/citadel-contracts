@@ -30,32 +30,81 @@ contract MintAndDistributeTest is BaseFixture {
             There unfortunately is the daily manual step of the initial mint destination propotions, we can automate this via contract with some work and oracles.
         */
 
+        assertTrue(citadelMinter.supplySchedule() == address(schedule));
+
+        uint fundingBps = 4000;
+        uint stakingBps = 3000;
+        uint lockingBps = 3000;
+        uint MAX_BPS = 10000;
+
+        uint wbtcFundingPoolWeight = 8000;
+        uint cvxFundingPoolWeight = 2000;
+        uint expectedTotalPoolWeight = 10000;
+
         vm.startPrank(policyOps);
-        citadelMinter.setCitadelDistributionSplit(4000,3000,3000);
+        citadelMinter.setCitadelDistributionSplit(fundingBps,stakingBps,lockingBps);
         // confirm only policy ops can call
         // bps between three positions must add up to 10000 (100%)
 
         // can't mint before start
-        // vm.expectRevert("SupplySchedule: minting not started");
+        assertTrue(schedule.globalStartTimestamp() == 0);
+        vm.expectRevert("SupplySchedule: minting not started");
+        citadelMinter.mintAndDistribute();
+        
+        // policy ops should not be able to start minting schedule
+        vm.expectRevert("invalid-caller-role");
+        schedule.setMintingStart(block.timestamp);
+        assertTrue(schedule.globalStartTimestamp() == 0);
+
+        vm.prank(governance);
+        schedule.setMintingStart(block.timestamp);
+        assertTrue(schedule.globalStartTimestamp() == block.timestamp);
+
+        vm.expectRevert("SupplySchedule: already minted up to current block");
+        citadelMinter.mintAndDistribute();
+
+        vm.warp(block.timestamp + 1000);
 
         // can't mint without funding pools setup
         vm.expectRevert("CitadelMinter: no funding pools");
         citadelMinter.mintAndDistribute();
 
-        citadelMinter.setFundingPoolWeight(address(fundingWbtc), 8000);
-        citadelMinter.setFundingPoolWeight(address(fundingCvx), 2000);
-        
-        // policy ops should not be able to start minting schedule
-        vm.expectRevert("invalid-caller-role");
-        schedule.setMintingStart(block.timestamp);
+        citadelMinter.setFundingPoolWeight(address(fundingWbtc), wbtcFundingPoolWeight);
+        citadelMinter.setFundingPoolWeight(address(fundingCvx), cvxFundingPoolWeight);
 
-        vm.prank(governance);
-        schedule.setMintingStart(block.timestamp);
+        comparator.snapPrev();
+        uint expectedMint = schedule.getMintable();
 
-        vm.warp(1000);
-
-        vm.startPrank(policyOps);
         citadelMinter.mintAndDistribute();
+
+        comparator.snapCurr();
+
+        // funding pools should recieve based on funding bps and pool weights
+        uint expectedToFunding = expectedMint * fundingBps / MAX_BPS;
+
+        uint totalPoolWeight = citadelMinter.totalFundingPoolWeight();
+        assertTrue(totalPoolWeight == expectedTotalPoolWeight);
+
+        uint expectedToWbtcFunding = expectedToFunding * wbtcFundingPoolWeight / totalPoolWeight;
+        assertEq(comparator.diff("citadel.balanceOf(fundingWbtc)"), expectedToWbtcFunding);
+
+        uint expectedToCvxFunding = expectedToFunding * cvxFundingPoolWeight / totalPoolWeight;
+        assertEq(comparator.diff("citadel.balanceOf(fundingCvx)"), expectedToCvxFunding);
+
+        // staking ppfs should increase based on staking bps
+        uint expectedToStakers = expectedMint * stakingBps / MAX_BPS;
+
+        emit log_named_uint("xCitadel ppfs before", comparator.prev("xCitadel.getPricePerFullShare()"));
+        emit log_named_uint("xCitadel ppfs after", comparator.curr("xCitadel.getPricePerFullShare()"));
+        emit log_named_uint("change in xCitadel ppfs", comparator.diff("xCitadel.getPricePerFullShare()"));
+
+        emit log_named_uint("xCitadel total supply before", comparator.prev("xCitadel.totalSupply()"));
+        emit log_named_uint("xCitadel total supply after", comparator.curr("xCitadel.totalSupply()"));
+        emit log_named_uint("xCitadel change in supply", comparator.diff("xCitadel.totalSupply()"));
+
+        // locking reward schedule should modulate based on locking bps
+        uint expectedToLockers = expectedMint * stakingBps / MAX_BPS;
+
         vm.stopPrank();
     }
 }
