@@ -21,4 +21,5 @@ contract SupplyScheduleTest is BaseFixture {
         emit log_uint(schedule.epochRate(5));
         emit log_uint(schedule.epochRate(6));
     }
+
 }

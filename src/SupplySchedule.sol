@@ -1,6 +1,8 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.12;
 
+import "ds-test/test.sol";
+
 import {IERC20Upgradeable} from "openzeppelin-contracts-upgradeable/token/ERC20/IERC20Upgradeable.sol";
 import {ERC20Upgradeable} from "openzeppelin-contracts-upgradeable/token/ERC20/ERC20Upgradeable.sol";
 import {MathUpgradeable} from "openzeppelin-contracts-upgradeable/utils/math/MathUpgradeable.sol";
@@ -18,12 +20,11 @@ import "./lib/GlobalAccessControlManaged.sol";
 Supply schedules are defined in terms of Epochs
 
 */
-contract SupplySchedule is GlobalAccessControlManaged {
+contract SupplySchedule is GlobalAccessControlManaged, DSTest {
     bytes32 public constant CONTRACT_GOVERNANCE_ROLE = keccak256("CONTRACT_GOVERNANCE_ROLE");
 
-    uint epochLength = 86400 * 7;
-    uint globalStartTimestamp;
-    uint lastMintTimestamp;
+    uint public epochLength = 7 days;
+    uint public globalStartTimestamp;
 
     /// epoch index * epoch length = start time 
 
@@ -37,11 +38,82 @@ contract SupplySchedule is GlobalAccessControlManaged {
         _setEpochRates();
     }
 
-    function getMintable() external view returns (uint256) {
-        require(globalStartTimestamp > 0, "minting not started");
+    // @dev duplicate of getMintable() with debug print added
+    // @dev this function is out of scope for reviews and audits
+    function getMintableDebug(uint lastMintTimestamp) external {
+        require(globalStartTimestamp > 0, "SupplySchedule: minting not started");
+        require(lastMintTimestamp > globalStartTimestamp, "SupplySchedule: attempting to mint before start block");
+        require(block.timestamp > lastMintTimestamp, "SupplySchedule: already minted up to current block");
+
         uint mintable = 0;
-        uint startingEpoch = lastMintTimestamp - globalStartTimestamp / epochLength;
-        uint endingEpoch = block.timestamp - globalStartTimestamp / epochLength;
+
+        emit log_named_uint("mintable", mintable);
+        emit log_named_uint("block.timestamp", block.timestamp);
+        emit log_named_uint("lastMintTimestamp", lastMintTimestamp);
+        emit log_named_uint("globalStartTimestamp", globalStartTimestamp);
+        emit log_named_uint("epochLength", epochLength);
+        
+        uint startingEpoch = (lastMintTimestamp - globalStartTimestamp) / epochLength;
+        emit log_named_uint("startingEpoch", startingEpoch);
+
+        uint endingEpoch = (block.timestamp - globalStartTimestamp) / epochLength;
+        emit log_named_uint("endingEpoch", endingEpoch);
+
+        for (uint i = startingEpoch; i <= endingEpoch; i++) {
+            uint rate = epochRate[i];
+
+            uint epochStartTime = globalStartTimestamp + i * epochLength;
+            uint epochEndTime = globalStartTimestamp + (i+1) * epochLength;
+
+            emit log_named_uint("epoch iteration", i);
+            emit log_named_uint("epochStartTime", epochStartTime);
+            emit log_named_uint("epochEndTime", epochEndTime);
+
+            uint time = MathUpgradeable.min(block.timestamp, epochEndTime) - MathUpgradeable.max(lastMintTimestamp, epochStartTime);
+
+            emit log_named_uint("time to mint over", time);
+
+            mintable += rate * time;
+
+            emit log_named_uint("mintable from this iteration", rate * time);
+            emit log_named_uint("total mintable after this iteration", mintable);
+        }
+
+        // return mintable;
+    }
+
+    
+    function getEpochAtTimestamp(uint _timestamp) public view returns (uint256) {
+        require(globalStartTimestamp > 0, "SupplySchedule: minting not started");
+        return (_timestamp - globalStartTimestamp) / epochLength;
+    }
+
+    function getCurrentEpoch() public view returns (uint256) {
+        return getEpochAtTimestamp(block.timestamp);
+    }
+
+    function getEmissionsForEpoch(uint _epoch) public view returns (uint256) {
+        return epochRate[_epoch] * epochLength;
+    }
+
+    function getEmissionsForCurrentEpoch() public view returns (uint256) {
+        uint epoch = getCurrentEpoch();
+        return getEmissionsForEpoch(epoch);
+    }
+
+    function getMintable(uint lastMintTimestamp) external view returns (uint256) {
+        require(globalStartTimestamp > 0, "SupplySchedule: minting not started");
+        require(block.timestamp > lastMintTimestamp, "SupplySchedule: already minted up to current block");
+
+        if (lastMintTimestamp < globalStartTimestamp) {
+            lastMintTimestamp = globalStartTimestamp;
+        }
+
+        uint mintable = 0;
+        
+        uint startingEpoch = (lastMintTimestamp - globalStartTimestamp) / epochLength;
+
+        uint endingEpoch = (block.timestamp - globalStartTimestamp) / epochLength;
 
         for (uint i = startingEpoch; i <= endingEpoch; i++) {
             uint rate = epochRate[i];
@@ -57,17 +129,16 @@ contract SupplySchedule is GlobalAccessControlManaged {
         return mintable;
     }
 
-    function setMintingStartTimestamp(uint _globalStartTimestamp) external onlyRole(CONTRACT_GOVERNANCE_ROLE) gacPausable {
-        require(globalStartTimestamp == 0, "minting already started");
-        require(_globalStartTimestamp >= 0, "minting must start at or after current time");
+    function setMintingStart(uint _globalStartTimestamp) external onlyRole(CONTRACT_GOVERNANCE_ROLE) gacPausable {
+        require(globalStartTimestamp == 0, "SupplySchedule: minting already started");
+        require(_globalStartTimestamp >= 0, "SupplySchedule: minting must start at or after current time");
 
         globalStartTimestamp = _globalStartTimestamp;
-        lastMintTimestamp = _globalStartTimestamp;
         emit MintingStartTimeSet(_globalStartTimestamp);
     }
 
     function setEpochRate(uint _epoch, uint _rate) external onlyRole(CONTRACT_GOVERNANCE_ROLE) gacPausable {
-        require(epochRate[_epoch] == 0, "epoch rate already set");
+        require(epochRate[_epoch] == 0, "SupplySchedule: rate already set for given epoch");
         // TODO: Require this epoch is in the future. What happens if no data is set? (It just fails to mint until set)
         epochRate[_epoch] = _rate;
         emit EpochSupplyRateSet(_epoch, _rate);

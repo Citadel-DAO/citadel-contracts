@@ -36,6 +36,8 @@ contract CitadelMinter is GlobalAccessControlManaged, ReentrancyGuardUpgradeable
     IxCitadelLocker public xCitadelLocker;
     address public supplySchedule;
 
+    uint256 public lastMintTimestamp;
+
     uint256 constant MAX_BPS = 10000;
 
     EnumerableSetUpgradeable.AddressSet internal fundingPools;
@@ -49,6 +51,11 @@ contract CitadelMinter is GlobalAccessControlManaged, ReentrancyGuardUpgradeable
     event FundingPoolWeightSet(address pool, uint weight, uint totalFundingPoolWeight);
     event CitadelDistributionSplitSet(uint fundingBps, uint stakingBps, uint lockingBps);
     event CitadelDistribution(uint fundingAmount, uint stakingAmount, uint lockingAmount);
+
+    event CitadelDistributionToFunding(uint startTime, uint endTime, uint citadelAmount);
+    event CitadelDistributionToFundingPool(uint startTime, uint endTime, address pool, uint citadelAmount);
+    event CitadelDistributionToStaking(uint startTime, uint endTime, uint citadelAmount);
+    event CitadelDistributionToLocking(uint startTime, uint endTime, uint citadelAmount, uint xCitadelAmount);
 
     function initialize(
         address _gac,
@@ -76,6 +83,14 @@ contract CitadelMinter is GlobalAccessControlManaged, ReentrancyGuardUpgradeable
         IERC20Upgradeable(citadelToken).approve(xCitadel, type(uint256).max);
         // Approve xCitadel for locker to use
         IERC20Upgradeable(xCitadel).approve(_xCitadelLocker, type(uint256).max);
+    }
+
+    function initializeLastMintTimestamp() external onlyRole(CONTRACT_GOVERNANCE_ROLE) gacPausable {
+        require(lastMintTimestamp == 0, "CitadelMinter: last mint timestamp already initialized");
+        uint globalStartTimestamp = ISupplySchedule(supplySchedule).globalStartTimestamp();
+
+        require(globalStartTimestamp >= 0, "CitadelMinter: supply schedule start not initialized");
+        lastMintTimestamp = globalStartTimestamp;
     }
 
     // @dev Set the funding weight for a given address. 
@@ -121,14 +136,20 @@ contract CitadelMinter is GlobalAccessControlManaged, ReentrancyGuardUpgradeable
 
     /// @dev Auto-compound staker amount into xCTDL
     function mintAndDistribute() external onlyRole(POLICY_OPERATIONS_ROLE) gacPausable nonReentrant {
-        uint mintable = 1e18;
-        // ISupplySchedule(supplySchedule).getMintable();
-        // uint mintable = ISupplySchedule(supplySchedule).getMintable();
+
+        // debug setup, ignore for audit and review
+        // uint mintable = 1e18;
+        // ISupplySchedule(supplySchedule).getMintableDebug();
+
+        uint mintable = ISupplySchedule(supplySchedule).getMintable(lastMintTimestamp);
         ICitadelToken(citadelToken).mint(address(this), mintable);
 
         uint lockingAmount = 0;
         uint stakingAmount = 0;
         uint fundingAmount = 0;
+
+        uint startTime = lastMintTimestamp;
+        uint endTime = block.timestamp;
 
         if (lockingBps != 0) {
             lockingAmount = mintable.mul(lockingBps).div(MAX_BPS);
@@ -140,23 +161,33 @@ contract CitadelMinter is GlobalAccessControlManaged, ReentrancyGuardUpgradeable
 
             uint256 afterAmount = IERC20Upgradeable(xCitadel).balanceOf(
                 address(this));
+            
+            uint256 xCitadelToLockers = afterAmount - beforeAmount;
 
             xCitadelLocker.notifyRewardAmount(
                 xCitadel,
-                afterAmount.sub(beforeAmount));
+                xCitadelToLockers
+                );
+            emit CitadelDistributionToLocking(lastMintTimestamp, block.timestamp, lockingAmount, xCitadelToLockers);
         }
 
         if (stakingBps != 0) {
             stakingAmount = mintable.mul(stakingBps).div(MAX_BPS);
+
             IERC20Upgradeable(citadelToken).transfer(xCitadel, stakingAmount);
+            emit CitadelDistributionToStaking(lastMintTimestamp, block.timestamp, stakingAmount);
         }
 
         if (fundingBps != 0) {
             fundingAmount = mintable.mul(fundingBps).div(MAX_BPS);
+
             _transferToFundingPools(fundingAmount);
+            emit CitadelDistributionToFunding(lastMintTimestamp, block.timestamp, fundingAmount);
         }
 
         emit CitadelDistribution(fundingAmount, stakingAmount, lockingAmount);
+
+        lastMintTimestamp = block.timestamp;
     }
 
     // ===== Internal Functions =====
@@ -168,12 +199,14 @@ contract CitadelMinter is GlobalAccessControlManaged, ReentrancyGuardUpgradeable
             address pool = fundingPools.at(i);
             uint weight = fundingPoolWeights[pool];
 
-            uint amonut = _citadelAmount.mul(weight).div(totalFundingPoolWeight);
+            uint amount = _citadelAmount.mul(weight).div(totalFundingPoolWeight);
 
             IERC20Upgradeable(citadelToken).safeTransfer(
                 pool,
-                amonut
+                amount
             );
+
+            emit CitadelDistributionToFundingPool(lastMintTimestamp, block.timestamp, pool, amount);
         }
     }
 

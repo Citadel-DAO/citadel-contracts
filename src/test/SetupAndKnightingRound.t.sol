@@ -46,16 +46,8 @@ contract KnightingRoundTest is BaseFixture {
         // knightingRound.buy(1e8, 0, emptyProof);
         // vm.stopPrank();
 
-        /*
-            Prepare for launch (atomic):
-            - Mint initial Citadel based on knighting round assets raised
-            - Send 60% to knighting round for distribution
-            - finalize() KR to get assets
-            - LP with 15% of citadel supply + wBTC amount as per initial price
-            - Send 25% remaining to treasury vault
-            - Initialize and open funding contracts
-
-            [Citadel now has an open market and funding can commence!]
-        */
+        
     }
+
+    
 }

@@ -17,7 +17,6 @@ contract MintAndDistributeTest is BaseFixture {
             - this can be called at any frequency (not sure on rounding impact at very fast rate such as per-block)
                 - we could set a max frequency by governance when we move to permissionless here
             - minted amount should match from epoch data
-            - epoch data should be sanity checked
             - should handle the case at the border of two epochs gracefully
             - if there is an undefined epoch, it should fail until that epoch is defined. 
                 -  after this is corrected, it should mint as expected from last mint as if that data had been there.
@@ -58,6 +57,9 @@ contract MintAndDistributeTest is BaseFixture {
 
         vm.prank(governance);
         schedule.setMintingStart(block.timestamp);
+
+        vm.prank(governance);
+        citadelMinter.initializeLastMintTimestamp();
         assertTrue(schedule.globalStartTimestamp() == block.timestamp);
 
         vm.expectRevert("SupplySchedule: already minted up to current block");
@@ -73,7 +75,7 @@ contract MintAndDistributeTest is BaseFixture {
         citadelMinter.setFundingPoolWeight(address(fundingCvx), cvxFundingPoolWeight);
 
         comparator.snapPrev();
-        uint expectedMint = schedule.getMintable();
+        uint expectedMint = schedule.getMintable(citadelMinter.lastMintTimestamp());
 
         citadelMinter.mintAndDistribute();
 

@@ -196,8 +196,8 @@ contract BaseFixture is DSTest, Utils {
         knightingRoundParams = KnightingRoundParams({
             start: block.timestamp + 100,
             duration: 7 days,
-            citadelWbtcPrice: ONE / 21, // 21 CTDL per wBTC
-            wbtcLimit: 100 * 10**8 // 100 wBTC
+            citadelWbtcPrice: 21e18, // 21 CTDL per wBTC
+            wbtcLimit: 100e8 // 100 wBTC
         });
 
         knightingRound.initialize(
@@ -207,7 +207,7 @@ contract BaseFixture is DSTest, Utils {
             knightingRoundParams.start,
             knightingRoundParams.duration,
             knightingRoundParams.citadelWbtcPrice,
-            address(treasuryVault),
+            address(governance),
             address(0), // TODO: Add guest list and test with it
             knightingRoundParams.wbtcLimit
         );
@@ -244,6 +244,7 @@ contract BaseFixture is DSTest, Utils {
         gac.grantRole(POLICY_OPERATIONS_ROLE, policyOps);
 
         gac.grantRole(CITADEL_MINTER_ROLE, address(citadelMinter));
+        gac.grantRole(CITADEL_MINTER_ROLE, governance); // To handle initial supply, remove atomically.
 
         gac.grantRole(PAUSER_ROLE, guardian);
         gac.grantRole(UNPAUSER_ROLE, techOps);
@@ -261,9 +262,11 @@ contract BaseFixture is DSTest, Utils {
         // Setup balance tracking
         comparator = new SnapshotComparator();
 
-        uint numAddressesToTrack = 7;
+        uint256 numAddressesToTrack = 7;
         address[] memory accounts_to_track = new address[](numAddressesToTrack);
-        string[] memory accounts_to_track_names = new string[](numAddressesToTrack);
+        string[] memory accounts_to_track_names = new string[](
+            numAddressesToTrack
+        );
 
         accounts_to_track[0] = whale;
         accounts_to_track_names[0] = "whale";
@@ -370,5 +373,88 @@ contract BaseFixture is DSTest, Utils {
             address(citadel),
             abi.encodeWithSignature("totalSupply()")
         );
+
+        comparator.addCall(
+            "xCitadel.totalSupply()",
+            address(xCitadel),
+            abi.encodeWithSignature("totalSupply()")
+        );
+
+        comparator.addCall(
+            "xCitadel.getPricePerFullShare()",
+            address(xCitadel),
+            abi.encodeWithSignature("getPricePerFullShare()")
+        );
+    }
+
+    // @dev simple simulation of knighting round, in order to advance next stages in a 'realistic' manner
+    function _knightingRoundSim() internal {
+        bytes32[] memory emptyProof = new bytes32[](1);
+
+        // Move to knighting round start
+        vm.warp(knightingRound.saleStart());
+
+        // Shrimp BTC
+        vm.startPrank(shrimp);
+        wbtc.approve(address(knightingRound), wbtc.balanceOf(shrimp));
+        knightingRound.buy(wbtc.balanceOf(shrimp) / 2, 0, emptyProof);
+        vm.stopPrank();
+
+        // Whale BTC
+        vm.startPrank(whale);
+        wbtc.approve(address(knightingRound), wbtc.balanceOf(whale));
+        knightingRound.buy(wbtc.balanceOf(whale) / 2, 0, emptyProof);
+        vm.stopPrank();
+
+        // Knighting round concludes...
+        uint timeTillEnd = knightingRoundParams.start + knightingRoundParams.duration - block.timestamp;
+        vm.warp(timeTillEnd);
+    }
+
+    // @dev run 'launch' multisend operation as a series of calls.
+    function _atomicLaunchSim() internal {
+        /*
+            Prepare for launch (in prod, atomicly via multisend):
+            - Mint initial Citadel based on knighting round assets raised
+            - Send 60% to knighting round for distribution
+            - finalize() KR to get assets
+            - LP with 15% of citadel supply + wBTC amount as per initial price
+            - Send 25% remaining to treasury vault
+            - Initialize and open funding contracts
+
+            [Citadel now has an open market and funding can commence!]
+        */
+
+        vm.startPrank(governance);
+
+        uint256 citadelBought = knightingRound.totalTokenOutBought();
+        uint256 initialSupply = (citadelBought * 1666666666666666667) / 1e18; // Amount bought = 60% of initial supply, therefore total citadel ~= 1.67 amount bought.
+
+        citadel.mint(governance, initialSupply);
+        citadel.transfer(address(knightingRound), citadelBought);
+
+        uint256 remainingSupply = initialSupply - citadelBought - 1e18; // one coin for seeding xCitadel
+
+        citadel.approve(address(xCitadel), 1e18);
+        xCitadel.deposit(1e18);
+
+        uint256 toLiquidity = (remainingSupply * 4e17) / 1e18; // 15% of total, or 40% of remaining 40%
+        uint256 toTreasury = (remainingSupply * 6e17) / 1e18; // 25% of total, or 60% of remaining 40%
+
+        // TODO: Create curve pool and add liquidity
+
+        citadel.transfer(treasuryVault, toTreasury);
+
+        // Transfer liquidity and remaining assets to treasury
+        cvx.transfer(treasuryVault, cvx.balanceOf(governance));
+        wbtc.transfer(treasuryVault, wbtc.balanceOf(governance));
+
+        // Set first minting EPOCHS
+        gac.revokeRole(CITADEL_MINTER_ROLE, governance); // Remove admin mint, only CitadelMinter rules can mint now
+
+        knightingRound.finalize();
+        vm.stopPrank();
+
+        // In a second TX, set the rest of minting epochs in batches, as is possible with gas costs
     }
 }
