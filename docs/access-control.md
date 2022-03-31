@@ -11,9 +11,7 @@ When we don't use the GAC to permission calls, it's for one of the following rea
 ## Governance 🏰
 The big one - contract governance. This manages all critical functionality for the integrity of the system, such as access control, upgradeability, and anything that touches significant funds within the contracts.
 
-Everything action governance takes is gated by a timelockl, so that actions can be reviewed and flagged by others.
-
-As Citadel matures, this role is intended to increasingly go away from multisig management and to the token holders.
+Everything action governance takes is gated by a timelock, so that actions can be reviewed and flagged by others.
 
 ## Policy Ops 👨‍🔬
 As it stands, Citadel requires some active parameter management to follow the tokenomic model.
