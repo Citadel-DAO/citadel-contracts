@@ -245,12 +245,7 @@ contract Funding is GlobalAccessControlManaged, ReentrancyGuardUpgradeable {
         emit DiscountSet(_discount);
     }
 
-    function setCitadelAssetPriceBounds(uint _minPrice, uint _maxPrice) external gacPausable onlyRole(POLICY_OPERATIONS_ROLE) {
-        minCitadelPriceInAsset = _minPrice;
-        maxCitadelPriceInAsset = _maxPrice;
-
-        emit CitadelPriceBoundsSet(_minPrice, _maxPrice);
-    }
+    
 
     function clearCitadelPriceFlag() external gacPausable onlyRole(POLICY_OPERATIONS_ROLE) {
         citadelPriceFlag = false;
@@ -325,6 +320,23 @@ contract Funding is GlobalAccessControlManaged, ReentrancyGuardUpgradeable {
         emit DiscountManagerSet(_discountManager);
     }
 
+    function setSaleRecipient(address _saleRecipient) external gacPausable onlyRole(CONTRACT_GOVERNANCE_ROLE) {
+        require(
+            _saleRecipient != address(0),
+            "Funding: sale recipient should not be zero"
+        );
+
+        saleRecipient = _saleRecipient;
+        emit SaleRecipientUpdated(_saleRecipient);
+    }
+
+    function setCitadelAssetPriceBounds(uint _minPrice, uint _maxPrice) external gacPausable onlyRole(CONTRACT_GOVERNANCE_ROLE) {
+        minCitadelPriceInAsset = _minPrice;
+        maxCitadelPriceInAsset = _maxPrice;
+
+        emit CitadelPriceBoundsSet(_minPrice, _maxPrice);
+    }
+
     /// ==========================
     /// ===== Oracle actions =====
     /// ==========================
@@ -357,13 +369,5 @@ contract Funding is GlobalAccessControlManaged, ReentrancyGuardUpgradeable {
      * @notice Update the `asset` receipient address. Can only be called by owner
      * @param _saleRecipient New recipient address
      */
-    function setSaleRecipient(address _saleRecipient) external gacPausable onlyRole(CONTRACT_GOVERNANCE_ROLE) {
-        require(
-            _saleRecipient != address(0),
-            "Funding: sale recipient should not be zero"
-        );
 
-        saleRecipient = _saleRecipient;
-        emit SaleRecipientUpdated(_saleRecipient);
-    }
 }
