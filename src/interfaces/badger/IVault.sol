@@ -2,7 +2,9 @@
 
 pragma solidity >= 0.5.0 <= 0.9.0;
 
-interface IVault {
+import {IERC20} from "../erc20/IERC20.sol";
+
+interface IVault is IERC20 {
     function token() external view returns (address);
 
     function rewards() external view returns (address);
@@ -35,9 +37,5 @@ interface IVault {
     function depositFor(address _recipient, uint256 _amount) external;
 
     // View
-    function balanceOf(address account) external returns (uint256);
-
-    function totalSupply() external returns (uint256);
-
     function getPricePerFullShare() external returns (uint256);
 }

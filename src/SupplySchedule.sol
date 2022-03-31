@@ -12,8 +12,7 @@ import {PausableUpgradeable} from "openzeppelin-contracts-upgradeable/security/P
 import {SafeERC20Upgradeable} from "openzeppelin-contracts-upgradeable/token/ERC20/utils/SafeERC20Upgradeable.sol";
 import {ReentrancyGuardUpgradeable} from "openzeppelin-contracts-upgradeable/security/ReentrancyGuardUpgradeable.sol";
 
-import {IVault} from "./interfaces/IVault.sol";
-
+import {IVault} from "./interfaces/badger/IVault.sol";
 import "./lib/GlobalAccessControlManaged.sol";
 
 /**

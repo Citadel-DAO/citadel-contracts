@@ -9,7 +9,8 @@ import "./interfaces/badger/IBadgerVipGuestlist.sol";
 import "./lib/GlobalAccessControlManaged.sol";
 
 /**
- * @notice Sells a token at a predetermined price to whitelisted buyers.
+ * @title Citadel Knighting Round
+ * @notice Sells citadel at a predetermined price to whitelisted buyers. Citadel tokens are not distributed until the finalize event.
  * TODO: Better revert strings
  */
 contract KnightingRound is GlobalAccessControlManaged {
@@ -97,11 +98,11 @@ contract KnightingRound is GlobalAccessControlManaged {
 
     /**
      * @notice Initializer.
-     * @param _tokenOut The token this contract will return in a trade
+     * @param _tokenOut The token this contract will return in a trade (citadel)
      * @param _tokenIn The token this contract will receive in a trade
      * @param _saleStart The time when tokens can be first purchased
      * @param _saleDuration The duration of the token sale
-     * @param _tokenOutPrice The tokenIn per tokenOut price
+     * @param _tokenOutPrice The tokenOut per tokenIn price
      * @param _saleRecipient The address receiving the proceeds of the sale - will be citadel multisig
      * @param _guestlist Address that will manage auction approvals
      * @param _tokenInLimit The max tokenIn that the contract can take

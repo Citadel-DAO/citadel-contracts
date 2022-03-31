@@ -36,6 +36,8 @@ contract GlobalAccessControl is
     bytes32 public constant TREASURY_OPERATIONS_ROLE =
         keccak256("TREASURY_OPERATIONS_ROLE");
 
+    bytes32 public constant KEEPER_ROLE = keccak256("KEEPER_ROLE");
+
     bytes32 public constant PAUSER_ROLE = keccak256("PAUSER_ROLE");
     bytes32 public constant UNPAUSER_ROLE = keccak256("UNPAUSER_ROLE");
 
@@ -70,6 +72,7 @@ contract GlobalAccessControl is
         _setRoleAdmin(UNPAUSER_ROLE, CONTRACT_GOVERNANCE_ROLE);
         _setRoleAdmin(BLOCKLIST_MANAGER_ROLE, CONTRACT_GOVERNANCE_ROLE);
         _setRoleAdmin(CITADEL_MINTER_ROLE, CONTRACT_GOVERNANCE_ROLE);
+        _setRoleAdmin(KEEPER_ROLE, CONTRACT_GOVERNANCE_ROLE);
 
         // Add default admin role here to avoid governance mistakes
         _setRoleAdmin(DEFAULT_ADMIN_ROLE, CONTRACT_GOVERNANCE_ROLE);

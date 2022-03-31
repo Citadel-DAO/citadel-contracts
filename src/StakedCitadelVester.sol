@@ -9,9 +9,9 @@ import {ReentrancyGuardUpgradeable} from "openzeppelin-contracts-upgradeable/sec
 import "./lib/GlobalAccessControlManaged.sol";
 
 /**
- * @dev Time-locks tokens according to an unlock schedule.
+ * @title Staked Citadel Vesting Utility.
+ * @notice Time-locks tokens on users' behalf according to an unlock schedule.
  */
-
 contract StakedCitadelVester is GlobalAccessControlManaged, ReentrancyGuardUpgradeable {
     using SafeMathUpgradeable for uint256;
     using SafeERC20Upgradeable for IERC20Upgradeable;
@@ -71,6 +71,8 @@ contract StakedCitadelVester is GlobalAccessControlManaged, ReentrancyGuardUpgra
 
     /**
      * @dev setup vesting for recipient.
+     * @notice note that a given address can only have one active vest at a time.
+     * @notice adding a new vest before claiming completely from the previous will re-lock the previous amount according to the new vesting timeline.
      * @param recipient The account for which vesting will be setup.
      * @param _amount amount that will be vested
      * @param _unlockBegin The time at which unlocking of tokens will begin.

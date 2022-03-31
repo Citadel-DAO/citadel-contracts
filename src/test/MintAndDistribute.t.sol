@@ -29,7 +29,7 @@ contract MintAndDistributeTest is BaseFixture {
             There unfortunately is the daily manual step of the initial mint destination propotions, we can automate this via contract with some work and oracles.
         */
 
-        assertTrue(citadelMinter.supplySchedule() == address(schedule));
+        assertTrue(address(citadelMinter.supplySchedule()) == address(schedule));
 
         uint fundingBps = 4000;
         uint stakingBps = 3000;
@@ -51,7 +51,7 @@ contract MintAndDistributeTest is BaseFixture {
         citadelMinter.mintAndDistribute();
         
         // policy ops should not be able to start minting schedule
-        vm.expectRevert("invalid-caller-role");
+        vm.expectRevert("GAC: invalid-caller-role");
         schedule.setMintingStart(block.timestamp);
         assertTrue(schedule.globalStartTimestamp() == 0);
 

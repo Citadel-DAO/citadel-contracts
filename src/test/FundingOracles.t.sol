@@ -17,7 +17,6 @@ contract SetupAndKnightingRoundTest is BaseFixture {
             - update xCTDL/CTDL
             - permissions
             - swap oracle addresses
-            - 
         */
     }
 }
