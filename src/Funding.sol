@@ -23,6 +23,7 @@ contract Funding is GlobalAccessControlManaged, ReentrancyGuardUpgradeable {
     bytes32 public constant POLICY_OPERATIONS_ROLE = keccak256("POLICY_OPERATIONS_ROLE");
     bytes32 public constant TREASURY_OPS_ROLE = keccak256("TREASURY_OPS_ROLE");
     bytes32 public constant TREASURY_VAULT_ROLE = keccak256("TREASURY_VAULT_ROLE");
+    bytes32 public constant KEEPER_ROLE = keccak256("KEEPER_ROLE");
 
     uint public constant MAX_BPS = 10000;
 
@@ -203,7 +204,7 @@ contract Funding is GlobalAccessControlManaged, ReentrancyGuardUpgradeable {
         uint citadelAmountWithoutDiscount = (_assetAmountIn * citadelPriceInAsset) / assetDecimalsNormalizationValue;
 
         if (funding.discount > 0) {
-            citadelAmount_ = (citadelAmountWithoutDiscount * (MAX_BPS + funding.discount)) / MAX_BPS;
+            citadelAmount_ = (citadelAmountWithoutDiscount * MAX_BPS) / (MAX_BPS - funding.discount);
         } else {
             citadelAmount_ = citadelAmountWithoutDiscount;
         }
@@ -226,18 +227,9 @@ contract Funding is GlobalAccessControlManaged, ReentrancyGuardUpgradeable {
         return funding;
     }
 
-    /**
-     * @notice Set minimum and maximum discount
-     * @dev managed by contract governance to place constraints around the parameter for policy operations to play within
-     * @param _minDiscount minimum discount (in bps)
-     * @param _maxDiscount maximum discount (in bps)
-     */
-    function setDiscountLimits(uint _minDiscount, uint _maxDiscount) external gacPausable onlyRole(CONTRACT_GOVERNANCE_ROLE) {
-        funding.minDiscount = _minDiscount;
-        funding.maxDiscount = _maxDiscount;
-
-        emit DiscountLimitsSet(_minDiscount, _maxDiscount);
-    }
+    /// ==============================
+    /// ===== Policy Ops actions =====
+    /// ==============================
 
     /**
      * @notice Set discount manually, within the constraints of min and max discount values
@@ -253,17 +245,6 @@ contract Funding is GlobalAccessControlManaged, ReentrancyGuardUpgradeable {
         emit DiscountSet(_discount);
     }
 
-    /**
-     * @notice Set a discount manager address
-     * @dev This is intended to be used for an automated discount manager contract to supplement or replace manual calls
-     * @param _discountManager discount manager address
-     */
-    function setDiscountManager(address _discountManager) external gacPausable onlyRole(CONTRACT_GOVERNANCE_ROLE) {
-        funding.discountManager = _discountManager;
-
-        emit DiscountManagerSet(_discountManager);
-    }
-
     function setCitadelAssetPriceBounds(uint _minPrice, uint _maxPrice) external gacPausable onlyRole(POLICY_OPERATIONS_ROLE) {
         minCitadelPriceInAsset = _minPrice;
         maxCitadelPriceInAsset = _maxPrice;
@@ -273,44 +254,6 @@ contract Funding is GlobalAccessControlManaged, ReentrancyGuardUpgradeable {
 
     function clearCitadelPriceFlag() external gacPausable onlyRole(POLICY_OPERATIONS_ROLE) {
         citadelPriceFlag = false;
-    }
-
-    /// ==========================
-    /// ===== Oracle actions =====
-    /// ==========================
-
-    /// @notice Update citadel price in asset terms from oracle source
-    /// @dev Note that the oracle mechanics are abstracted to the oracle address
-    function updateCitadelPriceInAsset(uint _citadelPriceInAsset) external gacPausable onlyCitadelPriceInAssetOracle {
-        require(_citadelPriceInAsset > 0, "citadel price must not be zero");
-
-        if (_citadelPriceInAsset < minCitadelPriceInAsset || _citadelPriceInAsset > maxCitadelPriceInAsset) {
-            citadelPriceFlag = true;
-            emit CitadelPriceFlag(_citadelPriceInAsset, minCitadelPriceInAsset, maxCitadelPriceInAsset);
-        } else {
-            citadelPriceInAsset = _citadelPriceInAsset;
-            emit CitadelPriceInAssetUpdated(_citadelPriceInAsset);    
-        }
-    }
-
-    /// @notice Cache xCitadel value in citatdel terms by reading pricePerShare
-    function updateXCitadelPriceInCitadel() external gacPausable onlyCitadelPriceInAssetOracle {
-        xCitadelPriceInCitadel = xCitadel.getPricePerFullShare();
-        emit xCitadelPriceInCitadelUpdated(xCitadelPriceInCitadel);
-    }
-
-    /**
-     * @notice Update the `asset` receipient address. Can only be called by owner
-     * @param _saleRecipient New recipient address
-     */
-    function setSaleRecipient(address _saleRecipient) external gacPausable onlyRole(CONTRACT_GOVERNANCE_ROLE) {
-        require(
-            _saleRecipient != address(0),
-            "Funding: sale recipient should not be zero"
-        );
-
-        saleRecipient = _saleRecipient;
-        emit SaleRecipientUpdated(_saleRecipient);
     }
 
     /**
@@ -323,6 +266,10 @@ contract Funding is GlobalAccessControlManaged, ReentrancyGuardUpgradeable {
         funding.assetCap = _assetCap;
         emit AssetCapUpdated(_assetCap);
     }
+
+    /// ================================
+    /// ===== Treasury Ops actions =====
+    /// ================================
 
     /**
      * @notice Transfers out any tokens accidentally sent to the contract. Can only be called by owner
@@ -348,5 +295,75 @@ contract Funding is GlobalAccessControlManaged, ReentrancyGuardUpgradeable {
         asset.safeTransfer(saleRecipient, amount);
 
         emit ClaimToTreasury(address(asset), amount);
+    }
+
+    /// ==============================
+    /// ===== Governance actions =====
+    /// ==============================
+
+    /**
+     * @notice Set minimum and maximum discount
+     * @dev managed by contract governance to place constraints around the parameter for policy operations to play within
+     * @param _minDiscount minimum discount (in bps)
+     * @param _maxDiscount maximum discount (in bps)
+     */
+    function setDiscountLimits(uint _minDiscount, uint _maxDiscount) external gacPausable onlyRole(CONTRACT_GOVERNANCE_ROLE) {
+        funding.minDiscount = _minDiscount;
+        funding.maxDiscount = _maxDiscount;
+
+        emit DiscountLimitsSet(_minDiscount, _maxDiscount);
+    }
+
+    /**
+     * @notice Set a discount manager address
+     * @dev This is intended to be used for an automated discount manager contract to supplement or replace manual calls
+     * @param _discountManager discount manager address
+     */
+    function setDiscountManager(address _discountManager) external gacPausable onlyRole(CONTRACT_GOVERNANCE_ROLE) {
+        funding.discountManager = _discountManager;
+
+        emit DiscountManagerSet(_discountManager);
+    }
+
+    /// ==========================
+    /// ===== Oracle actions =====
+    /// ==========================
+
+    /// @notice Update citadel price in asset terms from oracle source
+    /// @dev Note that the oracle mechanics are abstracted to the oracle address
+    function updateCitadelPriceInAsset(uint _citadelPriceInAsset) external gacPausable onlyCitadelPriceInAssetOracle {
+        require(_citadelPriceInAsset > 0, "citadel price must not be zero");
+
+        if (_citadelPriceInAsset < minCitadelPriceInAsset || _citadelPriceInAsset > maxCitadelPriceInAsset) {
+            citadelPriceFlag = true;
+            emit CitadelPriceFlag(_citadelPriceInAsset, minCitadelPriceInAsset, maxCitadelPriceInAsset);
+        } else {
+            citadelPriceInAsset = _citadelPriceInAsset;
+            emit CitadelPriceInAssetUpdated(_citadelPriceInAsset);    
+        }
+    }
+
+    /// ==========================
+    /// ===== Keeper actions =====
+    /// ==========================
+
+    /// @notice Cache xCitadel value in citatdel terms by reading pricePerShare
+    function updateXCitadelPriceInCitadel() external gacPausable onlyRole(KEEPER_ROLE) {
+        xCitadelPriceInCitadel = xCitadel.getPricePerFullShare();
+        emit xCitadelPriceInCitadelUpdated(xCitadelPriceInCitadel);
+    }
+
+    /**
+     * @notice Update the `asset` receipient address. Can only be called by owner
+     * @param _saleRecipient New recipient address
+     */
+    function setSaleRecipient(address _saleRecipient) external gacPausable onlyRole(CONTRACT_GOVERNANCE_ROLE) {
+        require(
+            _saleRecipient != address(0),
+            "Funding: sale recipient should not be zero"
+        );
+
+        saleRecipient = _saleRecipient;
+        emit SaleRecipientUpdated(_saleRecipient);
     }
 }
