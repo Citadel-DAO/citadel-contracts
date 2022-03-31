@@ -84,8 +84,8 @@ contract StakedCitadel is
     address public vesting; // Address of the vesting contract where after withdrawal we send CTDL to vest for 21 days
 
     /// @dev name and symbol prefixes for lpcomponent token of vault
-    string internal constant _defaultNamePrefix = "Badger Sett ";
-    string internal constant _symbolSymbolPrefix = "b";
+    string internal constant _defaultNamePrefix = "Staked ";
+    string internal constant _symbolSymbolPrefix = "x";
 
     /// Params to track autocompounded rewards
     uint256 public lifeTimeEarned; // keeps track of total earnings
@@ -294,7 +294,7 @@ contract StakedCitadel is
     /// @return Balance of token handled by the sett.
     function balance() public view returns (uint256) {
         return
-            token.balanceOf(address(this)).add(IStrategy(strategy).balanceOf());
+            token.balanceOf(address(this));
     }
 
     /// @notice Defines how much of the Setts' underlying is available for strategy to borrow.
