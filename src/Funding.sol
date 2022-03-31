@@ -24,6 +24,8 @@ contract Funding is GlobalAccessControlManaged, ReentrancyGuardUpgradeable {
     bytes32 public constant TREASURY_OPS_ROLE = keccak256("TREASURY_OPS_ROLE");
     bytes32 public constant TREASURY_VAULT_ROLE = keccak256("TREASURY_VAULT_ROLE");
 
+    uint public constant MAX_BPS = 10000;
+
     IERC20 public citadel; /// token to distribute (in vested xCitadel form)
     IVault public xCitadel; /// wrapped citadel form that is actually distributed
     IERC20 public asset; /// token to take in WBTC / bibbtc LP / CVX / bveCVX
@@ -198,7 +200,8 @@ contract Funding is GlobalAccessControlManaged, ReentrancyGuardUpgradeable {
         view
         returns (uint256 citadelAmount_)
     {
-        citadelAmount_ = (_assetAmountIn * citadelPriceInAsset) / assetDecimalsNormalizationValue;
+        uint citadelAmountWithoutDiscount = (_assetAmountIn * citadelPriceInAsset) / assetDecimalsNormalizationValue;
+        citadelAmount_ = (citadelAmountWithoutDiscount * (MAX_BPS - funding.discount)) / MAX_BPS;
     }
 
     /**
