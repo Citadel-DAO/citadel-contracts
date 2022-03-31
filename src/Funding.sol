@@ -19,42 +19,43 @@ contract Funding is GlobalAccessControlManaged, ReentrancyGuardUpgradeable {
     using SafeERC20 for IERC20;
 
     // Roles used from GAC
-    bytes32 public constant CONTRACT_GOVERNANCE_ROLE = keccak256("CONTRACT_GOVERNANCE_ROLE");
-    bytes32 public constant POLICY_OPERATIONS_ROLE = keccak256("POLICY_OPERATIONS_ROLE");
+    bytes32 public constant CONTRACT_GOVERNANCE_ROLE =
+        keccak256("CONTRACT_GOVERNANCE_ROLE");
+    bytes32 public constant POLICY_OPERATIONS_ROLE =
+        keccak256("POLICY_OPERATIONS_ROLE");
     bytes32 public constant TREASURY_OPS_ROLE = keccak256("TREASURY_OPS_ROLE");
-    bytes32 public constant TREASURY_VAULT_ROLE = keccak256("TREASURY_VAULT_ROLE");
+    bytes32 public constant TREASURY_VAULT_ROLE =
+        keccak256("TREASURY_VAULT_ROLE");
     bytes32 public constant KEEPER_ROLE = keccak256("KEEPER_ROLE");
 
-    uint public constant MAX_BPS = 10000;
+    uint256 public constant MAX_BPS = 10000;
 
     IERC20 public citadel; /// token to distribute (in vested xCitadel form)
     IVault public xCitadel; /// wrapped citadel form that is actually distributed
     IERC20 public asset; /// token to take in WBTC / bibbtc LP / CVX / bveCVX
 
-    uint public citadelPriceInAsset; /// asset per citadel price eg. 1 WBTC (8 decimals) = 40,000 CTDL ==> price = 10^8 / 40,000
-    uint public minCitadelPriceInAsset; /// Lower bound on expected citadel price in asset terms. Used as circuit breaker oracle.
-    uint public maxCitadelPriceInAsset; /// Upper bound on expected citadel price in asset terms. Used as circuit breaker oracle.
+    uint256 public citadelPriceInAsset; /// asset per citadel price eg. 1 WBTC (8 decimals) = 40,000 CTDL ==> price = 10^8 / 40,000
+    uint256 public minCitadelPriceInAsset; /// Lower bound on expected citadel price in asset terms. Used as circuit breaker oracle.
+    uint256 public maxCitadelPriceInAsset; /// Upper bound on expected citadel price in asset terms. Used as circuit breaker oracle.
     bool public citadelPriceFlag; /// Flag citadel price for review by guardian if it exceeds min and max bounds;
 
-    uint public xCitadelPriceInCitadel; /// xCitadel price per share
-
     // TODO: This will be calculated LIVE from cached ppfs
-    uint public xCitadelPriceInAsset; /// citadel price modified by xCitadel pricePerShare
+    uint256 public xCitadelPriceInAsset; /// citadel price modified by xCitadel pricePerShare
 
-    uint public assetDecimalsNormalizationValue;
+    uint256 public assetDecimalsNormalizationValue;
 
     address public citadelPriceInAssetOracle;
     address public saleRecipient;
 
     struct FundingParams {
-        uint discount;
-        uint minDiscount;
-        uint maxDiscount;
+        uint256 discount;
+        uint256 minDiscount;
+        uint256 maxDiscount;
         address discountManager;
-        uint assetCumulativeFunded; /// persistent sum of asset amount in over lifetime of contract.
-        uint assetCap; /// Max asset token that can be taken in by the contract (defines the cap for citadel sold)
+        uint256 assetCumulativeFunded; /// persistent sum of asset amount in over lifetime of contract.
+        uint256 assetCap; /// Max asset token that can be taken in by the contract (defines the cap for citadel sold)
     }
-    
+
     FundingParams public funding;
 
     /// ==================
@@ -70,10 +71,9 @@ contract Funding is GlobalAccessControlManaged, ReentrancyGuardUpgradeable {
     );
 
     event CitadelPriceInAssetUpdated(uint256 citadelPrice);
-    event xCitadelPriceInCitadelUpdated(uint256 xCitadelPrice);
 
-    event CitadelPriceBoundsSet(uint minPrice, uint maxPrice);
-    event CitadelPriceFlag(uint price, uint minPrice, uint maxPrice);
+    event CitadelPriceBoundsSet(uint256 minPrice, uint256 maxPrice);
+    event CitadelPriceFlag(uint256 price, uint256 minPrice, uint256 maxPrice);
 
     event SaleRecipientUpdated(address indexed recipient);
     event AssetCapUpdated(uint256 assetCap);
@@ -82,14 +82,17 @@ contract Funding is GlobalAccessControlManaged, ReentrancyGuardUpgradeable {
     event ClaimToTreasury(address indexed token, uint256 amount);
 
     modifier onlyCitadelPriceInAssetOracle() {
-        require(msg.sender == citadelPriceInAssetOracle, "onlyCitadelPriceInAssetOracle");
+        require(
+            msg.sender == citadelPriceInAssetOracle,
+            "onlyCitadelPriceInAssetOracle"
+        );
         _;
     }
 
-    event DiscountLimitsSet(uint minDiscount, uint maxDiscount);
-    event DiscountSet(uint discount);
+    event DiscountLimitsSet(uint256 minDiscount, uint256 maxDiscount);
+    event DiscountSet(uint256 discount);
     event DiscountManagerSet(address discountManager);
-    
+
     /// =======================
     /// ===== Initializer =====
     /// =======================
@@ -127,14 +130,7 @@ contract Funding is GlobalAccessControlManaged, ReentrancyGuardUpgradeable {
 
         citadelPriceInAssetOracle = _citadelPriceInAssetOracle;
 
-        funding = FundingParams(
-            0,
-            0,
-            0,
-            address(0),
-            0,
-            _assetCap
-        );
+        funding = FundingParams(0, 0, 0, address(0), 0, _assetCap);
 
         // Allow to deposit in vault
         citadel.approve(address(xCitadel), type(uint256).max);
@@ -147,10 +143,12 @@ contract Funding is GlobalAccessControlManaged, ReentrancyGuardUpgradeable {
     }
 
     modifier onlyWhenPriceNotFlagged() {
-        require(citadelPriceFlag == false, "Funding: citadel price from oracle flagged and pending review");
+        require(
+            citadelPriceFlag == false,
+            "Funding: citadel price from oracle flagged and pending review"
+        );
         _;
     }
-    
 
     /// ==========================
     /// ===== Public actions =====
@@ -162,13 +160,16 @@ contract Funding is GlobalAccessControlManaged, ReentrancyGuardUpgradeable {
      * @param _minCitadelOut ID of DAO to vote for
      * @return citadelAmount_ Amount of `xCitadel` bought
      */
-    function deposit(
-        uint256 _assetAmountIn,
-        uint256 _minCitadelOut
-    ) external onlyWhenPriceNotFlagged gacPausable returns (uint256 citadelAmount_) {
+    function deposit(uint256 _assetAmountIn, uint256 _minCitadelOut)
+        external
+        onlyWhenPriceNotFlagged
+        gacPausable
+        returns (uint256 citadelAmount_)
+    {
         require(_assetAmountIn > 0, "_assetAmountIn must not be 0");
         require(
-            funding.assetCumulativeFunded.add(_assetAmountIn) <= funding.assetCap,
+            funding.assetCumulativeFunded.add(_assetAmountIn) <=
+                funding.assetCap,
             "asset funding cap exceeded"
         );
 
@@ -179,12 +180,17 @@ contract Funding is GlobalAccessControlManaged, ReentrancyGuardUpgradeable {
 
         // Deposit xCitadel and send to user
         // TODO: Check gas costs. How does this relate to market buying if you do want to deposit to xCTDL?
-        uint xCitadelBeforeDeposit = xCitadel.balanceOf(msg.sender);
+        uint256 xCitadelBeforeDeposit = xCitadel.balanceOf(msg.sender);
         xCitadel.depositFor(msg.sender, citadelAmount_);
-        uint xCitadelAfterDeposit = xCitadel.balanceOf(msg.sender);
-        uint xCitadelGained = xCitadelAfterDeposit - xCitadelBeforeDeposit;
+        uint256 xCitadelAfterDeposit = xCitadel.balanceOf(msg.sender);
+        uint256 xCitadelGained = xCitadelAfterDeposit - xCitadelBeforeDeposit;
 
-        emit Deposit(msg.sender, _assetAmountIn, xCitadelGained, citadelAmount_);
+        emit Deposit(
+            msg.sender,
+            _assetAmountIn,
+            xCitadelGained,
+            citadelAmount_
+        );
     }
 
     /// =======================
@@ -201,14 +207,16 @@ contract Funding is GlobalAccessControlManaged, ReentrancyGuardUpgradeable {
         view
         returns (uint256 citadelAmount_)
     {
-        uint citadelAmountWithoutDiscount = (_assetAmountIn * citadelPriceInAsset) / assetDecimalsNormalizationValue;
+        uint256 citadelAmountWithoutDiscount = (_assetAmountIn *
+            citadelPriceInAsset) / assetDecimalsNormalizationValue;
 
         if (funding.discount > 0) {
-            citadelAmount_ = (citadelAmountWithoutDiscount * MAX_BPS) / (MAX_BPS - funding.discount);
+            citadelAmount_ =
+                (citadelAmountWithoutDiscount * MAX_BPS) /
+                (MAX_BPS - funding.discount);
         } else {
             citadelAmount_ = citadelAmountWithoutDiscount;
         }
-        
     }
 
     /**
@@ -216,8 +224,8 @@ contract Funding is GlobalAccessControlManaged, ReentrancyGuardUpgradeable {
      * @return limitLeft_ Amount of `asset` that can still be exchanged for citadel
      */
     function getRemainingFundable() external view returns (uint256 limitLeft_) {
-        uint assetCumulativeFunded = funding.assetCumulativeFunded;
-        uint assetCap = funding.assetCap;
+        uint256 assetCumulativeFunded = funding.assetCumulativeFunded;
+        uint256 assetCap = funding.assetCap;
         if (assetCumulativeFunded < assetCap) {
             limitLeft_ = assetCap.sub(assetCumulativeFunded);
         }
@@ -236,18 +244,24 @@ contract Funding is GlobalAccessControlManaged, ReentrancyGuardUpgradeable {
      * @dev managed by policy operations for rapid response to market conditions
      * @param _discount active discount (in bps)
      */
-    function setDiscount(uint _discount) external gacPausable onlyRoleOrAddress(POLICY_OPERATIONS_ROLE, funding.discountManager) {
+    function setDiscount(uint256 _discount)
+        external
+        gacPausable
+        onlyRoleOrAddress(POLICY_OPERATIONS_ROLE, funding.discountManager)
+    {
         require(_discount >= funding.minDiscount, "discount < minDiscount");
         require(_discount <= funding.maxDiscount, "discount > maxDiscount");
 
         funding.discount = _discount;
-        
+
         emit DiscountSet(_discount);
     }
 
-    
-
-    function clearCitadelPriceFlag() external gacPausable onlyRole(POLICY_OPERATIONS_ROLE) {
+    function clearCitadelPriceFlag()
+        external
+        gacPausable
+        onlyRole(POLICY_OPERATIONS_ROLE)
+    {
         citadelPriceFlag = false;
     }
 
@@ -256,8 +270,15 @@ contract Funding is GlobalAccessControlManaged, ReentrancyGuardUpgradeable {
      * @dev This is cumulative asset cap, so must take into account the asset amount already funded.
      * @param _assetCap New max cumulatiive amountIn
      */
-    function setAssetCap(uint256 _assetCap) external gacPausable onlyRole(POLICY_OPERATIONS_ROLE) {
-        require(_assetCap > funding.assetCumulativeFunded, "cannot decrease cap below global sum of assets in");
+    function setAssetCap(uint256 _assetCap)
+        external
+        gacPausable
+        onlyRole(POLICY_OPERATIONS_ROLE)
+    {
+        require(
+            _assetCap > funding.assetCumulativeFunded,
+            "cannot decrease cap below global sum of assets in"
+        );
         funding.assetCap = _assetCap;
         emit AssetCapUpdated(_assetCap);
     }
@@ -273,10 +294,17 @@ contract Funding is GlobalAccessControlManaged, ReentrancyGuardUpgradeable {
      *      (current contract balance - amount left to be claimed)
      * @param _token The token to sweep
      */
-    function sweep(address _token) external gacPausable onlyRole(TREASURY_OPS_ROLE) {
+    function sweep(address _token)
+        external
+        gacPausable
+        onlyRole(TREASURY_OPS_ROLE)
+    {
         uint256 amount = IERC20(_token).balanceOf(address(this));
         require(amount > 0, "nothing to sweep");
-        require(_token != address(asset), "cannot sweep funding asset, use claimAssetToTreasury()");
+        require(
+            _token != address(asset),
+            "cannot sweep funding asset, use claimAssetToTreasury()"
+        );
 
         IERC20(_token).safeTransfer(saleRecipient, amount);
         emit Sweep(_token, amount);
@@ -284,7 +312,11 @@ contract Funding is GlobalAccessControlManaged, ReentrancyGuardUpgradeable {
 
     /// @notice Claim accumulated asset token to treasury
     /// @dev We let assets accumulate and batch transfer to treasury (rather than transfer atomically on each deposi)t for user gas savings
-    function claimAssetToTreasury() external gacPausable onlyRole(TREASURY_OPS_ROLE) {
+    function claimAssetToTreasury()
+        external
+        gacPausable
+        onlyRole(TREASURY_OPS_ROLE)
+    {
         uint256 amount = asset.balanceOf(address(this));
         require(amount > 0, "nothing to claim");
         asset.safeTransfer(saleRecipient, amount);
@@ -302,7 +334,11 @@ contract Funding is GlobalAccessControlManaged, ReentrancyGuardUpgradeable {
      * @param _minDiscount minimum discount (in bps)
      * @param _maxDiscount maximum discount (in bps)
      */
-    function setDiscountLimits(uint _minDiscount, uint _maxDiscount) external gacPausable onlyRole(CONTRACT_GOVERNANCE_ROLE) {
+    function setDiscountLimits(uint256 _minDiscount, uint256 _maxDiscount)
+        external
+        gacPausable
+        onlyRole(CONTRACT_GOVERNANCE_ROLE)
+    {
         funding.minDiscount = _minDiscount;
         funding.maxDiscount = _maxDiscount;
 
@@ -314,13 +350,21 @@ contract Funding is GlobalAccessControlManaged, ReentrancyGuardUpgradeable {
      * @dev This is intended to be used for an automated discount manager contract to supplement or replace manual calls
      * @param _discountManager discount manager address
      */
-    function setDiscountManager(address _discountManager) external gacPausable onlyRole(CONTRACT_GOVERNANCE_ROLE) {
+    function setDiscountManager(address _discountManager)
+        external
+        gacPausable
+        onlyRole(CONTRACT_GOVERNANCE_ROLE)
+    {
         funding.discountManager = _discountManager;
 
         emit DiscountManagerSet(_discountManager);
     }
 
-    function setSaleRecipient(address _saleRecipient) external gacPausable onlyRole(CONTRACT_GOVERNANCE_ROLE) {
+    function setSaleRecipient(address _saleRecipient)
+        external
+        gacPausable
+        onlyRole(CONTRACT_GOVERNANCE_ROLE)
+    {
         require(
             _saleRecipient != address(0),
             "Funding: sale recipient should not be zero"
@@ -330,7 +374,11 @@ contract Funding is GlobalAccessControlManaged, ReentrancyGuardUpgradeable {
         emit SaleRecipientUpdated(_saleRecipient);
     }
 
-    function setCitadelAssetPriceBounds(uint _minPrice, uint _maxPrice) external gacPausable onlyRole(CONTRACT_GOVERNANCE_ROLE) {
+    function setCitadelAssetPriceBounds(uint256 _minPrice, uint256 _maxPrice)
+        external
+        gacPausable
+        onlyRole(CONTRACT_GOVERNANCE_ROLE)
+    {
         minCitadelPriceInAsset = _minPrice;
         maxCitadelPriceInAsset = _maxPrice;
 
@@ -343,31 +391,31 @@ contract Funding is GlobalAccessControlManaged, ReentrancyGuardUpgradeable {
 
     /// @notice Update citadel price in asset terms from oracle source
     /// @dev Note that the oracle mechanics are abstracted to the oracle address
-    function updateCitadelPriceInAsset(uint _citadelPriceInAsset) external gacPausable onlyCitadelPriceInAssetOracle {
+    function updateCitadelPriceInAsset(uint256 _citadelPriceInAsset)
+        external
+        gacPausable
+        onlyCitadelPriceInAssetOracle
+    {
         require(_citadelPriceInAsset > 0, "citadel price must not be zero");
 
-        if (_citadelPriceInAsset < minCitadelPriceInAsset || _citadelPriceInAsset > maxCitadelPriceInAsset) {
+        if (
+            _citadelPriceInAsset < minCitadelPriceInAsset ||
+            _citadelPriceInAsset > maxCitadelPriceInAsset
+        ) {
             citadelPriceFlag = true;
-            emit CitadelPriceFlag(_citadelPriceInAsset, minCitadelPriceInAsset, maxCitadelPriceInAsset);
+            emit CitadelPriceFlag(
+                _citadelPriceInAsset,
+                minCitadelPriceInAsset,
+                maxCitadelPriceInAsset
+            );
         } else {
             citadelPriceInAsset = _citadelPriceInAsset;
-            emit CitadelPriceInAssetUpdated(_citadelPriceInAsset);    
+            emit CitadelPriceInAssetUpdated(_citadelPriceInAsset);
         }
-    }
-
-    /// ==========================
-    /// ===== Keeper actions =====
-    /// ==========================
-
-    /// @notice Cache xCitadel value in citatdel terms by reading pricePerShare
-    function updateXCitadelPriceInCitadel() external gacPausable onlyRole(KEEPER_ROLE) {
-        xCitadelPriceInCitadel = xCitadel.getPricePerFullShare();
-        emit xCitadelPriceInCitadelUpdated(xCitadelPriceInCitadel);
     }
 
     /**
      * @notice Update the `asset` receipient address. Can only be called by owner
      * @param _saleRecipient New recipient address
      */
-
 }
