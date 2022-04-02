@@ -15,6 +15,10 @@ contract GlobalAccessControlManaged is PausableUpgradeable {
     bytes32 public constant PAUSER_ROLE = keccak256("PAUSER_ROLE");
     bytes32 public constant UNPAUSER_ROLE = keccak256("UNPAUSER_ROLE");
 
+    /// =======================
+    /// ===== Initializer =====
+    /// =======================
+
     /**
      * @notice Initializer
      * @dev this is assumed to be used in the initializer of the inhereiting contract
@@ -41,7 +45,7 @@ contract GlobalAccessControlManaged is PausableUpgradeable {
     // @dev only holders of any of the given set of roles on the GAC can call
     modifier onlyRoles(bytes32[] memory roles) {
         bool validRoleFound = false;
-        for (uint i = 0; i < roles.length; i++) {
+        for (uint256 i = 0; i < roles.length; i++) {
             bytes32 role = roles[i];
             if (gac.hasRole(role, msg.sender)) {
                 validRoleFound = true;
@@ -55,7 +59,10 @@ contract GlobalAccessControlManaged is PausableUpgradeable {
     // @dev only holders of the given role on the GAC can call, or a specified address
     // @dev used to faciliate extra contract-specific permissioned accounts
     modifier onlyRoleOrAddress(bytes32 role, address account) {
-        require(gac.hasRole(role, msg.sender) || msg.sender == account, "GAC: invalid-caller-role-or-address");
+        require(
+            gac.hasRole(role, msg.sender) || msg.sender == account,
+            "GAC: invalid-caller-role-or-address"
+        );
         _;
     }
 
@@ -66,9 +73,9 @@ contract GlobalAccessControlManaged is PausableUpgradeable {
         _;
     }
 
-    /// ==============================
-    /// ===== Permissioned Calls =====
-    /// ==============================
+    /// ================================
+    /// ===== Permissioned actions =====
+    /// ================================
 
     function pause() external {
         require(gac.hasRole(PAUSER_ROLE, msg.sender));

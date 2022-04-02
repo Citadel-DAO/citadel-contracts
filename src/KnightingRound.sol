@@ -126,7 +126,10 @@ contract KnightingRound is GlobalAccessControlManaged {
             _saleDuration > 0,
             "KnightingRound: the sale duration must not be zero"
         );
-        require(_tokenOutPrice > 0, "KnightingRound: the price must not be zero");
+        require(
+            _tokenOutPrice > 0,
+            "KnightingRound: the price must not be zero"
+        );
         require(
             _saleRecipient != address(0),
             "KnightingRound: sale recipient should not be zero"
@@ -234,7 +237,9 @@ contract KnightingRound is GlobalAccessControlManaged {
         view
         returns (uint256 tokenOutAmount_)
     {
-        tokenOutAmount_ = (_tokenInAmount * tokenOutPrice) / tokenInNormalizationValue;
+        tokenOutAmount_ =
+            (_tokenInAmount * tokenOutPrice) /
+            tokenInNormalizationValue;
     }
 
     /**
@@ -257,9 +262,9 @@ contract KnightingRound is GlobalAccessControlManaged {
             (totalTokenIn >= tokenInLimit);
     }
 
-    /// ===============================
-    /// ===== Permissioned: owner =====
-    /// ===============================
+    /// ====================================
+    /// ===== Permissioned: governance =====
+    /// ====================================
 
     /**
      * @notice Finalize the sale after sale duration. Can only be called by owner
@@ -324,7 +329,10 @@ contract KnightingRound is GlobalAccessControlManaged {
         external
         onlyRole(CONTRACT_GOVERNANCE_ROLE)
     {
-        require(_tokenOutPrice > 0, "KnightingRound: the price must not be zero");
+        require(
+            _tokenOutPrice > 0,
+            "KnightingRound: the price must not be zero"
+        );
 
         tokenOutPrice = _tokenOutPrice;
 
@@ -348,6 +356,10 @@ contract KnightingRound is GlobalAccessControlManaged {
 
         emit SaleRecipientUpdated(_saleRecipient);
     }
+
+    /// ============================
+    /// ===== Tech ops actions =====
+    /// ============================
 
     /**
      * @notice Update the guestlist address. Can only be called by owner
@@ -376,6 +388,10 @@ contract KnightingRound is GlobalAccessControlManaged {
 
         emit TokenInLimitUpdated(_tokenInLimit);
     }
+
+    /// ================================
+    /// ===== Treasury Ops actions =====
+    /// ================================
 
     /**
      * @notice Transfers out any tokens accidentally sent to the contract. Can only be called by owner

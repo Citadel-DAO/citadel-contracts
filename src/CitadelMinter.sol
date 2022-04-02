@@ -92,6 +92,10 @@ contract CitadelMinter is
         uint256 xCitadelAmount
     );
 
+    /// =======================
+    /// ===== Initializer =====
+    /// =======================
+
     /**
      * @notice Initializer
      * @dev this contract must have the rights to mint the citadel token to function correctly
@@ -152,9 +156,9 @@ contract CitadelMinter is
         }
     }
 
-    /// ==========================================
-    /// ===== Permissioned Calls: Policy Ops =====
-    /// ==========================================
+    /// ==============================
+    /// ===== Policy Ops actions =====
+    /// ==============================
 
     /**
      * @notice Update the state of citadel emissions by minting and distributing citadel tokens according to the emission schedule and proportional splits between destinations (e.g. funding pools, stakers, lockers)
@@ -166,9 +170,7 @@ contract CitadelMinter is
         gacPausable
         nonReentrant
     {
-        uint256 mintable = supplySchedule.getMintable(
-            lastMintTimestamp
-        );
+        uint256 mintable = supplySchedule.getMintable(lastMintTimestamp);
         citadelToken.mint(address(this), mintable);
 
         uint256 lockingAmount = 0;
@@ -176,20 +178,19 @@ contract CitadelMinter is
         uint256 fundingAmount = 0;
 
         if (lockingBps != 0) {
-            lockingAmount = mintable * lockingBps / MAX_BPS;
-            uint256 beforeAmount = xCitadel.balanceOf(
-                address(this)
-            );
+            lockingAmount = (mintable * lockingBps) / MAX_BPS;
+            uint256 beforeAmount = xCitadel.balanceOf(address(this));
 
             IVault(xCitadel).deposit(lockingAmount);
 
-            uint256 afterAmount = xCitadel.balanceOf(
-                address(this)
-            );
+            uint256 afterAmount = xCitadel.balanceOf(address(this));
 
             uint256 xCitadelToLockers = afterAmount - beforeAmount;
 
-            xCitadelLocker.notifyRewardAmount(address(xCitadel), xCitadelToLockers);
+            xCitadelLocker.notifyRewardAmount(
+                address(xCitadel),
+                xCitadelToLockers
+            );
             emit CitadelDistributionToLocking(
                 lastMintTimestamp,
                 block.timestamp,
@@ -199,7 +200,7 @@ contract CitadelMinter is
         }
 
         if (stakingBps != 0) {
-            stakingAmount = mintable * stakingBps / MAX_BPS;
+            stakingAmount = (mintable * stakingBps) / MAX_BPS;
 
             citadelToken.transfer(address(xCitadel), stakingAmount);
             emit CitadelDistributionToStaking(
@@ -210,7 +211,7 @@ contract CitadelMinter is
         }
 
         if (fundingBps != 0) {
-            fundingAmount = mintable * fundingBps / MAX_BPS;
+            fundingAmount = (mintable * fundingBps) / MAX_BPS;
 
             _transferToFundingPools(fundingAmount);
             emit CitadelDistributionToFunding(
@@ -293,9 +294,9 @@ contract CitadelMinter is
         emit CitadelDistributionSplitSet(_fundingBps, _stakingBps, _lockingBps);
     }
 
-    /// ==========================================
-    /// ===== Permissioned Calls: Governance =====
-    /// ==========================================
+    /// ==============================
+    /// ===== Governance actions =====
+    /// ==============================
 
     function initializeLastMintTimestamp()
         external
@@ -327,7 +328,7 @@ contract CitadelMinter is
             address pool = fundingPools.at(i);
             uint256 weight = fundingPoolWeights[pool];
 
-            uint256 amount = _citadelAmount * weight / totalFundingPoolWeight;
+            uint256 amount = (_citadelAmount * weight) / totalFundingPoolWeight;
 
             IERC20Upgradeable(address(citadelToken)).safeTransfer(pool, amount);
 
@@ -348,6 +349,9 @@ contract CitadelMinter is
     }
 
     function _addFundingPool(address _pool) internal {
-        require(fundingPools.add(_pool), "CitadelMinter: funding pool already exists");
+        require(
+            fundingPools.add(_pool),
+            "CitadelMinter: funding pool already exists"
+        );
     }
 }

@@ -52,6 +52,14 @@ contract GlobalAccessControl is
     // NOTE: This is enforced at the contract level, the contract just allows the toggling of the bool
     bool public transferFromDisabled; // Set to true in initialize
 
+    /// =======================
+    /// ===== Initializer =====
+    /// =======================
+
+    /**
+     * @notice Initializer
+     * @param _initialContractGovernance Global access control
+     */
     function initialize(address _initialContractGovernance)
         external
         initializer
@@ -81,6 +89,10 @@ contract GlobalAccessControl is
         _setRoleAdmin(BLOCKLISTED_ROLE, BLOCKLIST_MANAGER_ROLE);
     }
 
+    /// ================================================
+    /// ===== Permissioned Actions (various roles) =====
+    /// ================================================
+
     function pause() external {
         require(hasRole(PAUSER_ROLE, msg.sender), "PAUSER_ROLE");
         _pause();
@@ -89,20 +101,6 @@ contract GlobalAccessControl is
     function unpause() external {
         require(hasRole(UNPAUSER_ROLE, msg.sender), "UNPAUSER_ROLE");
         _unpause();
-    }
-
-    function enableTransferFrom() external {
-        require(hasRole(UNPAUSER_ROLE, msg.sender), "PAUSER_ROLE");
-        transferFromDisabled = false;
-    }
-
-    function disableTransferFrom() external {
-        require(hasRole(PAUSER_ROLE, msg.sender), "PAUSER_ROLE");
-        transferFromDisabled = true;
-    }
-
-    function isBlocklisted(address account) external view returns (bool) {
-        return hasRole(BLOCKLISTED_ROLE, account);
     }
 
     /// @dev setup a new role via contract governance, without upgrade

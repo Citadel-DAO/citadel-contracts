@@ -9,8 +9,15 @@ contract CitadelToken is GlobalAccessControlManaged, ERC20Upgradeable {
     bytes32 public constant CITADEL_MINTER_ROLE =
         keccak256("CITADEL_MINTER_ROLE");
 
+    /// =======================
+    /// ===== Initializer =====
+    /// =======================
+
     /**
-     * @dev intialize.
+     * @notice Initializer
+     * @param _name Token name
+     * @param _symbol Token symbol
+     * @param _gac Global access control to allow permissioned calls by role
      */
     function initialize(
         string memory _name,
@@ -20,6 +27,10 @@ contract CitadelToken is GlobalAccessControlManaged, ERC20Upgradeable {
         __ERC20_init(_name, _symbol);
         __GlobalAccessControlManaged_init(_gac);
     }
+
+    /// ==========================
+    /// ===== Minter actions =====
+    /// ==========================
 
     /**
      * @dev Mints new tokens.
