@@ -1,11 +1,26 @@
-# Install
-- Follow the instructions to install [eth-brownie](https://github.com/eth-brownie/brownie).
-- Copy `.env.example` -> `.env` and populate the keys.
+# Getting Started
 
-# Run
+## Prerequisites
+
+- [Foundry](https://github.com/gakonst/foundry)
+
+## Installation
+
+Install and update submodules:
+
+```console
+git submodule init
+git submodule update
 ```
-brownie compile
-brownie run scripts/test_deploy.py
+
+## Tests
+
+> :warning: Tests are currently failing
+
+To run the tests:
+
+```
+forge test
 ```
 
 # Citadel (CTDL) Token:
