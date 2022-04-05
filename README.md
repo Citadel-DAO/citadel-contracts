@@ -1,17 +1,37 @@
-# Install
-- Follow the instructions to install [eth-brownie](https://github.com/eth-brownie/brownie).
-- Copy `.env.example` -> `.env` and populate the keys.
+ Getting Started
 
-# Run
-```
-brownie compile
-brownie run scripts/test_deploy.py
+## Prerequisites
+
+- [Foundry](https://github.com/gakonst/foundry)
+
+## Installation
+
+Install and update submodules:
+
+```console
+git submodule init
+git submodule update
 ```
 
-# Citadel (CTDL) Token:
+## Compilation
+```
+forge build
+```
+
+## Tests
+Because the tests interact with mainnet contracts, tests must be run in mainnet fork mode. 
+
+```
+forge test --fork-url <mainnet-rpc-url>
+```
+> ⚠️ Some tests are currently failing, they are under active development
+
+# Contract Overview
+
+## Citadel (CTDL) Token:
 The base token of the system, an upgradeable ERC20 token that is minted according to the supply schedule.
 
-# xCitadel Vault:
+## xCitadel Vault:
 A staked CTDL position that increases in value automatically as emission rewards are distributed by the project.
 
 The code is a fork of badger vaults 1.5 with no strategy which allows users to deposit CTDL token and receive xCTDL token. 
@@ -26,7 +46,7 @@ Upon withdraw from xCitadel vault CTDL tokens are sent to vesting contract where
 
 Each user can only have one vested exit active at a time. A second withdrawal during that vesting timeframe resets the timer to 21 days.
 
-# xCitadelLocker:
+## xCitadelLocker:
 Allows locking of xCTDL token for 21 weeks based upon the [convex locker](https://github.com/convex-eth/platform/blob/main/contracts/contracts/CvxLocker.sol) model.
 
 Some resources on locking:
@@ -41,7 +61,7 @@ Locking allows users to earn governance rights and claimable xCTDL rewards.
 - addRewards modified to allow distribution of staking token too
 - `kickRewardPerEpoch` removed from function `_processExpiredLocks` to disable giving of kick rewards
 
-# CTDL Token Distribution:
+## CTDL Token Distribution:
 The _SupplySchedule_ contract defines the rate at which CTDL minting can occur. It is set by epoch by policy governance.
 
 Minting process originiates via a call to the _CTDLMinter_. It's distributed between funding pools, stakers, and lockers according to logic which is in the works.
@@ -53,7 +73,7 @@ Temporarily, this function takes in the amounts to mint directly until that logi
 
 - CTDL is minted determinstically according to Epoch data and an update can happen at any time from the policy governance. This means the desired interval between mint updates can be modulated seamlessly.
 
-# CTDLMinter:
+## CTDLMinter:
 Some notes on the mintAndDistribute() function:
 - Disallow minting if there is no epoch for some part of the time range covered since last mint
 - CTDL is minted according to Epoch data. Start from last mint.
@@ -64,7 +84,7 @@ How rewards are distributed:
 - CTDL for funding pool is deposited into xCTDL, and sent to funding pool management for use in funding 
 - CTDL for lockers is deposited into xCTDL and transferred to locking contract. The rewards rate for Lockers is modified.
 
-# Funding distribution
+## Funding distribution
 When CTDL is minted, a certain portion goes to the funding pool. This is distributed amongst the different asset accumulator contracts. Each contract is given a weight which determines it's proprtion of the funding pool to recieve. These weights are set by the policy team.
 
 ```
@@ -87,7 +107,7 @@ Remove an existing funding weight.
 The address must be in the list.
 Note that a funding contract weight cannot be set to zero, so this is the only way to remove it.
 
-# Funding Contract
+## Funding Contract
 Has a:
 * Oracle for market price of CTDL
 * Oracle for market price of the accumulated asset
