@@ -13,17 +13,69 @@ contract FundingTest is BaseFixture {
     function setUp() public override {
         BaseFixture.setUp();
     }
-
+    
     function testDiscountRateBasics() public {
-        assertTrue(true);
-    /** 
+        /** 
         @fatima: confirm the discount rate is functional
         - access control for setting discount rate (i.e. the proper accounts can call the function and it works. improper accounts revert when attempting to call)
         - access control for setting discount rate limits
         - pausing freezes these functions appropriately
     */
+
+        // calling from correct account
+        vm.prank(address(governance));
+        fundingCvx.setDiscountLimits(10, 50);
+        vm.prank(address(policyOps));
+        fundingCvx.setDiscount(20);
+        (uint256 discount,uint256 minDiscount,uint256 maxDiscount,,,) = fundingCvx.funding();
+        // check if discount is set
+        assertEq(discount,20);
+
+        // setting discount above maximum limit
+
+        vm.prank(address(policyOps));
+        vm.expectRevert(bytes("discount > maxDiscount"));
+        fundingCvx.setDiscount(60);
+
+        // setting discount below minimum limit
+        vm.prank(address(policyOps));
+        vm.expectRevert(bytes("discount < minDiscount"));
+        fundingCvx.setDiscount(5);
+
+        // calling setDiscount from a different account
+        vm.prank(address(1));
+        vm.expectRevert(bytes("GAC: invalid-caller-role-or-address"));
+        fundingCvx.setDiscount(20);
+
+        // - access control for setting discount rate limits
+
+        // calling with correct role
+        vm.prank(address(governance));
+        fundingCvx.setDiscountLimits(0, 50);
+        (,minDiscount,maxDiscount,,,) = fundingCvx.funding();
+
+        // checking if limits are set
+        assertEq(minDiscount,0);
+        assertEq(maxDiscount, 50);
+
+        // calling with wrong address
+        vm.prank(address(1));
+        vm.expectRevert(bytes("GAC: invalid-caller-role"));
+        fundingCvx.setDiscountLimits(0,20);
+
+        // - pausing freezes these functions appropriately
+        vm.prank(address(guardian));
+        gac.pause();
+        vm.prank(address(governance));
+        vm.expectRevert(bytes("global-paused"));
+        fundingCvx.setDiscountLimits(0, 50);
+        vm.prank(address(policyOps));
+        vm.expectRevert(bytes("global-paused"));
+        fundingCvx.setDiscount(10);
+
     }
 
+    
     function testDiscountRateBuys() public {
         assertTrue(true);
         /**
