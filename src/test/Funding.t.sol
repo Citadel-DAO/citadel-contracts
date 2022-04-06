@@ -5,20 +5,13 @@ import {BaseFixture} from "./BaseFixture.sol";
 import {SupplySchedule} from "../SupplySchedule.sol";
 import {GlobalAccessControl} from "../GlobalAccessControl.sol";
 import {Funding} from "../Funding.sol";
-
-import {ERC20Utils} from "./utils/ERC20Utils.sol";
 import {FixedPointMathLib} from "solmate/utils/FixedPointMathLib.sol";
-
-import "../interfaces/erc20/IERC20.sol";
 
 contract FundingTest is BaseFixture {
     using FixedPointMathLib for uint;
 
     function setUp() public override {
         BaseFixture.setUp();
-        ERC20Utils erc20utils = new ERC20Utils();
-        // address cvx_address = 0x4e3FBD56CD56c3e72c1403e103b45Db9da5B9D2B;
-        // IERC20 cvx = IERC20(cvx_address);
     }
     
     function testDiscountRateBasics() public {
