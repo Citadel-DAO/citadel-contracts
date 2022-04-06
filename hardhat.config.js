@@ -34,8 +34,8 @@ subtask(TASK_COMPILE_SOLIDITY_READ_FILE).setAction(async (_, __, runSuper) => {
   const file = await runSuper();
   const replacedOpenZepplin = replaceAll(
     file,
-    "\"openzeppelin-contracts",
-    "\"@openzeppelin/contracts"
+    '"openzeppelin-contracts',
+    '"@openzeppelin/contracts'
   );
   const replacedDSTest = replaceAll(
     replacedOpenZepplin,
@@ -52,7 +52,15 @@ subtask(TASK_COMPILE_SOLIDITY_READ_FILE).setAction(async (_, __, runSuper) => {
  * @type import('hardhat/config').HardhatUserConfig
  */
 module.exports = {
-  solidity: "0.8.12",
+  solidity: {
+    version: "0.8.12",
+    settings: {
+      optimizer: {
+        enabled: true,
+        runs: 200,
+      },
+    },
+  },
   paths: {
     sources: "./src",
     tests: "./test",
