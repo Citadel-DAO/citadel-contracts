@@ -6,12 +6,19 @@ import {SupplySchedule} from "../SupplySchedule.sol";
 import {GlobalAccessControl} from "../GlobalAccessControl.sol";
 import {Funding} from "../Funding.sol";
 
+import {ERC20Utils} from "./utils/ERC20Utils.sol";
 import {FixedPointMathLib} from "solmate/utils/FixedPointMathLib.sol";
+
+import "../interfaces/erc20/IERC20.sol";
+
 contract FundingTest is BaseFixture {
     using FixedPointMathLib for uint;
 
     function setUp() public override {
         BaseFixture.setUp();
+        ERC20Utils erc20utils = new ERC20Utils();
+        // address cvx_address = 0x4e3FBD56CD56c3e72c1403e103b45Db9da5B9D2B;
+        // IERC20 cvx = IERC20(cvx_address);
     }
     
     function testDiscountRateBasics() public {
@@ -58,6 +65,11 @@ contract FundingTest is BaseFixture {
         assertEq(minDiscount,0);
         assertEq(maxDiscount, 50);
 
+        // check discount can not be greater than or equal to MAX_BPS
+        vm.prank(address(governance));
+        vm.expectRevert(bytes("maxDiscount >= MAX_BPS"));
+        fundingCvx.setDiscountLimits(0, 10000);
+
         // calling with wrong address
         vm.prank(address(1));
         vm.expectRevert(bytes("GAC: invalid-caller-role"));
@@ -76,12 +88,38 @@ contract FundingTest is BaseFixture {
     }
 
     
-    function testDiscountRateBuys() public {
-        assertTrue(true);
+    function testDiscountRateBuys(uint8 _assetAmountIn, uint32 discount, uint8 citadelPrice) public {
+        
         /**
             @fatima: this is a good candidate to generalize using fuzzing: test buys with various discount rates, using fuzzing, and confirm the results.
             sanity check the numerical results (tokens in vs tokens out, based on price and discount rate)
         */ 
+
+        vm.assume(discount<10000 && _assetAmountIn>0 && citadelPrice>0);  // discount < MAX_BPS = 10000 
+
+        vm.prank(address(governance));
+        fundingCvx.setDiscountLimits(0, 9999);
+        
+        vm.prank(address(policyOps));
+        fundingCvx.setDiscount(discount); // set discount
+
+        vm.prank(eoaOracle);
+        fundingCvx.updateCitadelPriceInAsset(citadelPrice); // set citadel price
+
+        uint256 citadelAmountOutExpected = fundingCvx.getAmountOut(_assetAmountIn);
+
+        vm.prank(governance);
+        citadel.mint(address(fundingCvx), citadelAmountOutExpected ); // fundingCvx should have citadel to transfer to user
+
+        address user = address(1) ;
+        vm.startPrank(user);
+        erc20utils.forceMintTo(user, cvx_address , _assetAmountIn );
+        cvx.approve(address(fundingCvx), _assetAmountIn);
+        uint256 citadelAmountOut = fundingCvx.deposit(_assetAmountIn , 0);
+        vm.stopPrank();
+        
+        assertEq(citadelAmountOut , citadelAmountOutExpected);
+
     }
 
     function testBuy() public {
