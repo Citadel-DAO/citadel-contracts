@@ -71,7 +71,7 @@ contract FundingTest is BaseFixture {
         fundingCvx.setDiscountLimits(0,20);
 
         // - pausing freezes these functions appropriately
-        vm.prank(address(guardian));
+        vm.prank(guardian);
         gac.pause();
         vm.prank(address(governance));
         vm.expectRevert(bytes("global-paused"));
@@ -84,9 +84,6 @@ contract FundingTest is BaseFixture {
 
     function testDiscountRateBuys() public{
         _testDiscountRateBuys(fundingCvx, cvx, 100e18, 5000, 100e18 );
-        // - pausing freezes these functions appropriately
-        
-        // _testDiscountRateBuys(fundingCvx, cvx, 100e18, 1000, 100e18 );
 
     }
 
@@ -95,6 +92,56 @@ contract FundingTest is BaseFixture {
         // TODO: Fix comparator calls in inner function as per that functions comment
         _testDiscountRateBuys(fundingWbtc, wbtc, 2e8, 2000, 2e8 );
 
+    }
+
+    function testAccessControl() public{
+        // tests to check access controls of various set functions
+
+        vm.prank(address(1));
+        vm.expectRevert("GAC: invalid-caller-role");
+        fundingCvx.setAssetCap(10e18);
+
+        // setting asset cap from correct account
+        vm.prank(policyOps);
+        fundingCvx.setAssetCap(1000e18);
+        (,,,,,uint256 assetCap) = fundingCvx.funding();
+        assertEq(assetCap, 1000e18); // check if assetCap is set
+
+        vm.prank(address(1));
+        vm.expectRevert("GAC: invalid-caller-role");
+        fundingCvx.setDiscountManager(address(2));
+
+        // setting discountManager from correct account
+        vm.prank(governance);
+        fundingCvx.setDiscountManager(address(2));
+        (,,,address discountManager,,) = fundingCvx.funding();
+        assertEq(discountManager, address(2)); // check if discountManager is set
+
+        vm.prank(address(1));
+        vm.expectRevert("onlyCitadelPriceInAssetOracle");
+        fundingCvx.updateCitadelPriceInAsset(1000);
+
+        // setting citadelPriceInAsset from correct account
+        vm.prank(eoaOracle);
+        fundingCvx.updateCitadelPriceInAsset(1000);
+        assertEq(fundingCvx.citadelPriceInAsset(), 1000); // check if citadelPriceInAsset is set
+        
+        vm.prank(eoaOracle);
+        vm.expectRevert("citadel price must not be zero");
+        fundingCvx.updateCitadelPriceInAsset(0);
+
+        vm.prank(address(1));
+        vm.expectRevert("GAC: invalid-caller-role");
+        fundingCvx.setSaleRecipient(address(2));
+
+        // setting setSaleRecipient from correct account
+        vm.prank(governance);
+        fundingCvx.setSaleRecipient(address(2));
+        assertEq(fundingCvx.saleRecipient(), address(2)); // check if SaleRecipient is set
+        
+        vm.prank(governance);
+        vm.expectRevert("Funding: sale recipient should not be zero");
+        fundingCvx.setSaleRecipient(address(0));
     }
     
     function _testDiscountRateBuys(Funding fundingContract, IERC20 token, uint256 _assetAmountIn, uint32 discount, uint256 citadelPrice) public {
@@ -131,7 +178,7 @@ contract FundingTest is BaseFixture {
         assertEq(citadelAmountOut , citadelAmountOutExpected);
 
         // pausing should freeze deposit
-        vm.prank(address(guardian));
+        vm.prank(guardian);
         gac.pause();
         vm.expectRevert(bytes("global-paused"));
         fundingContract.deposit(_assetAmountIn , 0);
