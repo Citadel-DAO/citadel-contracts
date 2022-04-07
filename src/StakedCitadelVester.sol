@@ -118,7 +118,7 @@ contract StakedCitadelVester is
                     locked.mul(
                         block.timestamp.sub(vesting[recipient].unlockBegin)
                     )
-                ).div(vestingDuration)
+                ).div(vesting[recipient].unlockEnd - vesting[recipient].unlockBegin)
             ).sub(claimed);
     }
 
