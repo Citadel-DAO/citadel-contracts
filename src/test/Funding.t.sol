@@ -7,6 +7,8 @@ import {GlobalAccessControl} from "../GlobalAccessControl.sol";
 import {Funding} from "../Funding.sol";
 import {FixedPointMathLib} from "solmate/utils/FixedPointMathLib.sol";
 
+import "../interfaces/erc20/IERC20.sol";
+
 contract FundingTest is BaseFixture {
     using FixedPointMathLib for uint;
 
@@ -80,8 +82,22 @@ contract FundingTest is BaseFixture {
 
     }
 
+    function testDiscountRateBuys() public{
+        _testDiscountRateBuys(fundingCvx, cvx, 100e18, 5000, 100e18 );
+        // - pausing freezes these functions appropriately
+        
+        // _testDiscountRateBuys(fundingCvx, cvx, 100e18, 1000, 100e18 );
+
+    }
+
+    function testBuyDifferentDecimals() public {
+        // wBTC is an 8 decimal example
+        // TODO: Fix comparator calls in inner function as per that functions comment
+        _testDiscountRateBuys(fundingWbtc, wbtc, 2e8, 2000, 2e8 );
+
+    }
     
-    function testDiscountRateBuys(uint8 _assetAmountIn, uint32 discount, uint8 citadelPrice) public {
+    function _testDiscountRateBuys(Funding fundingContract, IERC20 token, uint256 _assetAmountIn, uint32 discount, uint256 citadelPrice) public {
         
         /**
             @fatima: this is a good candidate to generalize using fuzzing: test buys with various discount rates, using fuzzing, and confirm the results.
@@ -91,40 +107,49 @@ contract FundingTest is BaseFixture {
         vm.assume(discount<10000 && _assetAmountIn>0 && citadelPrice>0);  // discount < MAX_BPS = 10000 
 
         vm.prank(address(governance));
-        fundingCvx.setDiscountLimits(0, 9999);
+        fundingContract.setDiscountLimits(0, 9999);
         
         vm.prank(address(policyOps));
-        fundingCvx.setDiscount(discount); // set discount
+        fundingContract.setDiscount(discount); // set discount
 
         vm.prank(eoaOracle);
-        fundingCvx.updateCitadelPriceInAsset(citadelPrice); // set citadel price
+        fundingContract.updateCitadelPriceInAsset(citadelPrice); // set citadel price
 
-        uint256 citadelAmountOutExpected = fundingCvx.getAmountOut(_assetAmountIn);
+        uint256 citadelAmountOutExpected = fundingContract.getAmountOut(_assetAmountIn);
 
         vm.prank(governance);
-        citadel.mint(address(fundingCvx), citadelAmountOutExpected ); // fundingCvx should have citadel to transfer to user
+        citadel.mint(address(fundingContract), citadelAmountOutExpected ); // fundingContract should have citadel to transfer to user
 
         address user = address(1) ;
         vm.startPrank(user);
-        erc20utils.forceMintTo(user, cvx_address , _assetAmountIn );
-        cvx.approve(address(fundingCvx), _assetAmountIn);
-        uint256 citadelAmountOut = fundingCvx.deposit(_assetAmountIn , 0);
+        erc20utils.forceMintTo(user, address(token) , _assetAmountIn );
+        token.approve(address(fundingContract), _assetAmountIn);
+        uint256 citadelAmountOut = fundingContract.deposit(_assetAmountIn , 0);
         vm.stopPrank();
-        
+
+        // check citadelAmoutOut is same as expected
         assertEq(citadelAmountOut , citadelAmountOutExpected);
 
+        // pausing should freeze deposit
+        vm.prank(address(guardian));
+        gac.pause();
+        vm.expectRevert(bytes("global-paused"));
+        fundingContract.deposit(_assetAmountIn , 0);
+        vm.prank(address(techOps));
+        gac.unpause();
+
+
+        // flagging citadelPriceFlag should freeze deposit
+        vm.prank(governance);
+        fundingContract.setCitadelAssetPriceBounds(0, 5000);
+        vm.prank(eoaOracle);
+        fundingContract.updateCitadelPriceInAsset(6000);
+        vm.expectRevert(bytes("Funding: citadel price from oracle flagged and pending review"));
+        fundingContract.deposit(_assetAmountIn , 0);
+
     }
 
-    function testBuy() public {
-        _testBuy(fundingCvx, 100e18, 100e18);
-    }
-
-    function testBuyDifferentDecimals() public {
-        // wBTC is an 8 decimal example
-        // TODO: Fix comparator calls in inner function as per that functions comment
-        // _testBuy(fundingWbtc, 2e8, 2e8);
-        assertTrue(true);
-    }
+    
 
     function _testBuy(Funding fundingContract, uint assetIn, uint citadelPrice) internal {
         // just make citadel appear rather than going through minting flow here
