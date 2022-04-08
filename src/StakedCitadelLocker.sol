@@ -510,7 +510,7 @@ contract StakedCitadelLocker is
         uint256 nextUnlockIndex = userBalance.nextUnlockIndex;
         uint256 idx;
 
-        uint256 length = locks.length:
+        uint256 length = locks.length;
         for (uint256 i = nextUnlockIndex; i < length; /* See below for ++i*/) {
             if (locks[i].unlockTime > block.timestamp) {
                 if (idx == 0) {
@@ -760,9 +760,12 @@ contract StakedCitadelLocker is
     function updateStakeRatio(uint256 _offset) internal {
         if (isShutdown) return;
 
+        address cachedStakingProxy = stakingProxy;
+        IERC20Upgradeable cachedStakingToken = stakingToken;
+
         //get balances
-        uint256 local = stakingToken.balanceOf(address(this));
-        uint256 staked = IStakingProxy(stakingProxy).getBalance();
+        uint256 local = cachedStakingToken.balanceOf(address(this));
+        uint256 staked = IStakingProxy(cachedStakingProxy).getBalance();
         uint256 total = local.add(staked);
 
         if (total == 0) return;
@@ -776,12 +779,12 @@ contract StakedCitadelLocker is
         if (ratio > max) {
             //remove
             uint256 remove = staked.sub(total.mul(mean).div(denominator));
-            IStakingProxy(stakingProxy).withdraw(remove);
+            IStakingProxy(cachedStakingProxy).withdraw(remove);
         } else if (ratio < min) {
             //add
             uint256 increase = total.mul(mean).div(denominator).sub(staked);
-            stakingToken.safeTransfer(stakingProxy, increase);
-            IStakingProxy(stakingProxy).stake();
+            cachedStakingToken.safeTransfer(cachedStakingProxy, increase);
+            IStakingProxy(cachedStakingProxy).stake();
         }
     }
 
@@ -791,7 +794,8 @@ contract StakedCitadelLocker is
         nonReentrant
         updateReward(_account)
     {
-        for (uint256 i; i < rewardTokens.length; i++) {
+        uint256 length = rewardTokens.length;
+        for (uint256 i; i < length; /** See below for ++i */) {
             address _rewardsToken = rewardTokens[i];
             uint256 reward = rewards[_account][_rewardsToken];
             if (reward > 0) {
@@ -799,6 +803,8 @@ contract StakedCitadelLocker is
                 IERC20Upgradeable(_rewardsToken).safeTransfer(_account, reward);
                 emit RewardPaid(_account, _rewardsToken, reward);
             }
+
+            unchecked { ++i; }
         }
     }
 
@@ -812,21 +818,24 @@ contract StakedCitadelLocker is
     function _notifyReward(address _rewardsToken, uint256 _reward) internal {
         Reward storage rdata = rewardData[_rewardsToken];
 
-        if (block.timestamp >= rdata.periodFinish) {
-            rdata.rewardRate = _reward.div(rewardsDuration).to208();
+        uint256 cachedrDataPeriodFinish = rdata.periodFinish;
+        uint256 cachedRewardsDuration = rewardsDuration;
+
+        if (block.timestamp >= cachedrDataPeriodFinish) {
+            rdata.rewardRate = _reward.div(cachedRewardsDuration).to208();
         } else {
-            uint256 remaining = uint256(rdata.periodFinish).sub(
+            uint256 remaining = uint256(cachedrDataPeriodFinish).sub(
                 block.timestamp
             );
             uint256 leftover = remaining.mul(rdata.rewardRate);
             rdata.rewardRate = _reward
                 .add(leftover)
-                .div(rewardsDuration)
+                .div(cachedRewardsDuration)
                 .to208();
         }
 
         rdata.lastUpdateTime = block.timestamp.to40();
-        rdata.periodFinish = block.timestamp.add(rewardsDuration).to40();
+        rdata.periodFinish = block.timestamp.add(cachedRewardsDuration).to40();
     }
 
     function notifyRewardAmount(address _rewardsToken, uint256 _reward)
