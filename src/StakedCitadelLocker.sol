@@ -509,10 +509,12 @@ contract StakedCitadelLocker is
         Balances storage userBalance = balances[_user];
         uint256 nextUnlockIndex = userBalance.nextUnlockIndex;
         uint256 idx;
-        for (uint256 i = nextUnlockIndex; i < locks.length; i++) {
+
+        uint256 length = locks.length:
+        for (uint256 i = nextUnlockIndex; i < length; /* See below for ++i*/) {
             if (locks[i].unlockTime > block.timestamp) {
                 if (idx == 0) {
-                    lockData = new LockedBalance[](locks.length - i);
+                    lockData = new LockedBalance[](length - i);
                 }
                 lockData[idx] = locks[i];
                 idx++;
@@ -520,6 +522,8 @@ contract StakedCitadelLocker is
             } else {
                 unlockable = unlockable.add(locks[i].amount);
             }
+
+            unchecked { ++i; }
         }
         return (userBalance.locked, unlockable, locked, lockData);
     }
