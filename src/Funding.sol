@@ -164,6 +164,7 @@ contract Funding is GlobalAccessControlManaged, ReentrancyGuardUpgradeable {
         external
         onlyWhenPriceNotFlagged
         gacPausable
+        nonReentrant
         returns (uint256 citadelAmount_)
     {
         require(_assetAmountIn > 0, "_assetAmountIn must not be 0");
