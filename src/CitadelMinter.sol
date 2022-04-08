@@ -170,52 +170,65 @@ contract CitadelMinter is
         gacPausable
         nonReentrant
     {
-        uint256 mintable = supplySchedule.getMintable(lastMintTimestamp);
+        uint256 cachedLastMintTimestamp = lastMintTimestamp;
+
+        uint256 mintable = supplySchedule.getMintable(cachedLastMintTimestamp);
         citadelToken.mint(address(this), mintable);
 
         uint256 lockingAmount = 0;
         uint256 stakingAmount = 0;
         uint256 fundingAmount = 0;
 
-        if (lockingBps != 0) {
-            lockingAmount = (mintable * lockingBps) / MAX_BPS;
-            uint256 beforeAmount = xCitadel.balanceOf(address(this));
+        // 3 gas to store + 3 to read
+        // Saves 100 gas for each time we xCitadel
+        IVault cachedXCitadel = xCitadel;
 
-            IVault(xCitadel).deposit(lockingAmount);
+        // Saves gas below if true
+        uint256 cachedLockingBps = lockingBps;
+        if (cachedLockingBps != 0) {
+            lockingAmount = (mintable * cachedLockingBps) / MAX_BPS;
 
-            uint256 afterAmount = xCitadel.balanceOf(address(this));
+            uint256 beforeAmount = cachedXCitadel.balanceOf(address(this));
+
+            IVault(cachedXCitadel).deposit(lockingAmount);
+
+            uint256 afterAmount = cachedXCitadel.balanceOf(address(this));
 
             uint256 xCitadelToLockers = afterAmount - beforeAmount;
 
             xCitadelLocker.notifyRewardAmount(
-                address(xCitadel),
+                address(cachedXCitadel),
                 xCitadelToLockers
             );
             emit CitadelDistributionToLocking(
-                lastMintTimestamp,
+                cachedLastMintTimestamp,
                 block.timestamp,
                 lockingAmount,
                 xCitadelToLockers
             );
         }
 
-        if (stakingBps != 0) {
-            stakingAmount = (mintable * stakingBps) / MAX_BPS;
+        uint256 cachedStakingBps = stakingBps;
+        if (cachedStakingBps != 0) {
+            stakingAmount = (mintable * cachedStakingBps) / MAX_BPS;
 
-            citadelToken.transfer(address(xCitadel), stakingAmount);
+            citadelToken.transfer(address(cachedXCitadel), stakingAmount);
             emit CitadelDistributionToStaking(
-                lastMintTimestamp,
+                cachedLastMintTimestamp,
                 block.timestamp,
                 stakingAmount
             );
         }
 
-        if (fundingBps != 0) {
-            fundingAmount = (mintable * fundingBps) / MAX_BPS;
+
+        /// Saves gas if the if is true, if it's not costs 6 extra gas
+        uint256 cachedFundingBps = fundingBps;
+        if (cachedFundingBps != 0) {
+            fundingAmount = (mintable * cachedFundingBps) / MAX_BPS;
 
             _transferToFundingPools(fundingAmount);
             emit CitadelDistributionToFunding(
-                lastMintTimestamp,
+                cachedLastMintTimestamp,
                 block.timestamp,
                 fundingAmount
             );
@@ -245,6 +258,9 @@ contract CitadelMinter is
         );
 
         bool poolExists = fundingPools.contains(_pool);
+        
+        // NOTE: Could cachedTotalFundingPoolWeight but honestly logic is already messy enough
+    
         // Remove existing pool on 0 weight
         if (_weight == 0 && poolExists) {
             fundingPoolWeights[_pool] = 0;
@@ -323,12 +339,16 @@ contract CitadelMinter is
 
     // === Funding Pool Management ===
     function _transferToFundingPools(uint256 _citadelAmount) internal {
-        require(fundingPools.length() > 0, "CitadelMinter: no funding pools");
-        for (uint256 i = 0; i < fundingPools.length(); i++) {
+        uint256 length = fundingPools.length();
+        // Use cached to save 96 gas per loop read
+        uint256 cachedTotalFundingPoolWeight = totalFundingPoolWeight;
+
+        require(length > 0, "CitadelMinter: no funding pools");
+        for (uint256 i; i < length; ++i) {
             address pool = fundingPools.at(i);
             uint256 weight = fundingPoolWeights[pool];
 
-            uint256 amount = (_citadelAmount * weight) / totalFundingPoolWeight;
+            uint256 amount = (_citadelAmount * weight) / cachedTotalFundingPoolWeight;
 
             IERC20Upgradeable(address(citadelToken)).safeTransfer(pool, amount);
 
