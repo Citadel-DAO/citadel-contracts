@@ -170,7 +170,7 @@ contract KnightingRound is GlobalAccessControlManaged {
             block.timestamp < saleStart + saleDuration,
             "KnightingRound: already ended"
         );
-        require(_tokenInAmount > 0, "_tokenInAmount should be > 0");
+        require(_tokenInAmount != 0, "_tokenInAmount should be > 0");
         require(
             totalTokenIn.add(_tokenInAmount) <= tokenInLimit,
             "total amount exceeded"
@@ -182,7 +182,7 @@ contract KnightingRound is GlobalAccessControlManaged {
 
         uint256 boughtAmountTillNow = boughtAmounts[msg.sender];
 
-        if (boughtAmountTillNow > 0) {
+        if (boughtAmountTillNow != 0) {
             require(
                 _daoId == daoVotedFor[msg.sender],
                 "can't vote for multiple daos"
@@ -213,7 +213,7 @@ contract KnightingRound is GlobalAccessControlManaged {
 
         tokenOutAmount_ = boughtAmounts[msg.sender];
 
-        require(tokenOutAmount_ > 0, "nothing to claim");
+        require(tokenOutAmount_ != 0, "nothing to claim");
 
         hasClaimed[msg.sender] = true;
         totalTokenOutClaimed = totalTokenOutClaimed.add(tokenOutAmount_);
@@ -410,7 +410,7 @@ contract KnightingRound is GlobalAccessControlManaged {
             amount = amount.sub(amountLeftToBeClaimed);
         }
 
-        require(amount > 0, "nothing to sweep");
+        require(amount != 0, "nothing to sweep");
 
         ERC20Upgradeable(_token).safeTransfer(saleRecipient, amount);
 

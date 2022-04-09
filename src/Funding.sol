@@ -166,7 +166,7 @@ contract Funding is GlobalAccessControlManaged, ReentrancyGuardUpgradeable {
         gacPausable
         returns (uint256 citadelAmount_)
     {
-        require(_assetAmountIn > 0, "_assetAmountIn must not be 0");
+        require(_assetAmountIn != 0, "_assetAmountIn must not be 0");
         require(
             funding.assetCumulativeFunded.add(_assetAmountIn) <=
                 funding.assetCap,
@@ -180,9 +180,13 @@ contract Funding is GlobalAccessControlManaged, ReentrancyGuardUpgradeable {
 
         // Deposit xCitadel and send to user
         // TODO: Check gas costs. How does this relate to market buying if you do want to deposit to xCTDL?
-        uint256 xCitadelBeforeDeposit = xCitadel.balanceOf(msg.sender);
-        xCitadel.depositFor(msg.sender, citadelAmount_);
-        uint256 xCitadelAfterDeposit = xCitadel.balanceOf(msg.sender);
+        // 3 gas to store + 3 to read
+        // Saves 100 gas for each time we xCitadel
+        IVault cachedXCitadel = xCitadel;
+
+        uint256 xCitadelBeforeDeposit = cachedXCitadel.balanceOf(msg.sender);
+        cachedXCitadel.depositFor(msg.sender, citadelAmount_);
+        uint256 xCitadelAfterDeposit = cachedXCitadel.balanceOf(msg.sender);
         uint256 xCitadelGained = xCitadelAfterDeposit - xCitadelBeforeDeposit;
 
         emit Deposit(
@@ -300,7 +304,7 @@ contract Funding is GlobalAccessControlManaged, ReentrancyGuardUpgradeable {
         onlyRole(TREASURY_OPS_ROLE)
     {
         uint256 amount = IERC20(_token).balanceOf(address(this));
-        require(amount > 0, "nothing to sweep");
+        require(amount != 0, "nothing to sweep");
         require(
             _token != address(asset),
             "cannot sweep funding asset, use claimAssetToTreasury()"
@@ -318,7 +322,7 @@ contract Funding is GlobalAccessControlManaged, ReentrancyGuardUpgradeable {
         onlyRole(TREASURY_OPS_ROLE)
     {
         uint256 amount = asset.balanceOf(address(this));
-        require(amount > 0, "nothing to claim");
+        require(amount != 0, "nothing to claim");
         asset.safeTransfer(saleRecipient, amount);
 
         emit ClaimToTreasury(address(asset), amount);
@@ -396,7 +400,7 @@ contract Funding is GlobalAccessControlManaged, ReentrancyGuardUpgradeable {
         gacPausable
         onlyCitadelPriceInAssetOracle
     {
-        require(_citadelPriceInAsset > 0, "citadel price must not be zero");
+        require(_citadelPriceInAsset != 0, "citadel price must not be zero");
 
         if (
             _citadelPriceInAsset < minCitadelPriceInAsset ||

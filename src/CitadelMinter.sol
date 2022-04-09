@@ -248,9 +248,7 @@ contract CitadelMinter is
         // Remove existing pool on 0 weight
         if (_weight == 0 && poolExists) {
             fundingPoolWeights[_pool] = 0;
-            totalFundingPoolWeight =
-                totalFundingPoolWeight -
-                fundingPoolWeights[_pool];
+            //subtracting 0 doesn't change anything
             _removeFundingPool(_pool);
 
             emit FundingPoolWeightSet(_pool, _weight, totalFundingPoolWeight);
@@ -260,11 +258,8 @@ contract CitadelMinter is
             if (!poolExists) {
                 _addFundingPool(_pool);
             }
-            uint256 _newTotalWeight = totalFundingPoolWeight;
-            _newTotalWeight = _newTotalWeight - fundingPoolWeights[_pool];
-            fundingPoolWeights[_pool] = _weight;
-            _newTotalWeight = _newTotalWeight + _weight;
-            totalFundingPoolWeight = _newTotalWeight;
+            // can we just use the same variable `totalFundingPoolWeight` and emit the same?
+            uint256 _newTotalWeight = totalFundingPoolWeight - fundingPoolWeights[_pool] + _weight;
 
             emit FundingPoolWeightSet(_pool, _weight, _newTotalWeight);
         }
