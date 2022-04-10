@@ -2,7 +2,6 @@
 pragma solidity 0.8.12;
 
 import {IERC20Upgradeable} from "openzeppelin-contracts-upgradeable/token/ERC20/IERC20Upgradeable.sol";
-import {SafeMathUpgradeable} from "openzeppelin-contracts-upgradeable/utils/math/SafeMathUpgradeable.sol";
 import {AddressUpgradeable} from "openzeppelin-contracts-upgradeable/utils/AddressUpgradeable.sol";
 import {SafeERC20Upgradeable} from "openzeppelin-contracts-upgradeable/token/ERC20/utils/SafeERC20Upgradeable.sol";
 import {ERC20Upgradeable} from "openzeppelin-contracts-upgradeable/token/ERC20/ERC20Upgradeable.sol";
@@ -65,7 +64,6 @@ contract StakedCitadel is
 {
     using SafeERC20Upgradeable for IERC20Upgradeable;
     using AddressUpgradeable for address;
-    using SafeMathUpgradeable for uint256;
 
     uint256 constant ONE_ETH = 1e18;
 
@@ -287,20 +285,19 @@ contract StakedCitadel is
         if (totalSupply() == 0) {
             return ONE_ETH;
         }
-        return balance().mul(ONE_ETH).div(totalSupply());
+        return (balance() * ONE_ETH) / totalSupply();
     }
 
     /// @notice Gives the total balance of the underlying token within the sett and strategy system.
     /// @return Balance of token handled by the sett.
     function balance() public view returns (uint256) {
-        return
-            token.balanceOf(address(this));
+        return token.balanceOf(address(this));
     }
 
     /// @notice Defines how much of the Setts' underlying is available for strategy to borrow.
     /// @return Amount of tokens that the sett can provide to the strategy.
     function available() public view returns (uint256) {
-        return token.balanceOf(address(this)).mul(toEarnBps).div(MAX_BPS);
+        return (token.balanceOf(address(this)) * toEarnBps) / MAX_BPS;
     }
 
     /// ===== Public Actions =====
@@ -400,7 +397,7 @@ contract StakedCitadel is
         _onlyStrategy();
 
         uint256 harvestTime = block.timestamp;
-        uint256 assetsAtHarvest = balance().sub(_harvestedAmount); // Must be less than or equal or revert
+        uint256 assetsAtHarvest = balance() - _harvestedAmount; // Must be less than or equal or revert
 
         _handleFees(_harvestedAmount, harvestTime);
 
@@ -419,7 +416,7 @@ contract StakedCitadel is
             assetsAtLastHarvest = 0;
         }
 
-        lifeTimeEarned = lifeTimeEarned.add(_harvestedAmount);
+        lifeTimeEarned = lifeTimeEarned + _harvestedAmount;
         // Update time either way
         lastHarvestedAt = harvestTime;
 
@@ -446,9 +443,9 @@ contract StakedCitadel is
             address(this)
         );
 
-        additionalTokensEarned[_token] = additionalTokensEarned[_token].add(
-            tokenBalance
-        );
+        additionalTokensEarned[_token] =
+            additionalTokensEarned[_token] +
+            tokenBalance;
         lastAdditionalTokenAmount[_token] = tokenBalance;
 
         // We may have more, but we still report only what the strat sent
@@ -776,7 +773,7 @@ contract StakedCitadel is
         uint256 _before = token.balanceOf(address(this));
         token.safeTransferFrom(msg.sender, address(this), _amount);
         uint256 _after = token.balanceOf(address(this));
-        _mintSharesFor(_recipient, _after.sub(_before), _pool);
+        _mintSharesFor(_recipient, _after - _before, _pool);
     }
 
     /// @dev See `_depositWithAuthorization`
@@ -811,23 +808,23 @@ contract StakedCitadel is
     function _withdraw(uint256 _shares) internal nonReentrant {
         require(_shares != 0, "0 Shares");
 
-        uint256 r = (balance().mul(_shares)).div(totalSupply());
+        uint256 r = (balance() * _shares) / totalSupply();
         _burn(msg.sender, _shares);
 
         // Check balance
         uint256 b = token.balanceOf(address(this));
         if (b < r) {
-            uint256 _toWithdraw = r.sub(b);
+            uint256 _toWithdraw = r - b;
             IStrategy(strategy).withdraw(_toWithdraw);
             uint256 _after = token.balanceOf(address(this));
-            uint256 _diff = _after.sub(b);
+            uint256 _diff = _after - b;
             if (_diff < _toWithdraw) {
-                r = b.add(_diff);
+                r = b + _diff;
             }
         }
 
         uint256 _fee = _calculateFee(r, withdrawalFee);
-        uint256 _amount = r.sub(_fee);
+        uint256 _amount = r - _fee;
 
         // Send funds to vesting contract and setup vesting
         IVesting(vesting).setupVesting(msg.sender, _amount, block.timestamp);
@@ -835,7 +832,7 @@ contract StakedCitadel is
 
         // After you burned the shares, and you have sent the funds, adding here is equivalent to depositing
         // Process withdrawal fee
-        _mintSharesFor(treasury, _fee, balance().sub(_fee));
+        _mintSharesFor(treasury, _fee, balance() - _fee);
     }
 
     /// @dev Helper function to calculate fees.
@@ -850,7 +847,7 @@ contract StakedCitadel is
         if (feeBps == 0) {
             return 0;
         }
-        uint256 fee = amount.mul(feeBps).div(MAX_BPS);
+        uint256 fee = (amount * feeBps) / MAX_BPS;
         return fee;
     }
 
@@ -888,7 +885,7 @@ contract StakedCitadel is
         if (totalSupply() == 0) {
             shares = _amount;
         } else {
-            shares = (_amount.mul(totalSupply())).div(_pool);
+            shares = (_amount * totalSupply()) / _pool;
         }
         _mint(recipient, shares);
     }
@@ -903,22 +900,22 @@ contract StakedCitadel is
             uint256 feeGovernance,
             uint256 feeStrategist
         ) = _calculatePerformanceFee(_harvestedAmount);
-        uint256 duration = harvestTime.sub(lastHarvestedAt);
+        uint256 duration = harvestTime - lastHarvestedAt;
 
         // Management fee is calculated against the assets before harvest, to make it fair to depositors
         uint256 management_fee = managementFee > 0
-            ? managementFee
-                .mul(balance().sub(_harvestedAmount))
-                .mul(duration)
-                .div(SECS_PER_YEAR)
-                .div(MAX_BPS)
+            ? managementFee *
+                balance() -
+                (_harvestedAmount * duration) /
+                SECS_PER_YEAR /
+                MAX_BPS
             : 0;
-        uint256 totalGovernanceFee = feeGovernance.add(management_fee);
+        uint256 totalGovernanceFee = feeGovernance + management_fee;
 
         // Pool size is the size of the pool minus the fees, this way
         // it's equivalent to sending the tokens as rewards after the harvest
         // and depositing them again
-        uint256 _pool = balance().sub(totalGovernanceFee).sub(feeStrategist);
+        uint256 _pool = balance() - totalGovernanceFee - feeStrategist;
 
         // uint != is cheaper and equivalent to >
         if (totalGovernanceFee != 0) {
@@ -930,7 +927,7 @@ contract StakedCitadel is
             _mintSharesFor(
                 strategist,
                 feeStrategist,
-                _pool.add(totalGovernanceFee)
+                _pool + totalGovernanceFee
             );
         }
     }
