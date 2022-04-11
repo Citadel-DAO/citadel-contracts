@@ -177,6 +177,8 @@ contract Funding is GlobalAccessControlManaged, ReentrancyGuardUpgradeable {
         // Take in asset from user
         citadelAmount_ = getAmountOut(_assetAmountIn);
         require(citadelAmount_ >= _minCitadelOut, "minCitadelOut");
+
+        asset.safeTransferFrom(msg.sender, saleRecipient, _assetAmountIn);
         
         // Deposit xCitadel and send to user
         // TODO: Check gas costs. How does this relate to market buying if you do want to deposit to xCTDL?
@@ -184,8 +186,6 @@ contract Funding is GlobalAccessControlManaged, ReentrancyGuardUpgradeable {
         xCitadel.depositFor(msg.sender, citadelAmount_);
         uint256 xCitadelAfterDeposit = xCitadel.balanceOf(msg.sender);
         uint256 xCitadelGained = xCitadelAfterDeposit - xCitadelBeforeDeposit;
-
-        asset.safeTransferFrom(msg.sender, saleRecipient, _assetAmountIn);
 
         emit Deposit(
             msg.sender,
