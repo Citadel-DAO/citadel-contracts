@@ -23,7 +23,7 @@ contract Funding is GlobalAccessControlManaged, ReentrancyGuardUpgradeable {
         keccak256("CONTRACT_GOVERNANCE_ROLE");
     bytes32 public constant POLICY_OPERATIONS_ROLE =
         keccak256("POLICY_OPERATIONS_ROLE");
-    bytes32 public constant TREASURY_OPS_ROLE = keccak256("TREASURY_OPS_ROLE");
+    bytes32 public constant TREASURY_OPERATIONS_ROLE = keccak256("TREASURY_OPERATIONS_ROLE");
     bytes32 public constant TREASURY_VAULT_ROLE =
         keccak256("TREASURY_VAULT_ROLE");
     bytes32 public constant KEEPER_ROLE = keccak256("KEEPER_ROLE");
@@ -172,7 +172,7 @@ contract Funding is GlobalAccessControlManaged, ReentrancyGuardUpgradeable {
                 funding.assetCap,
             "asset funding cap exceeded"
         );
-
+        funding.assetCumulativeFunded = funding.assetCumulativeFunded.add(_assetAmountIn);
         // Take in asset from user
         citadelAmount_ = getAmountOut(_assetAmountIn);
         require(citadelAmount_ >= _minCitadelOut, "minCitadelOut");
@@ -297,7 +297,7 @@ contract Funding is GlobalAccessControlManaged, ReentrancyGuardUpgradeable {
     function sweep(address _token)
         external
         gacPausable
-        onlyRole(TREASURY_OPS_ROLE)
+        onlyRole(TREASURY_OPERATIONS_ROLE)
     {
         uint256 amount = IERC20(_token).balanceOf(address(this));
         require(amount > 0, "nothing to sweep");
@@ -315,7 +315,7 @@ contract Funding is GlobalAccessControlManaged, ReentrancyGuardUpgradeable {
     function claimAssetToTreasury()
         external
         gacPausable
-        onlyRole(TREASURY_OPS_ROLE)
+        onlyRole(TREASURY_OPERATIONS_ROLE)
     {
         uint256 amount = asset.balanceOf(address(this));
         require(amount > 0, "nothing to claim");
