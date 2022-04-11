@@ -94,9 +94,7 @@ contract FundingTest is BaseFixture {
 
     }
 
-    function testAccessControl() public{
-        // tests to check access controls of various set functions
-
+    function testSetAssetCap() public{
         vm.prank(address(1));
         vm.expectRevert("GAC: invalid-caller-role");
         fundingCvx.setAssetCap(10e18);
@@ -107,6 +105,46 @@ contract FundingTest is BaseFixture {
         (,,,,,uint256 assetCap) = fundingCvx.funding();
         assertEq(assetCap, 1000e18); // check if assetCap is set
 
+        // checking assetCap can not be less than accumulated funds.
+         _testDiscountRateBuys(fundingCvx, cvx, 100e18, 3000, 100e18 );
+        vm.prank(policyOps);
+        vm.expectRevert("cannot decrease cap below global sum of assets in");
+        fundingCvx.setAssetCap(10e18);
+    }
+
+    function testFailClaimAssetToTreasury() public{
+
+        vm.prank(address(1));
+        vm.expectRevert("GAC: invalid-caller-role");
+        fundingCvx.claimAssetToTreasury();
+
+        uint256 amount = cvx.balanceOf(address(fundingCvx));
+        uint256 balanceBefore = cvx.balanceOf(fundingCvx.saleRecipient());
+
+        vm.prank(treasuryOps);
+        fundingCvx.claimAssetToTreasury();
+
+        uint256 balanceAfter = cvx.balanceOf(fundingCvx.saleRecipient());
+
+        // check the difference of saleRecipient's balance is equal to the amount
+        assertEq(amount, balanceAfter-balanceBefore);
+
+    }
+
+    function testSweep() public {
+        
+        vm.prank(address(1));
+        vm.expectRevert("GAC: invalid-caller-role");
+        fundingCvx.sweep(address(cvx));
+
+        vm.prank(treasuryOps);
+        vm.expectRevert("cannot sweep funding asset, use claimAssetToTreasury()");
+        fundingCvx.sweep(address(cvx));
+
+    }
+    function testAccessControl() public{
+        // tests to check access controls of various set functions
+        
         vm.prank(address(1));
         vm.expectRevert("GAC: invalid-caller-role");
         fundingCvx.setDiscountManager(address(2));
@@ -144,6 +182,25 @@ contract FundingTest is BaseFixture {
         fundingCvx.setSaleRecipient(address(0));
     }
     
+    function testDepositModifiers() public{
+        // pausing should freeze deposit
+        vm.prank(guardian);
+        gac.pause();
+        vm.expectRevert(bytes("global-paused"));
+        fundingCvx.deposit(10e18 , 0);
+        vm.prank(address(techOps));
+        gac.unpause();
+
+        // flagging citadelPriceFlag should freeze deposit
+        vm.prank(governance);
+        fundingCvx.setCitadelAssetPriceBounds(0, 5000);
+        vm.prank(eoaOracle);
+        fundingCvx.updateCitadelPriceInAsset(6000);
+        vm.expectRevert(bytes("Funding: citadel price from oracle flagged and pending review"));
+        fundingCvx.deposit(10e18 , 0);
+
+    }
+
     function _testDiscountRateBuys(Funding fundingContract, IERC20 token, uint256 _assetAmountIn, uint32 discount, uint256 citadelPrice) public {
         
         /**
@@ -177,27 +234,8 @@ contract FundingTest is BaseFixture {
         // check citadelAmoutOut is same as expected
         assertEq(citadelAmountOut , citadelAmountOutExpected);
 
-        // pausing should freeze deposit
-        vm.prank(guardian);
-        gac.pause();
-        vm.expectRevert(bytes("global-paused"));
-        fundingContract.deposit(_assetAmountIn , 0);
-        vm.prank(address(techOps));
-        gac.unpause();
-
-
-        // flagging citadelPriceFlag should freeze deposit
-        vm.prank(governance);
-        fundingContract.setCitadelAssetPriceBounds(0, 5000);
-        vm.prank(eoaOracle);
-        fundingContract.updateCitadelPriceInAsset(6000);
-        vm.expectRevert(bytes("Funding: citadel price from oracle flagged and pending review"));
-        fundingContract.deposit(_assetAmountIn , 0);
-
     }
-
     
-
     function _testBuy(Funding fundingContract, uint assetIn, uint citadelPrice) internal {
         // just make citadel appear rather than going through minting flow here
         erc20utils.forceMintTo(address(fundingContract), address(citadel), 100000e18);
