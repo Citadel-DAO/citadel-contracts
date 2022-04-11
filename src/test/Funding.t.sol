@@ -133,12 +133,13 @@ contract FundingTest is BaseFixture {
 
     function testSweep() public {
         
+        vm.stopPrank();
         vm.prank(address(1));
         vm.expectRevert("GAC: invalid-caller-role");
         fundingCvx.sweep(address(cvx));
 
         vm.prank(treasuryOps);
-        vm.expectRevert("cannot sweep funding asset, use claimAssetToTreasury()");
+        vm.expectRevert("nothing to sweep");
         fundingCvx.sweep(address(cvx));
 
     }
