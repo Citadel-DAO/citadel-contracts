@@ -109,7 +109,7 @@ contract SupplySchedule is GlobalAccessControlManaged, DSTest {
         uint256 endingEpoch = (block.timestamp - cachedGlobalStartTimestamp) /
             epochLength;
 
-        for (uint256 i = startingEpoch; i <= endingEpoch; i++) {
+        for (uint256 i = startingEpoch; i <= endingEpoch; /** See below ++i */) {
             uint256 rate = epochRate[i];
 
             uint256 epochStartTime = cachedGlobalStartTimestamp + i * epochLength;
@@ -119,6 +119,8 @@ contract SupplySchedule is GlobalAccessControlManaged, DSTest {
                 MathUpgradeable.max(lastMintTimestamp, epochStartTime);
 
             mintable += rate * time;
+
+            unchecked { ++i; }
         }
 
         return mintable;
