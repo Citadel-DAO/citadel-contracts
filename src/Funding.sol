@@ -132,14 +132,15 @@ contract Funding is GlobalAccessControlManaged, ReentrancyGuardUpgradeable {
 
         funding = FundingParams(0, 0, 0, address(0), 0, _assetCap);
 
-        // Allow to deposit in vault
-        citadel.approve(address(xCitadel), type(uint256).max);
-
         assetDecimalsNormalizationValue = 10**asset.decimals();
 
         // No circuit breaker on price by default
         minCitadelPriceInAsset = 0;
         maxCitadelPriceInAsset = type(uint256).max;
+
+        // Allow to deposit in vault
+        // Done last for reEntrancy concerns
+        IERC20(_citadel).safeApprove(address(_xCitadel), type(uint256).max);
     }
 
     modifier onlyWhenPriceNotFlagged() {
