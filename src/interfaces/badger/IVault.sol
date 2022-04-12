@@ -37,5 +37,5 @@ interface IVault is IERC20 {
     function depositFor(address _recipient, uint256 _amount) external;
 
     // View
-    function getPricePerFullShare() external returns (uint256);
+    function getPricePerFullShare() external view returns (uint256);
 }

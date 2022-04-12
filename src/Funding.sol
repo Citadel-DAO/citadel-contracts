@@ -171,7 +171,7 @@ contract Funding is GlobalAccessControlManaged, ReentrancyGuardUpgradeable {
             funding.assetCumulativeFunded + _assetAmountIn <= funding.assetCap,
             "asset funding cap exceeded"
         );
-        funding.assetCumulativeFunded = funding.assetCumulativeFunded.add(_assetAmountIn);
+        funding.assetCumulativeFunded = funding.assetCumulativeFunded + _assetAmountIn;
         // Take in asset from user
         citadelAmount_ = getAmountOut(_assetAmountIn);
         require(citadelAmount_ >= _minCitadelOut, "minCitadelOut");
