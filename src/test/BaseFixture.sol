@@ -385,6 +385,7 @@ contract BaseFixture is DSTest, Utils {
             address(xCitadel),
             abi.encodeWithSignature("getPricePerFullShare()")
         );
+
     }
 
     // @dev simple simulation of knighting round, in order to advance next stages in a 'realistic' manner
