@@ -904,9 +904,7 @@ contract StakedCitadel is
 
         // Management fee is calculated against the assets before harvest, to make it fair to depositors
         uint256 management_fee = managementFee > 0
-            ? managementFee *
-                balance() -
-                (_harvestedAmount * duration) /
+            ? (managementFee * (balance() - _harvestedAmount) * duration) /
                 SECS_PER_YEAR /
                 MAX_BPS
             : 0;
