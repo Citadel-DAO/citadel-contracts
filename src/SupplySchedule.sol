@@ -23,7 +23,7 @@ contract SupplySchedule is GlobalAccessControlManaged, DSTest {
     bytes32 public constant CONTRACT_GOVERNANCE_ROLE =
         keccak256("CONTRACT_GOVERNANCE_ROLE");
 
-    uint256 public epochLength = 7 days;
+    uint256 public constant epochLength = 21 days;
     uint256 public globalStartTimestamp;
 
     /// epoch index * epoch length = start time
