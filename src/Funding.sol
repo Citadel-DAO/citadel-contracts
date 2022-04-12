@@ -117,7 +117,11 @@ contract Funding is GlobalAccessControlManaged, ReentrancyGuardUpgradeable {
     ) external initializer {
         require(
             _saleRecipient != address(0),
-            "Funding: sale recipient should not be zero"
+            "Funding: 0 sale"
+        );
+        require(
+            _citadelPriceInAssetOracle != address(0),
+            "Funding: 0 oracle"
         );
 
         __GlobalAccessControlManaged_init(_gac);
