@@ -13,7 +13,6 @@ import {GlobalAccessControl} from "../GlobalAccessControl.sol";
 import {CitadelToken} from "../CitadelToken.sol";
 import {StakedCitadel} from "../StakedCitadel.sol";
 import {StakedCitadelVester} from "../StakedCitadelVester.sol";
-import {StakedCitadelLocker} from "../StakedCitadelLocker.sol";
 
 import {SupplySchedule} from "../SupplySchedule.sol";
 import {CitadelMinter} from "../CitadelMinter.sol";
@@ -23,8 +22,11 @@ import {Funding} from "../Funding.sol";
 
 import "../interfaces/erc20/IERC20.sol";
 import "../interfaces/badger/IEmptyStrategy.sol";
+import "../interfaces/citadel/IStakedCitadelLocker.sol";
 
-contract BaseFixture is DSTest, Utils {
+string constant lockerArtifact = "artifacts/StakedCitadelLocker.json";
+
+contract BaseFixture is DSTest, Utils, stdCheats {
     Vm constant vm = Vm(HEVM_ADDRESS);
     ERC20Utils immutable erc20utils = new ERC20Utils();
     SnapshotComparator comparator;
@@ -88,7 +90,7 @@ contract BaseFixture is DSTest, Utils {
     CitadelToken citadel = new CitadelToken();
     StakedCitadel xCitadel = new StakedCitadel();
     StakedCitadelVester xCitadelVester = new StakedCitadelVester();
-    StakedCitadelLocker xCitadelLocker = new StakedCitadelLocker();
+    IStakedCitadelLocker xCitadelLocker = IStakedCitadelLocker(deployCode(lockerArtifact));
 
     SupplySchedule schedule = new SupplySchedule();
     CitadelMinter citadelMinter = new CitadelMinter();
@@ -173,13 +175,13 @@ contract BaseFixture is DSTest, Utils {
             address(citadel),
             address(xCitadel)
         );
-
         xCitadelLocker.initialize(
             address(xCitadel),
             "Vote Locked xCitadel",
             "vlCTDL"
         );
-        xCitadelLocker.addReward(address(xCitadel), address(citadelMinter));
+
+        xCitadelLocker.addReward(address(xCitadel), address(citadelMinter), false);
 
         schedule.initialize(address(gac));
         citadelMinter.initialize(
