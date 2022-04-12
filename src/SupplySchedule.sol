@@ -23,7 +23,7 @@ contract SupplySchedule is GlobalAccessControlManaged, DSTest {
     bytes32 public constant CONTRACT_GOVERNANCE_ROLE =
         keccak256("CONTRACT_GOVERNANCE_ROLE");
 
-    uint256 public epochLength = 7 days;
+    uint256 public constant epochLength = 21 days;
     uint256 public globalStartTimestamp;
 
     /// epoch index * epoch length = start time
@@ -87,8 +87,9 @@ contract SupplySchedule is GlobalAccessControlManaged, DSTest {
         view
         returns (uint256)
     {
+        uint256 cachedGlobalStartTimestamp = globalStartTimestamp;
         require(
-            globalStartTimestamp > 0,
+            cachedGlobalStartTimestamp > 0,
             "SupplySchedule: minting not started"
         );
         require(
@@ -96,28 +97,30 @@ contract SupplySchedule is GlobalAccessControlManaged, DSTest {
             "SupplySchedule: already minted up to current block"
         );
 
-        if (lastMintTimestamp < globalStartTimestamp) {
-            lastMintTimestamp = globalStartTimestamp;
+        if (lastMintTimestamp < cachedGlobalStartTimestamp) {
+            lastMintTimestamp = cachedGlobalStartTimestamp;
         }
 
         uint256 mintable = 0;
 
-        uint256 startingEpoch = (lastMintTimestamp - globalStartTimestamp) /
+        uint256 startingEpoch = (lastMintTimestamp - cachedGlobalStartTimestamp) /
             epochLength;
 
-        uint256 endingEpoch = (block.timestamp - globalStartTimestamp) /
+        uint256 endingEpoch = (block.timestamp - cachedGlobalStartTimestamp) /
             epochLength;
 
-        for (uint256 i = startingEpoch; i <= endingEpoch; i++) {
+        for (uint256 i = startingEpoch; i <= endingEpoch; /** See below ++i */) {
             uint256 rate = epochRate[i];
 
-            uint256 epochStartTime = globalStartTimestamp + i * epochLength;
-            uint256 epochEndTime = globalStartTimestamp + (i + 1) * epochLength;
+            uint256 epochStartTime = cachedGlobalStartTimestamp + i * epochLength;
+            uint256 epochEndTime = cachedGlobalStartTimestamp + (i + 1) * epochLength;
 
             uint256 time = MathUpgradeable.min(block.timestamp, epochEndTime) -
                 MathUpgradeable.max(lastMintTimestamp, epochStartTime);
 
             mintable += rate * time;
+
+            unchecked { ++i; }
         }
 
         return mintable;
