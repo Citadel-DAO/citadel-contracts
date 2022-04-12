@@ -431,9 +431,4 @@ contract Funding is GlobalAccessControlManaged, ReentrancyGuardUpgradeable {
             emit CitadelPriceInAssetUpdated(_citadelPriceInAsset);
         }
     }
-
-    /**
-     * @notice Update the `asset` receipient address. Can only be called by owner
-     * @param _saleRecipient New recipient address
-     */
 }
