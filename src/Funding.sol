@@ -228,10 +228,18 @@ contract Funding is GlobalAccessControlManaged, ReentrancyGuardUpgradeable {
         }
     }
 
+    /**
+     * @notice Get all funding params
+     * @return funding all funding params
+     */
     function getFundingParams() external view returns (FundingParams memory) {
         return funding;
     }
 
+    /**
+     * @notice Convenience function to get current discount rate
+     * @return discount current discount rate
+     */
     function getDiscount() external view returns (uint256) {
         return funding.discount;
     }
