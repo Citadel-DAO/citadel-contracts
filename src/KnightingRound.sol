@@ -3,7 +3,6 @@ pragma solidity 0.8.12;
 
 import {ERC20Upgradeable} from "openzeppelin-contracts-upgradeable/token/ERC20/ERC20Upgradeable.sol";
 import {SafeERC20Upgradeable} from "openzeppelin-contracts-upgradeable/token/ERC20/utils/SafeERC20Upgradeable.sol";
-import {SafeMathUpgradeable} from "openzeppelin-contracts-upgradeable/utils/math/SafeMathUpgradeable.sol";
 
 import "./interfaces/badger/IBadgerVipGuestlist.sol";
 import "./lib/GlobalAccessControlManaged.sol";
@@ -14,7 +13,6 @@ import "./lib/GlobalAccessControlManaged.sol";
  * TODO: Better revert strings
  */
 contract KnightingRound is GlobalAccessControlManaged {
-    using SafeMathUpgradeable for uint256;
     using SafeERC20Upgradeable for ERC20Upgradeable;
 
     bytes32 public constant CONTRACT_GOVERNANCE_ROLE =
@@ -172,7 +170,7 @@ contract KnightingRound is GlobalAccessControlManaged {
         );
         require(_tokenInAmount > 0, "_tokenInAmount should be > 0");
         require(
-            totalTokenIn.add(_tokenInAmount) <= tokenInLimit,
+            totalTokenIn + _tokenInAmount <= tokenInLimit,
             "total amount exceeded"
         );
 
@@ -193,11 +191,11 @@ contract KnightingRound is GlobalAccessControlManaged {
 
         tokenOutAmount_ = getAmountOut(_tokenInAmount);
 
-        boughtAmounts[msg.sender] = boughtAmountTillNow.add(tokenOutAmount_);
-        daoCommitments[_daoId] = daoCommitments[_daoId].add(tokenOutAmount_);
+        boughtAmounts[msg.sender] = boughtAmountTillNow + tokenOutAmount_;
+        daoCommitments[_daoId] = daoCommitments[_daoId] + tokenOutAmount_;
 
-        totalTokenIn = totalTokenIn.add(_tokenInAmount);
-        totalTokenOutBought = totalTokenOutBought.add(tokenOutAmount_);
+        totalTokenIn = totalTokenIn + _tokenInAmount;
+        totalTokenOutBought = totalTokenOutBought + tokenOutAmount_;
 
         tokenIn.safeTransferFrom(msg.sender, saleRecipient, _tokenInAmount);
 
@@ -216,7 +214,7 @@ contract KnightingRound is GlobalAccessControlManaged {
         require(tokenOutAmount_ > 0, "nothing to claim");
 
         hasClaimed[msg.sender] = true;
-        totalTokenOutClaimed = totalTokenOutClaimed.add(tokenOutAmount_);
+        totalTokenOutClaimed = totalTokenOutClaimed + tokenOutAmount_;
 
         tokenOut.safeTransfer(msg.sender, tokenOutAmount_);
 
@@ -248,7 +246,7 @@ contract KnightingRound is GlobalAccessControlManaged {
      */
     function getTokenInLimitLeft() external view returns (uint256 limitLeft_) {
         if (totalTokenIn < tokenInLimit) {
-            limitLeft_ = tokenInLimit.sub(totalTokenIn);
+            limitLeft_ = tokenInLimit - totalTokenIn;
         }
     }
 
@@ -404,10 +402,9 @@ contract KnightingRound is GlobalAccessControlManaged {
         uint256 amount = ERC20Upgradeable(_token).balanceOf(address(this));
 
         if (_token == address(tokenOut)) {
-            uint256 amountLeftToBeClaimed = totalTokenOutBought.sub(
-                totalTokenOutClaimed
-            );
-            amount = amount.sub(amountLeftToBeClaimed);
+            uint256 amountLeftToBeClaimed = totalTokenOutBought -
+                totalTokenOutClaimed;
+            amount = amount - amountLeftToBeClaimed;
         }
 
         require(amount > 0, "nothing to sweep");

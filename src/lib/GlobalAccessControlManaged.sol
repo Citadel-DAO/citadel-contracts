@@ -68,8 +68,8 @@ contract GlobalAccessControlManaged is PausableUpgradeable {
 
     /// @dev can be pausable by GAC or local flag
     modifier gacPausable() {
-        require(gac.paused() == false, "global-paused");
-        require(paused() == false, "local-paused");
+        require(!gac.paused(), "global-paused");
+        require(!paused(), "local-paused");
         _;
     }
 

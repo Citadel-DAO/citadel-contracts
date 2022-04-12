@@ -1,7 +1,6 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.12;
 
-import {SafeMathUpgradeable} from "openzeppelin-contracts-upgradeable/utils/math/SafeMathUpgradeable.sol";
 import {SafeERC20Upgradeable} from "openzeppelin-contracts-upgradeable/token/ERC20/utils/SafeERC20Upgradeable.sol";
 import {ReentrancyGuardUpgradeable} from "openzeppelin-contracts-upgradeable/security/ReentrancyGuardUpgradeable.sol";
 
@@ -15,7 +14,6 @@ import "./lib/SafeERC20.sol";
  * TODO: Better revert strings
  */
 contract Funding is GlobalAccessControlManaged, ReentrancyGuardUpgradeable {
-    using SafeMathUpgradeable for uint256;
     using SafeERC20 for IERC20;
 
     // Roles used from GAC
@@ -38,9 +36,6 @@ contract Funding is GlobalAccessControlManaged, ReentrancyGuardUpgradeable {
     uint256 public minCitadelPriceInAsset; /// Lower bound on expected citadel price in asset terms. Used as circuit breaker oracle.
     uint256 public maxCitadelPriceInAsset; /// Upper bound on expected citadel price in asset terms. Used as circuit breaker oracle.
     bool public citadelPriceFlag; /// Flag citadel price for review by guardian if it exceeds min and max bounds;
-
-    // TODO: This will be calculated LIVE from cached ppfs
-    uint256 public xCitadelPriceInAsset; /// citadel price modified by xCitadel pricePerShare
 
     uint256 public assetDecimalsNormalizationValue;
 
@@ -116,7 +111,11 @@ contract Funding is GlobalAccessControlManaged, ReentrancyGuardUpgradeable {
     ) external initializer {
         require(
             _saleRecipient != address(0),
-            "Funding: sale recipient should not be zero"
+            "Funding: 0 sale"
+        );
+        require(
+            _citadelPriceInAssetOracle != address(0),
+            "Funding: 0 oracle"
         );
 
         __GlobalAccessControlManaged_init(_gac);
@@ -131,14 +130,15 @@ contract Funding is GlobalAccessControlManaged, ReentrancyGuardUpgradeable {
 
         funding = FundingParams(0, 0, 0, address(0), 0, _assetCap);
 
-        // Allow to deposit in vault
-        citadel.approve(address(xCitadel), type(uint256).max);
-
         assetDecimalsNormalizationValue = 10**asset.decimals();
 
         // No circuit breaker on price by default
         minCitadelPriceInAsset = 0;
         maxCitadelPriceInAsset = type(uint256).max;
+
+        // Allow to deposit in vault
+        // Done last for reEntrancy concerns
+        IERC20(_citadel).safeApprove(address(_xCitadel), type(uint256).max);
     }
 
     modifier onlyWhenPriceNotFlagged() {
@@ -168,11 +168,10 @@ contract Funding is GlobalAccessControlManaged, ReentrancyGuardUpgradeable {
     {
         require(_assetAmountIn > 0, "_assetAmountIn must not be 0");
         require(
-            funding.assetCumulativeFunded.add(_assetAmountIn) <=
-                funding.assetCap,
+            funding.assetCumulativeFunded + _assetAmountIn <= funding.assetCap,
             "asset funding cap exceeded"
         );
-        funding.assetCumulativeFunded = funding.assetCumulativeFunded.add(_assetAmountIn);
+        funding.assetCumulativeFunded = funding.assetCumulativeFunded + _assetAmountIn;
         // Take in asset from user
         citadelAmount_ = getAmountOut(_assetAmountIn);
         require(citadelAmount_ >= _minCitadelOut, "minCitadelOut");
@@ -204,16 +203,25 @@ contract Funding is GlobalAccessControlManaged, ReentrancyGuardUpgradeable {
         view
         returns (uint256 citadelAmount_)
     {
-        uint256 citadelAmountWithoutDiscount = (_assetAmountIn *
-            citadelPriceInAsset) / assetDecimalsNormalizationValue;
+        uint256 citadelAmountWithoutDiscount = _assetAmountIn * citadelPriceInAsset;
 
         if (funding.discount > 0) {
             citadelAmount_ =
                 (citadelAmountWithoutDiscount * MAX_BPS) /
                 (MAX_BPS - funding.discount);
-        } else {
-            citadelAmount_ = citadelAmountWithoutDiscount;
         }
+
+        citadelAmount_ = citadelAmount_ / assetDecimalsNormalizationValue;
+    }
+
+    /**
+     * @notice Get the amount received when exchanging `asset`, in terms of xCitadel at current price per share
+     * @param _assetAmountIn Amount of `asset` to exchange
+     * @return xCitadelAmount_ Amount of `xCitadel` received at current price per share
+     */
+    function getStakedCitadelAmountOut(uint256 _assetAmountIn) public view returns (uint256 xCitadelAmount_) {
+        uint citadelAmount = getAmountOut(_assetAmountIn);
+        xCitadelAmount_ = citadelAmount * 10**citadel.decimals() / xCitadel.getPricePerFullShare();
     }
 
     /**
@@ -224,14 +232,22 @@ contract Funding is GlobalAccessControlManaged, ReentrancyGuardUpgradeable {
         uint256 assetCumulativeFunded = funding.assetCumulativeFunded;
         uint256 assetCap = funding.assetCap;
         if (assetCumulativeFunded < assetCap) {
-            limitLeft_ = assetCap.sub(assetCumulativeFunded);
+            limitLeft_ = assetCap - assetCumulativeFunded;
         }
     }
 
+    /**
+     * @notice Get all funding params
+     * @return funding all funding params
+     */
     function getFundingParams() external view returns (FundingParams memory) {
         return funding;
     }
 
+    /**
+     * @notice Convenience function to get current discount rate
+     * @return discount current discount rate
+     */
     function getDiscount() external view returns (uint256) {
         return funding.discount;
     }
