@@ -217,6 +217,16 @@ contract Funding is GlobalAccessControlManaged, ReentrancyGuardUpgradeable {
     }
 
     /**
+     * @notice Get the amount received when exchanging `asset`, in terms of xCitadel at current price per share
+     * @param _assetAmountIn Amount of `asset` to exchange
+     * @return xCitadelAmount_ Amount of `xCitadel` received at current price per share
+     */
+    function getStakedCitadelAmountOut(uint256 _assetAmountIn) public view returns (uint256 xCitadelAmount_) {
+        uint citadelAmount = getAmountOut(_assetAmountIn);
+        xCitadelAmount_ = citadelAmount * 10**citadel.decimals() / xCitadel.getPricePerFullShare();
+    }
+
+    /**
      * @notice Check how much `asset` can still be taken in, based on cap and cumulative amount funded
      * @return limitLeft_ Amount of `asset` that can still be exchanged for citadel
      */
