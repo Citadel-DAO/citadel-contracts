@@ -5,8 +5,10 @@ import {BaseFixture} from "./BaseFixture.sol";
 import {SupplySchedule} from "../SupplySchedule.sol";
 import {GlobalAccessControl} from "../GlobalAccessControl.sol";
 import {Funding} from "../Funding.sol";
-
 import {FixedPointMathLib} from "solmate/utils/FixedPointMathLib.sol";
+
+import "../interfaces/erc20/IERC20.sol";
+
 contract FundingTest is BaseFixture {
     using FixedPointMathLib for uint;
 
@@ -58,13 +60,18 @@ contract FundingTest is BaseFixture {
         assertEq(minDiscount,0);
         assertEq(maxDiscount, 50);
 
+        // check discount can not be greater than or equal to MAX_BPS
+        vm.prank(address(governance));
+        vm.expectRevert(bytes("maxDiscount >= MAX_BPS"));
+        fundingCvx.setDiscountLimits(0, 10000);
+
         // calling with wrong address
         vm.prank(address(1));
         vm.expectRevert(bytes("GAC: invalid-caller-role"));
         fundingCvx.setDiscountLimits(0,20);
 
         // - pausing freezes these functions appropriately
-        vm.prank(address(guardian));
+        vm.prank(guardian);
         gac.pause();
         vm.prank(address(governance));
         vm.expectRevert(bytes("global-paused"));
@@ -75,26 +82,161 @@ contract FundingTest is BaseFixture {
 
     }
 
-    
-    function testDiscountRateBuys() public {
-        assertTrue(true);
-        /**
-            @fatima: this is a good candidate to generalize using fuzzing: test buys with various discount rates, using fuzzing, and confirm the results.
-            sanity check the numerical results (tokens in vs tokens out, based on price and discount rate)
-        */ 
-    }
+    function testDiscountRateBuys() public{
+        _testDiscountRateBuys(fundingCvx, cvx, 100e18, 5000, 100e18 );
 
-    function testBuy() public {
-        _testBuy(fundingCvx, 100e18, 100e18);
     }
 
     function testBuyDifferentDecimals() public {
         // wBTC is an 8 decimal example
         // TODO: Fix comparator calls in inner function as per that functions comment
-        // _testBuy(fundingWbtc, 2e8, 2e8);
-        assertTrue(true);
+        _testDiscountRateBuys(fundingWbtc, wbtc, 2e8, 2000, 2e8 );
+
     }
 
+    function testSetAssetCap() public{
+        vm.prank(address(1));
+        vm.expectRevert("GAC: invalid-caller-role");
+        fundingCvx.setAssetCap(10e18);
+
+        // setting asset cap from correct account
+        vm.prank(policyOps);
+        fundingCvx.setAssetCap(1000e18);
+        (,,,,,uint256 assetCap) = fundingCvx.funding();
+        assertEq(assetCap, 1000e18); // check if assetCap is set
+
+        // checking assetCap can not be less than accumulated funds.
+         _testDiscountRateBuys(fundingCvx, cvx, 100e18, 3000, 100e18 );
+        vm.prank(policyOps);
+        vm.expectRevert("cannot decrease cap below global sum of assets in");
+        fundingCvx.setAssetCap(10e18);
+    }
+
+    function testFailClaimAssetToTreasury() public{
+
+        vm.prank(address(1));
+        vm.expectRevert("GAC: invalid-caller-role");
+        fundingCvx.claimAssetToTreasury();
+
+        uint256 amount = cvx.balanceOf(address(fundingCvx));
+        uint256 balanceBefore = cvx.balanceOf(fundingCvx.saleRecipient());
+
+        vm.prank(treasuryOps);
+        fundingCvx.claimAssetToTreasury();
+
+        uint256 balanceAfter = cvx.balanceOf(fundingCvx.saleRecipient());
+
+        // check the difference of saleRecipient's balance is equal to the amount
+        assertEq(amount, balanceAfter-balanceBefore);
+
+    }
+
+    function testSweep() public {
+        
+        vm.stopPrank();
+        vm.prank(address(1));
+        vm.expectRevert("GAC: invalid-caller-role");
+        fundingCvx.sweep(address(cvx));
+
+        vm.prank(treasuryOps);
+        vm.expectRevert("nothing to sweep");
+        fundingCvx.sweep(address(cvx));
+
+    }
+    function testAccessControl() public{
+        // tests to check access controls of various set functions
+        
+        vm.prank(address(1));
+        vm.expectRevert("GAC: invalid-caller-role");
+        fundingCvx.setDiscountManager(address(2));
+
+        // setting discountManager from correct account
+        vm.prank(governance);
+        fundingCvx.setDiscountManager(address(2));
+        (,,,address discountManager,,) = fundingCvx.funding();
+        assertEq(discountManager, address(2)); // check if discountManager is set
+
+        vm.prank(address(1));
+        vm.expectRevert("onlyCitadelPriceInAssetOracle");
+        fundingCvx.updateCitadelPriceInAsset(1000);
+
+        // setting citadelPriceInAsset from correct account
+        vm.prank(eoaOracle);
+        fundingCvx.updateCitadelPriceInAsset(1000);
+        assertEq(fundingCvx.citadelPriceInAsset(), 1000); // check if citadelPriceInAsset is set
+        
+        vm.prank(eoaOracle);
+        vm.expectRevert("citadel price must not be zero");
+        fundingCvx.updateCitadelPriceInAsset(0);
+
+        vm.prank(address(1));
+        vm.expectRevert("GAC: invalid-caller-role");
+        fundingCvx.setSaleRecipient(address(2));
+
+        // setting setSaleRecipient from correct account
+        vm.prank(governance);
+        fundingCvx.setSaleRecipient(address(2));
+        assertEq(fundingCvx.saleRecipient(), address(2)); // check if SaleRecipient is set
+        
+        vm.prank(governance);
+        vm.expectRevert("Funding: sale recipient should not be zero");
+        fundingCvx.setSaleRecipient(address(0));
+    }
+    
+    function testDepositModifiers() public{
+        // pausing should freeze deposit
+        vm.prank(guardian);
+        gac.pause();
+        vm.expectRevert(bytes("global-paused"));
+        fundingCvx.deposit(10e18 , 0);
+        vm.prank(address(techOps));
+        gac.unpause();
+
+        // flagging citadelPriceFlag should freeze deposit
+        vm.prank(governance);
+        fundingCvx.setCitadelAssetPriceBounds(0, 5000);
+        vm.prank(eoaOracle);
+        fundingCvx.updateCitadelPriceInAsset(6000);
+        vm.expectRevert(bytes("Funding: citadel price from oracle flagged and pending review"));
+        fundingCvx.deposit(10e18 , 0);
+
+    }
+
+    function _testDiscountRateBuys(Funding fundingContract, IERC20 token, uint256 _assetAmountIn, uint32 discount, uint256 citadelPrice) public {
+        
+        /**
+            @fatima: this is a good candidate to generalize using fuzzing: test buys with various discount rates, using fuzzing, and confirm the results.
+            sanity check the numerical results (tokens in vs tokens out, based on price and discount rate)
+        */ 
+
+        vm.assume(discount<10000 && _assetAmountIn>0 && citadelPrice>0);  // discount < MAX_BPS = 10000 
+
+        vm.prank(address(governance));
+        fundingContract.setDiscountLimits(0, 9999);
+        
+        vm.prank(address(policyOps));
+        fundingContract.setDiscount(discount); // set discount
+
+        vm.prank(eoaOracle);
+        fundingContract.updateCitadelPriceInAsset(citadelPrice); // set citadel price
+
+        uint256 citadelAmountOutExpected = fundingContract.getAmountOut(_assetAmountIn);
+
+        vm.prank(governance);
+        citadel.mint(address(fundingContract), citadelAmountOutExpected ); // fundingContract should have citadel to transfer to user
+
+        address user = address(1) ;
+        vm.startPrank(user);
+        erc20utils.forceMintTo(user, address(token) , _assetAmountIn );
+        token.approve(address(fundingContract), _assetAmountIn);
+        uint256 citadelAmountOut = fundingContract.deposit(_assetAmountIn , 0);
+        vm.stopPrank();
+
+        // check citadelAmoutOut is same as expected
+        assertEq(citadelAmountOut , citadelAmountOutExpected);
+
+    }
+    
     function _testBuy(Funding fundingContract, uint assetIn, uint citadelPrice) internal {
         // just make citadel appear rather than going through minting flow here
         erc20utils.forceMintTo(address(fundingContract), address(citadel), 100000e18);

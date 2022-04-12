@@ -55,12 +55,15 @@ contract MintAndDistributeTest is BaseFixture {
         schedule.setMintingStart(block.timestamp);
         assertTrue(schedule.globalStartTimestamp() == 0);
 
+        vm.stopPrank();
         vm.prank(governance);
         schedule.setMintingStart(block.timestamp);
 
         vm.prank(governance);
         citadelMinter.initializeLastMintTimestamp();
         assertTrue(schedule.globalStartTimestamp() == block.timestamp);
+
+        vm.startPrank(policyOps);
 
         vm.expectRevert("SupplySchedule: already minted up to current block");
         citadelMinter.mintAndDistribute();

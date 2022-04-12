@@ -137,7 +137,7 @@ contract SupplySchedule is GlobalAccessControlManaged, DSTest {
             "SupplySchedule: minting already started"
         );
         require(
-            _globalStartTimestamp >= 0,
+            _globalStartTimestamp >= block.timestamp,
             "SupplySchedule: minting must start at or after current time"
         );
 
