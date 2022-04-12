@@ -324,7 +324,7 @@ contract CitadelMinter is
             .globalStartTimestamp();
 
         require(
-            globalStartTimestamp >= 0,
+            globalStartTimestamp != 0,
             "CitadelMinter: supply schedule start not initialized"
         );
         lastMintTimestamp = globalStartTimestamp;
