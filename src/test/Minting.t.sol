@@ -4,6 +4,8 @@ pragma solidity 0.8.12;
 import {BaseFixture} from "./BaseFixture.sol";
 import {SupplySchedule} from "../SupplySchedule.sol";
 import {GlobalAccessControl} from "../GlobalAccessControl.sol";
+import {Funding} from "../Funding.sol";
+import {CitadelMinter} from "../CitadelMinter.sol";
 
 contract MintingTest is BaseFixture {
     function setUp() public override {
@@ -33,6 +35,35 @@ contract MintingTest is BaseFixture {
         vm.expectRevert(bytes("global-paused"));
         citadelMinter.setCitadelDistributionSplit(5000, 3000, 2000);
 
+    }
+
+    function testSetFundingPoolWeight() public{
+        _testSetFundingPoolWeight(address(fundingCvx), 8000);
+        _testSetFundingPoolWeight(address(fundingWbtc), 2000);
+
+        // check if totalFundingPoolWeight is updated
+        assertEq(citadelMinter.totalFundingPoolWeight(), 10000);
+
+        // check if weight is more than MAX_BPS
+        _testSetFundingPoolWeight(address(fundingCvx), 11000);
+
+    }
+
+    function _testSetFundingPoolWeight(address fundingPool, uint256 weight) public{
+        vm.stopPrank();
+        vm.expectRevert("GAC: invalid-caller-role");
+        citadelMinter.setFundingPoolWeight(fundingPool, weight);
+
+        vm.startPrank(policyOps);
+        if(weight > 10000){
+            vm.expectRevert("exceed max funding pool weight");
+            citadelMinter.setFundingPoolWeight(fundingPool , weight);
+        }
+        else{
+            citadelMinter.setFundingPoolWeight(fundingPool , weight);
+            assertEq(citadelMinter.fundingPoolWeights(fundingPool), weight);
+        }
+        vm.stopPrank();
     }
 
     function testExampleEpochRates() public {
