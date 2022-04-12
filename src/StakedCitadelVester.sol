@@ -64,6 +64,7 @@ contract StakedCitadelVester is
         address _vault
     ) external initializer {
         require(_vestingToken != address(0), "Address zero invalid");
+        require(_vault != address(0), "Address zero invalid");
 
         __GlobalAccessControlManaged_init(_gac);
         __ReentrancyGuard_init();
