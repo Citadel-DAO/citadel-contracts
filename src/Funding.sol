@@ -66,8 +66,7 @@ contract Funding is GlobalAccessControlManaged, ReentrancyGuardUpgradeable {
     event Deposit(
         address indexed buyer,
         uint256 assetIn,
-        uint256 xCitadelOut,
-        uint256 citadelValue
+        uint256 citadelOutValue
     );
 
     event CitadelPriceInAssetUpdated(uint256 citadelPrice);
@@ -182,15 +181,11 @@ contract Funding is GlobalAccessControlManaged, ReentrancyGuardUpgradeable {
         
         // Deposit xCitadel and send to user
         // TODO: Check gas costs. How does this relate to market buying if you do want to deposit to xCTDL?
-        uint256 xCitadelBeforeDeposit = xCitadel.balanceOf(msg.sender);
         xCitadel.depositFor(msg.sender, citadelAmount_);
-        uint256 xCitadelAfterDeposit = xCitadel.balanceOf(msg.sender);
-        uint256 xCitadelGained = xCitadelAfterDeposit - xCitadelBeforeDeposit;
 
         emit Deposit(
             msg.sender,
             _assetAmountIn,
-            xCitadelGained,
             citadelAmount_
         );
     }
@@ -235,6 +230,10 @@ contract Funding is GlobalAccessControlManaged, ReentrancyGuardUpgradeable {
 
     function getFundingParams() external view returns (FundingParams memory) {
         return funding;
+    }
+
+    function getDiscount() external view returns (uint256) {
+        return funding.discount;
     }
 
     /// ==============================
