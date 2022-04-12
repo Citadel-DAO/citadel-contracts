@@ -1,7 +1,6 @@
 // SPDX-License-Identifier: MIT
 pragma solidity 0.8.12;
 
-import {SafeMathUpgradeable} from "openzeppelin-contracts-upgradeable/utils/math/SafeMathUpgradeable.sol";
 import {SafeERC20Upgradeable} from "openzeppelin-contracts-upgradeable/token/ERC20/utils/SafeERC20Upgradeable.sol";
 import {ReentrancyGuardUpgradeable} from "openzeppelin-contracts-upgradeable/security/ReentrancyGuardUpgradeable.sol";
 
@@ -15,7 +14,6 @@ import "./lib/SafeERC20.sol";
  * TODO: Better revert strings
  */
 contract Funding is GlobalAccessControlManaged, ReentrancyGuardUpgradeable {
-    using SafeMathUpgradeable for uint256;
     using SafeERC20 for IERC20;
 
     // Roles used from GAC
@@ -170,8 +168,7 @@ contract Funding is GlobalAccessControlManaged, ReentrancyGuardUpgradeable {
     {
         require(_assetAmountIn > 0, "_assetAmountIn must not be 0");
         require(
-            funding.assetCumulativeFunded.add(_assetAmountIn) <=
-                funding.assetCap,
+            funding.assetCumulativeFunded + _assetAmountIn <= funding.assetCap,
             "asset funding cap exceeded"
         );
         funding.assetCumulativeFunded = funding.assetCumulativeFunded.add(_assetAmountIn);
@@ -235,7 +232,7 @@ contract Funding is GlobalAccessControlManaged, ReentrancyGuardUpgradeable {
         uint256 assetCumulativeFunded = funding.assetCumulativeFunded;
         uint256 assetCap = funding.assetCap;
         if (assetCumulativeFunded < assetCap) {
-            limitLeft_ = assetCap.sub(assetCumulativeFunded);
+            limitLeft_ = assetCap - assetCumulativeFunded;
         }
     }
 

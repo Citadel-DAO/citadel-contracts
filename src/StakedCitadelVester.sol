@@ -2,7 +2,6 @@
 pragma solidity 0.8.12;
 
 import {IERC20Upgradeable} from "openzeppelin-contracts-upgradeable/token/ERC20/IERC20Upgradeable.sol";
-import {SafeMathUpgradeable} from "openzeppelin-contracts-upgradeable/utils/math/SafeMathUpgradeable.sol";
 import {SafeERC20Upgradeable} from "openzeppelin-contracts-upgradeable/token/ERC20/utils/SafeERC20Upgradeable.sol";
 import {ReentrancyGuardUpgradeable} from "openzeppelin-contracts-upgradeable/security/ReentrancyGuardUpgradeable.sol";
 
@@ -16,7 +15,6 @@ contract StakedCitadelVester is
     GlobalAccessControlManaged,
     ReentrancyGuardUpgradeable
 {
-    using SafeMathUpgradeable for uint256;
     using SafeERC20Upgradeable for IERC20Upgradeable;
 
     bytes32 public constant CONTRACT_GOVERNANCE_ROLE =
@@ -90,9 +88,9 @@ contract StakedCitadelVester is
             amount = claimable;
         }
         if (amount != 0) {
-            vesting[msg.sender].claimedAmounts = vesting[msg.sender]
-                .claimedAmounts
-                .add(amount);
+            vesting[msg.sender].claimedAmounts =
+                vesting[msg.sender].claimedAmounts +
+                amount;
             vestingToken.safeTransfer(recipient, amount);
             emit Claimed(msg.sender, recipient, amount);
         }
@@ -111,16 +109,12 @@ contract StakedCitadelVester is
         uint256 locked = vesting[recipient].lockedAmounts;
         uint256 claimed = vesting[recipient].claimedAmounts;
         if (block.timestamp >= vesting[recipient].unlockEnd) {
-            return locked.sub(claimed);
+            return locked - claimed;
         }
         return
-            (
-                (
-                    locked.mul(
-                        block.timestamp.sub(vesting[recipient].unlockBegin)
-                    )
-                ).div(vesting[recipient].unlockEnd - vesting[recipient].unlockBegin)
-            ).sub(claimed);
+            ((locked * (block.timestamp - vesting[recipient].unlockBegin)) /
+                (vesting[recipient].unlockEnd -
+                    vesting[recipient].unlockBegin)) - claimed;
     }
 
     /// =========================
@@ -143,11 +137,11 @@ contract StakedCitadelVester is
         require(msg.sender == vault, "StakedCitadelVester: only xCTDL vault");
         require(_amount > 0, "StakedCitadelVester: cannot vest 0");
 
-        vesting[recipient].lockedAmounts = vesting[recipient].lockedAmounts.add(
-            _amount
-        );
+        vesting[recipient].lockedAmounts =
+            vesting[recipient].lockedAmounts +
+            _amount;
         vesting[recipient].unlockBegin = _unlockBegin;
-        vesting[recipient].unlockEnd = _unlockBegin.add(vestingDuration);
+        vesting[recipient].unlockEnd = _unlockBegin + vestingDuration;
 
         emit Vest(
             recipient,

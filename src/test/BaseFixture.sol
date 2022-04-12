@@ -8,7 +8,6 @@ import {Utils} from "./utils/Utils.sol";
 import {ERC20Utils} from "./utils/ERC20Utils.sol";
 import {SnapshotComparator} from "./utils/SnapshotUtils.sol";
 
-import {SafeMathUpgradeable} from "openzeppelin-contracts-upgradeable/utils/math/SafeMathUpgradeable.sol";
 import {GlobalAccessControl} from "../GlobalAccessControl.sol";
 
 import {CitadelToken} from "../CitadelToken.sol";
@@ -26,7 +25,6 @@ import "../interfaces/erc20/IERC20.sol";
 import "../interfaces/badger/IEmptyStrategy.sol";
 
 contract BaseFixture is DSTest, Utils {
-    using SafeMathUpgradeable for uint256;
     Vm constant vm = Vm(HEVM_ADDRESS);
     ERC20Utils immutable erc20utils = new ERC20Utils();
     SnapshotComparator comparator;
