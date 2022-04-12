@@ -39,9 +39,6 @@ contract Funding is GlobalAccessControlManaged, ReentrancyGuardUpgradeable {
     uint256 public maxCitadelPriceInAsset; /// Upper bound on expected citadel price in asset terms. Used as circuit breaker oracle.
     bool public citadelPriceFlag; /// Flag citadel price for review by guardian if it exceeds min and max bounds;
 
-    // TODO: This will be calculated LIVE from cached ppfs
-    uint256 public xCitadelPriceInAsset; /// citadel price modified by xCitadel pricePerShare
-
     uint256 public assetDecimalsNormalizationValue;
 
     address public citadelPriceInAssetOracle;
