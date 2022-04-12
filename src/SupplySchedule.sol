@@ -87,8 +87,9 @@ contract SupplySchedule is GlobalAccessControlManaged, DSTest {
         view
         returns (uint256)
     {
+        uint256 cachedGlobalStartTimestamp = globalStartTimestamp;
         require(
-            globalStartTimestamp > 0,
+            cachedGlobalStartTimestamp > 0,
             "SupplySchedule: minting not started"
         );
         require(
@@ -96,23 +97,23 @@ contract SupplySchedule is GlobalAccessControlManaged, DSTest {
             "SupplySchedule: already minted up to current block"
         );
 
-        if (lastMintTimestamp < globalStartTimestamp) {
-            lastMintTimestamp = globalStartTimestamp;
+        if (lastMintTimestamp < cachedGlobalStartTimestamp) {
+            lastMintTimestamp = cachedGlobalStartTimestamp;
         }
 
         uint256 mintable = 0;
 
-        uint256 startingEpoch = (lastMintTimestamp - globalStartTimestamp) /
+        uint256 startingEpoch = (lastMintTimestamp - cachedGlobalStartTimestamp) /
             epochLength;
 
-        uint256 endingEpoch = (block.timestamp - globalStartTimestamp) /
+        uint256 endingEpoch = (block.timestamp - cachedGlobalStartTimestamp) /
             epochLength;
 
         for (uint256 i = startingEpoch; i <= endingEpoch; i++) {
             uint256 rate = epochRate[i];
 
-            uint256 epochStartTime = globalStartTimestamp + i * epochLength;
-            uint256 epochEndTime = globalStartTimestamp + (i + 1) * epochLength;
+            uint256 epochStartTime = cachedGlobalStartTimestamp + i * epochLength;
+            uint256 epochEndTime = cachedGlobalStartTimestamp + (i + 1) * epochLength;
 
             uint256 time = MathUpgradeable.min(block.timestamp, epochEndTime) -
                 MathUpgradeable.max(lastMintTimestamp, epochStartTime);
