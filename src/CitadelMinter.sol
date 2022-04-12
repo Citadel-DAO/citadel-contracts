@@ -220,7 +220,6 @@ contract CitadelMinter is
             );
         }
 
-
         /// Saves gas if the if is true, if it's not costs 6 extra gas
         uint256 cachedFundingBps = fundingBps;
         if (cachedFundingBps != 0) {
@@ -258,15 +257,11 @@ contract CitadelMinter is
         );
 
         bool poolExists = fundingPools.contains(_pool);
-        
+
         // NOTE: Could cachedTotalFundingPoolWeight but honestly logic is already messy enough
-    
+
         // Remove existing pool on 0 weight
         if (_weight == 0 && poolExists) {
-            fundingPoolWeights[_pool] = 0;
-            totalFundingPoolWeight =
-                totalFundingPoolWeight -
-                fundingPoolWeights[_pool];
             _removeFundingPool(_pool);
 
             emit FundingPoolWeightSet(_pool, _weight, totalFundingPoolWeight);
@@ -348,7 +343,8 @@ contract CitadelMinter is
             address pool = fundingPools.at(i);
             uint256 weight = fundingPoolWeights[pool];
 
-            uint256 amount = (_citadelAmount * weight) / cachedTotalFundingPoolWeight;
+            uint256 amount = (_citadelAmount * weight) /
+                cachedTotalFundingPoolWeight;
 
             IERC20Upgradeable(address(citadelToken)).safeTransfer(pool, amount);
 
@@ -362,6 +358,11 @@ contract CitadelMinter is
     }
 
     function _removeFundingPool(address _pool) internal {
+        uint256 currentPoolWeight = fundingPoolWeights[_pool];
+        totalFundingPoolWeight = totalFundingPoolWeight - currentPoolWeight;
+
+        fundingPoolWeights[_pool] = 0;
+
         require(
             fundingPools.remove(_pool),
             "CitadelMinter: funding pool does not exist for removal"
