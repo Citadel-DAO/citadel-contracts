@@ -39,9 +39,6 @@ contract Funding is GlobalAccessControlManaged, ReentrancyGuardUpgradeable {
     uint256 public maxCitadelPriceInAsset; /// Upper bound on expected citadel price in asset terms. Used as circuit breaker oracle.
     bool public citadelPriceFlag; /// Flag citadel price for review by guardian if it exceeds min and max bounds;
 
-    // TODO: This will be calculated LIVE from cached ppfs
-    uint256 public xCitadelPriceInAsset; /// citadel price modified by xCitadel pricePerShare
-
     uint256 public assetDecimalsNormalizationValue;
 
     address public citadelPriceInAssetOracle;
@@ -116,7 +113,11 @@ contract Funding is GlobalAccessControlManaged, ReentrancyGuardUpgradeable {
     ) external initializer {
         require(
             _saleRecipient != address(0),
-            "Funding: sale recipient should not be zero"
+            "Funding: 0 sale"
+        );
+        require(
+            _citadelPriceInAssetOracle != address(0),
+            "Funding: 0 oracle"
         );
 
         __GlobalAccessControlManaged_init(_gac);
@@ -131,14 +132,15 @@ contract Funding is GlobalAccessControlManaged, ReentrancyGuardUpgradeable {
 
         funding = FundingParams(0, 0, 0, address(0), 0, _assetCap);
 
-        // Allow to deposit in vault
-        citadel.approve(address(xCitadel), type(uint256).max);
-
         assetDecimalsNormalizationValue = 10**asset.decimals();
 
         // No circuit breaker on price by default
         minCitadelPriceInAsset = 0;
         maxCitadelPriceInAsset = type(uint256).max;
+
+        // Allow to deposit in vault
+        // Done last for reEntrancy concerns
+        IERC20(_citadel).safeApprove(address(_xCitadel), type(uint256).max);
     }
 
     modifier onlyWhenPriceNotFlagged() {
@@ -204,16 +206,15 @@ contract Funding is GlobalAccessControlManaged, ReentrancyGuardUpgradeable {
         view
         returns (uint256 citadelAmount_)
     {
-        uint256 citadelAmountWithoutDiscount = (_assetAmountIn *
-            citadelPriceInAsset) / assetDecimalsNormalizationValue;
+        uint256 citadelAmountWithoutDiscount = _assetAmountIn * citadelPriceInAsset;
 
         if (funding.discount > 0) {
             citadelAmount_ =
                 (citadelAmountWithoutDiscount * MAX_BPS) /
                 (MAX_BPS - funding.discount);
-        } else {
-            citadelAmount_ = citadelAmountWithoutDiscount;
         }
+
+        citadelAmount_ = citadelAmount_ / assetDecimalsNormalizationValue;
     }
 
     /**
