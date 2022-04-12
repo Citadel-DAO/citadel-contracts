@@ -5,9 +5,34 @@ import {BaseFixture} from "./BaseFixture.sol";
 import {SupplySchedule} from "../SupplySchedule.sol";
 import {GlobalAccessControl} from "../GlobalAccessControl.sol";
 
-contract SupplyScheduleTest is BaseFixture {
+contract MintingTest is BaseFixture {
     function setUp() public override {
         BaseFixture.setUp();
+    }
+
+    function testSetCitadelDistributionSplit() public{
+        vm.expectRevert("GAC: invalid-caller-role");
+        citadelMinter.setCitadelDistributionSplit(5000, 3000, 2000);
+
+        vm.startPrank(policyOps);
+        vm.expectRevert("CitadelMinter: Sum of propvalues must be 10000 bps");
+        citadelMinter.setCitadelDistributionSplit(5000, 2000, 2000);
+
+        citadelMinter.setCitadelDistributionSplit(5000, 3000, 2000);
+        // check if distribution split is set.
+        assertEq(citadelMinter.fundingBps(),5000);
+        assertEq(citadelMinter.stakingBps(),3000);
+        assertEq(citadelMinter.lockingBps(),2000);
+
+        vm.stopPrank();
+
+        // pausing should freeze setCitadelDistributionSplit
+        vm.prank(guardian);
+        gac.pause();
+        vm.prank(address(policyOps));
+        vm.expectRevert(bytes("global-paused"));
+        citadelMinter.setCitadelDistributionSplit(5000, 3000, 2000);
+
     }
 
     function testExampleEpochRates() public {
