@@ -129,9 +129,9 @@ contract CitadelMinter is
         supplySchedule = ISupplySchedule(_supplySchedule);
 
         // Approve xCitadel vault for use of citadel tokens
-        citadelToken.approve(_xCitadel, type(uint256).max);
+        citadelToken.safeApprove(_xCitadel, type(uint256).max);
         // Approve xCitadel for locker to use
-        xCitadel.approve(_xCitadelLocker, type(uint256).max);
+        xCitadel.safeApprove(_xCitadelLocker, type(uint256).max);
     }
 
     /// =======================
@@ -212,7 +212,7 @@ contract CitadelMinter is
         if (cachedStakingBps != 0) {
             stakingAmount = (mintable * cachedStakingBps) / MAX_BPS;
 
-            citadelToken.transfer(address(cachedXCitadel), stakingAmount);
+            citadelToken.safeTransfer(address(cachedXCitadel), stakingAmount);
             emit CitadelDistributionToStaking(
                 cachedLastMintTimestamp,
                 block.timestamp,
