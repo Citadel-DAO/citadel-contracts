@@ -33,6 +33,7 @@ contract KnightingRoundTest is BaseFixture {
 
         uint256 tokenOutAmountExpected = knightingRound.getAmountOut(1e8);
         wbtc.approve(address(knightingRound), wbtc.balanceOf(shrimp));
+
         uint256 tokenOutAmount = knightingRound.buy(1e8, 0, emptyProof);
         comparator.snapCurr();
 
@@ -73,6 +74,63 @@ contract KnightingRoundTest is BaseFixture {
         vm.stopPrank();
     }
     
+    function testFinalizeAndClaim() public{
+        bytes32[] memory emptyProof = new bytes32[](1);
 
+        vm.warp(block.timestamp + 100);
+
+        vm.expectRevert("sale not finalized");
+        knightingRound.claim();
+
+        vm.startPrank(shrimp);
+        wbtc.approve(address(knightingRound), wbtc.balanceOf(shrimp));
+        uint256 tokenOutAmount = knightingRound.buy(1e8, 0, emptyProof); // shrimp bought something
+
+        vm.stopPrank();
+
+
+
+        vm.startPrank(governance);
+
+        vm.expectRevert("KnightingRound: not finished");
+        knightingRound.finalize(); 
+
+        // move forward so that KnightingRound is finished.
+        vm.warp(knightingRoundParams.start + knightingRoundParams.duration); // to saleEnded() true
+
+        vm.expectRevert("KnightingRound: not enough balance");
+        knightingRound.finalize(); 
+
+        uint256 citadelBought = knightingRound.totalTokenOutBought();
+        uint256 initialSupply = (citadelBought * 1666666666666666667) / 1e18; // Amount bought = 60% of initial supply, therefore total citadel ~= 1.67 amount bought.
+
+        // Let's transfer citadel to kinghtingRound so that users can claim their bought citadel.
+        citadel.mint(governance, initialSupply);
+        citadel.transfer(address(knightingRound), citadelBought);
+        knightingRound.finalize(); // round finalized
+        vm.stopPrank();
+
+
+        vm.startPrank(shrimp);
+        comparator.snapPrev();
+        knightingRound.claim();   // now shrimp can claim
+        comparator.snapCurr();
+
+        assertEq(comparator.diff("citadel.balanceOf(shrimp)"), tokenOutAmount);
+
+        assertTrue(knightingRound.hasClaimed(shrimp)); // hasClaimed should be true
+
+        // should not be able to claim again
+        vm.expectRevert("already claimed");
+        knightingRound.claim();
+
+        vm.stopPrank();
+
+        // shark did not buy anything
+        vm.prank(shark);
+        vm.expectRevert("nothing to claim");
+        knightingRound.claim();
+
+    }
     
 }
