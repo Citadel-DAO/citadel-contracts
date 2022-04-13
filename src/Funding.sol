@@ -166,12 +166,12 @@ contract Funding is GlobalAccessControlManaged, ReentrancyGuardUpgradeable {
         nonReentrant
         returns (uint256 citadelAmount_)
     {
-        require(_assetAmountIn > 0, "_assetAmountIn must not be 0");
+        require(_assetAmountIn != 0, "_assetAmountIn must not be 0");
         require(
             funding.assetCumulativeFunded + _assetAmountIn <= funding.assetCap,
             "asset funding cap exceeded"
         );
-        funding.assetCumulativeFunded = funding.assetCumulativeFunded + _assetAmountIn;
+        funding.assetCumulativeFunded += _assetAmountIn;
         // Take in asset from user
         citadelAmount_ = getAmountOut(_assetAmountIn);
         require(citadelAmount_ >= _minCitadelOut, "minCitadelOut");
@@ -317,7 +317,7 @@ contract Funding is GlobalAccessControlManaged, ReentrancyGuardUpgradeable {
         onlyRole(TREASURY_OPERATIONS_ROLE)
     {
         uint256 amount = IERC20(_token).balanceOf(address(this));
-        require(amount > 0, "nothing to sweep");
+        require(amount != 0, "nothing to sweep");
         require(
             _token != address(asset),
             "cannot sweep funding asset, use claimAssetToTreasury()"
@@ -335,7 +335,7 @@ contract Funding is GlobalAccessControlManaged, ReentrancyGuardUpgradeable {
         onlyRole(TREASURY_OPERATIONS_ROLE)
     {
         uint256 amount = asset.balanceOf(address(this));
-        require(amount > 0, "nothing to claim");
+        require(amount != 0, "nothing to claim");
         asset.safeTransfer(saleRecipient, amount);
 
         emit ClaimToTreasury(address(asset), amount);
@@ -414,7 +414,7 @@ contract Funding is GlobalAccessControlManaged, ReentrancyGuardUpgradeable {
         gacPausable
         onlyCitadelPriceInAssetOracle
     {
-        require(_citadelPriceInAsset > 0, "citadel price must not be zero");
+        require(_citadelPriceInAsset != 0, "citadel price must not be zero");
 
         if (
             _citadelPriceInAsset < minCitadelPriceInAsset ||

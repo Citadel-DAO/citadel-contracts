@@ -58,7 +58,7 @@ contract SupplySchedule is GlobalAccessControlManaged, DSTest {
         returns (uint256)
     {
         require(
-            globalStartTimestamp > 0,
+            globalStartTimestamp != 0,
             "SupplySchedule: minting not started"
         );
         return (_timestamp - globalStartTimestamp) / epochLength;
@@ -88,7 +88,7 @@ contract SupplySchedule is GlobalAccessControlManaged, DSTest {
     {
         uint256 cachedGlobalStartTimestamp = globalStartTimestamp;
         require(
-            cachedGlobalStartTimestamp > 0,
+            cachedGlobalStartTimestamp != 0,
             "SupplySchedule: minting not started"
         );
         require(
@@ -177,7 +177,7 @@ contract SupplySchedule is GlobalAccessControlManaged, DSTest {
 
     function getMintableDebug(uint256 lastMintTimestamp) external {
         require(
-            globalStartTimestamp > 0,
+            globalStartTimestamp != 0,
             "SupplySchedule: minting not started"
         );
         require(
@@ -205,7 +205,7 @@ contract SupplySchedule is GlobalAccessControlManaged, DSTest {
             epochLength;
         emit log_named_uint("endingEpoch", endingEpoch);
 
-        for (uint256 i = startingEpoch; i <= endingEpoch; i++) {
+        for (uint256 i = startingEpoch; i <= endingEpoch;/** See below ++i */) {
             uint256 rate = epochRate[i];
 
             uint256 epochStartTime = globalStartTimestamp + i * epochLength;
@@ -221,6 +221,8 @@ contract SupplySchedule is GlobalAccessControlManaged, DSTest {
             emit log_named_uint("time to mint over", time);
 
             mintable += rate * time;
+            // optimised
+            unchecked { ++i; }
 
             emit log_named_uint("mintable from this iteration", rate * time);
             emit log_named_uint(

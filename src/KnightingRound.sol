@@ -121,11 +121,11 @@ contract KnightingRound is GlobalAccessControlManaged {
             "KnightingRound: start date may not be in the past"
         );
         require(
-            _saleDuration > 0,
+            _saleDuration != 0,
             "KnightingRound: the sale duration must not be zero"
         );
         require(
-            _tokenOutPrice > 0,
+            _tokenOutPrice != 0,
             "KnightingRound: the price must not be zero"
         );
         require(
@@ -168,7 +168,7 @@ contract KnightingRound is GlobalAccessControlManaged {
             block.timestamp < saleStart + saleDuration,
             "KnightingRound: already ended"
         );
-        require(_tokenInAmount > 0, "_tokenInAmount should be > 0");
+        require(_tokenInAmount != 0, "_tokenInAmount should be > 0");
         require(
             totalTokenIn + _tokenInAmount <= tokenInLimit,
             "total amount exceeded"
@@ -180,7 +180,7 @@ contract KnightingRound is GlobalAccessControlManaged {
 
         uint256 boughtAmountTillNow = boughtAmounts[msg.sender];
 
-        if (boughtAmountTillNow > 0) {
+        if (boughtAmountTillNow != 0) {
             require(
                 _daoId == daoVotedFor[msg.sender],
                 "can't vote for multiple daos"
@@ -192,10 +192,10 @@ contract KnightingRound is GlobalAccessControlManaged {
         tokenOutAmount_ = getAmountOut(_tokenInAmount);
 
         boughtAmounts[msg.sender] = boughtAmountTillNow + tokenOutAmount_;
-        daoCommitments[_daoId] = daoCommitments[_daoId] + tokenOutAmount_;
+        daoCommitments[_daoId] += tokenOutAmount_;
 
-        totalTokenIn = totalTokenIn + _tokenInAmount;
-        totalTokenOutBought = totalTokenOutBought + tokenOutAmount_;
+        totalTokenIn += _tokenInAmount;
+        totalTokenOutBought += tokenOutAmount_;
 
         tokenIn.safeTransferFrom(msg.sender, saleRecipient, _tokenInAmount);
 
@@ -211,10 +211,10 @@ contract KnightingRound is GlobalAccessControlManaged {
 
         tokenOutAmount_ = boughtAmounts[msg.sender];
 
-        require(tokenOutAmount_ > 0, "nothing to claim");
+        require(tokenOutAmount_ != 0, "nothing to claim");
 
         hasClaimed[msg.sender] = true;
-        totalTokenOutClaimed = totalTokenOutClaimed + tokenOutAmount_;
+        totalTokenOutClaimed += tokenOutAmount_;
 
         tokenOut.safeTransfer(msg.sender, tokenOutAmount_);
 
@@ -309,7 +309,7 @@ contract KnightingRound is GlobalAccessControlManaged {
         onlyRole(CONTRACT_GOVERNANCE_ROLE)
     {
         require(
-            _saleDuration > 0,
+            _saleDuration != 0,
             "KnightingRound: the sale duration must not be zero"
         );
         require(!finalized, "KnightingRound: already finalized");
@@ -328,7 +328,7 @@ contract KnightingRound is GlobalAccessControlManaged {
         onlyRole(CONTRACT_GOVERNANCE_ROLE)
     {
         require(
-            _tokenOutPrice > 0,
+            _tokenOutPrice != 0,
             "KnightingRound: the price must not be zero"
         );
 
@@ -404,10 +404,10 @@ contract KnightingRound is GlobalAccessControlManaged {
         if (_token == address(tokenOut)) {
             uint256 amountLeftToBeClaimed = totalTokenOutBought -
                 totalTokenOutClaimed;
-            amount = amount - amountLeftToBeClaimed;
+            amount -= amountLeftToBeClaimed;
         }
 
-        require(amount > 0, "nothing to sweep");
+        require(amount != 0, "nothing to sweep");
 
         ERC20Upgradeable(_token).safeTransfer(saleRecipient, amount);
 

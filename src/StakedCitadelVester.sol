@@ -88,9 +88,7 @@ contract StakedCitadelVester is
             amount = claimable;
         }
         if (amount != 0) {
-            vesting[msg.sender].claimedAmounts =
-                vesting[msg.sender].claimedAmounts +
-                amount;
+            vesting[msg.sender].claimedAmounts += amount;
             vestingToken.safeTransfer(recipient, amount);
             emit Claimed(msg.sender, recipient, amount);
         }
@@ -135,11 +133,9 @@ contract StakedCitadelVester is
         uint256 _unlockBegin
     ) external {
         require(msg.sender == vault, "StakedCitadelVester: only xCTDL vault");
-        require(_amount > 0, "StakedCitadelVester: cannot vest 0");
+        require(_amount != 0, "StakedCitadelVester: cannot vest 0");
 
-        vesting[recipient].lockedAmounts =
-            vesting[recipient].lockedAmounts +
-            _amount;
+        vesting[recipient].lockedAmounts += _amount;
         vesting[recipient].unlockBegin = _unlockBegin;
         vesting[recipient].unlockEnd = _unlockBegin + vestingDuration;
 

@@ -149,7 +149,7 @@ contract CitadelMinter is
         pools = new address[](numPools);
         weights = new uint256[](numPools);
 
-        for (uint256 i = 0; i < numPools; i++) {
+        for (uint256 i; i < numPools; ++i) {
             address pool = fundingPools.at(i);
             uint256 weight = fundingPoolWeights[pool];
 
@@ -273,11 +273,7 @@ contract CitadelMinter is
             if (!poolExists) {
                 _addFundingPool(_pool);
             }
-            uint256 _newTotalWeight = totalFundingPoolWeight;
-            _newTotalWeight = _newTotalWeight - fundingPoolWeights[_pool];
-            fundingPoolWeights[_pool] = _weight;
-            _newTotalWeight = _newTotalWeight + _weight;
-            totalFundingPoolWeight = _newTotalWeight;
+            uint256 _newTotalWeight = totalFundingPoolWeight - fundingPoolWeights[_pool] + _weight;
 
             emit FundingPoolWeightSet(_pool, _weight, _newTotalWeight);
         }
