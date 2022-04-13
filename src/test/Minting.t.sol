@@ -44,6 +44,9 @@ contract MintingTest is BaseFixture {
         // check if totalFundingPoolWeight is updated
         assertEq(citadelMinter.totalFundingPoolWeight(), 10000);
 
+        _testSetFundingPoolWeight(address(fundingCvx), 6000);
+        // check if totalFundingPoolWeight is updated
+        assertEq(citadelMinter.totalFundingPoolWeight(), 8000);
         // check if weight is more than MAX_BPS
         _testSetFundingPoolWeight(address(fundingCvx), 11000);
 
