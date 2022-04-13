@@ -5,6 +5,7 @@ __pycache__
 build/
 reports/
 .env
+artifacts/
 
 node_modules/
 hh-cache/
