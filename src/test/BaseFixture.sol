@@ -24,7 +24,7 @@ import "../interfaces/erc20/IERC20.sol";
 import "../interfaces/badger/IEmptyStrategy.sol";
 import "../interfaces/citadel/IStakedCitadelLocker.sol";
 
-string constant lockerArtifact = "artifacts/StakedCitadelLocker.json";
+string constant lockerArtifact = "artifacts-external/StakedCitadelLocker.json";
 
 contract BaseFixture is DSTest, Utils, stdCheats {
     Vm constant vm = Vm(HEVM_ADDRESS);
