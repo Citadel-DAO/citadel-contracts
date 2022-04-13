@@ -8,6 +8,7 @@ import "./interfaces/badger/IVault.sol";
 import "./interfaces/erc20/IERC20.sol";
 import "./lib/GlobalAccessControlManaged.sol";
 import "./lib/SafeERC20.sol";
+import "./interfaces/citadel/IMedianOracle.sol";
 
 /**
  * @notice Sells a token at a predetermined price to whitelisted buyers.
@@ -407,6 +408,39 @@ contract Funding is GlobalAccessControlManaged, ReentrancyGuardUpgradeable {
     /// ===== Oracle actions =====
     /// ==========================
 
+    /// @notice Update citadel price in asset terms from oracle source
+    /// @dev Note that the oracle mechanics are abstracted to the oracle address
+    function updateCitadelPriceInAsset()
+        external
+        gacPausable
+        onlyRole(KEEPER_ROLE)
+    {   
+        uint _citadelPriceInAsset;
+        bool _valid;
+
+        (_citadelPriceInAsset, _valid) = IMedianOracle(citadelPriceInAssetOracle).getData();
+
+        require(_citadelPriceInAsset > 0, "citadel price must not be zero");
+        require(_valid, "oracle data must be valid");
+
+        if (
+            _citadelPriceInAsset < minCitadelPriceInAsset ||
+            _citadelPriceInAsset > maxCitadelPriceInAsset
+        ) {
+            citadelPriceFlag = true;
+            emit CitadelPriceFlag(
+                _citadelPriceInAsset,
+                minCitadelPriceInAsset,
+                maxCitadelPriceInAsset
+            );
+        } else {
+            citadelPriceInAsset = _citadelPriceInAsset;
+            emit CitadelPriceInAssetUpdated(_citadelPriceInAsset);
+        }
+    }
+
+
+    /// @dev OUT OF AUDIT SCOPE: This is a test function that will be removed in final code
     /// @notice Update citadel price in asset terms from oracle source
     /// @dev Note that the oracle mechanics are abstracted to the oracle address
     function updateCitadelPriceInAsset(uint256 _citadelPriceInAsset)
