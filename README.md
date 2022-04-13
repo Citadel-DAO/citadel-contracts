@@ -1,4 +1,13 @@
-Getting Started
+# Citadel
+![](./docs/images/citadel-knights.png)
+> Assemby of the Knights
+
+The high-level concepts and progress updates can be found on [Medium](https://thecitadeldao.medium.com/).
+
+An [informal video](https://drive.google.com/file/d/1hCzQrgZEsbd0t2mtuaXm7Cp3YS-ZIlw3/view?usp=sharing) offering a summary of the smart contracts.
+
+
+# Getting Started
 
 ## Prerequisites
 
