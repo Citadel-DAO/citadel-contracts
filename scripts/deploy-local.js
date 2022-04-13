@@ -1,4 +1,5 @@
 const hre = require("hardhat");
+const StakedCitadelLockerArtifact = require("../artifacts-external/StakedCitadelLocker.json");
 const ethers = hre.ethers;
 
 const wbtc_address = "0x2260fac5e5542a773aa44fbcfedf7c193bc2c599";
@@ -21,9 +22,22 @@ async function main() {
   const StakedCitadelVester = await ethers.getContractFactory(
     "StakedCitadelVester"
   );
-  const StakedCitadelLocker = await ethers.getContractFactory(
-    "StakedCitadelLocker"
-  );
+  const StakedCitadelLocker = await ethers.getContractFactoryFromArtifact({
+    ...StakedCitadelLockerArtifact,
+    _format: "hh-sol-artifact-1",
+    contractName: "StakedCitadelLocker",
+    sourceName: "src/StakedCitadelLocker.sol",
+    linkReferences: {
+      ...StakedCitadelLockerArtifact.bytecode.linkReferences,
+      ...StakedCitadelLockerArtifact.deployedBytecode.linkReferences,
+    },
+    deployedLinkReferences: {
+      ...StakedCitadelLockerArtifact.bytecode.deployedLinkReferences,
+      ...StakedCitadelLockerArtifact.deployedBytecode.deployedLinkReferences,
+    },
+    bytecode: StakedCitadelLockerArtifact.bytecode.object,
+    deployedBytecode: StakedCitadelLockerArtifact.deployedBytecode.object,
+  });
 
   const SupplySchedule = await ethers.getContractFactory("SupplySchedule");
   const CitadelMinter = await ethers.getContractFactory("CitadelMinter");
