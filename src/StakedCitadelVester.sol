@@ -129,7 +129,7 @@ contract StakedCitadelVester is
      * @param _amount amount that will be vested
      * @param _unlockBegin The time at which unlocking of tokens will begin.
      */
-    function vest(
+    function setupVesting(
         address recipient,
         uint256 _amount,
         uint256 _unlockBegin
