@@ -3,6 +3,7 @@ pragma solidity 0.8.12;
 
 import {ERC20Upgradeable} from "openzeppelin-contracts-upgradeable/token/ERC20/ERC20Upgradeable.sol";
 import {SafeERC20Upgradeable} from "openzeppelin-contracts-upgradeable/token/ERC20/utils/SafeERC20Upgradeable.sol";
+import {ReentrancyGuardUpgradeable} from "openzeppelin-contracts-upgradeable/security/ReentrancyGuardUpgradeable.sol";
 
 import "./interfaces/badger/IBadgerVipGuestlist.sol";
 import "./lib/GlobalAccessControlManaged.sol";
@@ -12,7 +13,7 @@ import "./lib/GlobalAccessControlManaged.sol";
  * @notice Sells citadel at a predetermined price to whitelisted buyers. Citadel tokens are not distributed until the finalize event.
  * TODO: Better revert strings
  */
-contract KnightingRound is GlobalAccessControlManaged {
+contract KnightingRound is GlobalAccessControlManaged, ReentrancyGuardUpgradeable {
     using SafeERC20Upgradeable for ERC20Upgradeable;
 
     bytes32 public constant CONTRACT_GOVERNANCE_ROLE =
@@ -398,7 +399,7 @@ contract KnightingRound is GlobalAccessControlManaged {
      *      (current contract balance - amount left to be claimed)
      * @param _token The token to sweep
      */
-    function sweep(address _token) external onlyRole(TREASURY_OPERATIONS_ROLE) {
+    function sweep(address _token) external gacPausable nonReentrant onlyRole(TREASURY_OPERATIONS_ROLE) {
         uint256 amount = ERC20Upgradeable(_token).balanceOf(address(this));
 
         if (_token == address(tokenOut)) {
@@ -409,8 +410,7 @@ contract KnightingRound is GlobalAccessControlManaged {
 
         require(amount > 0, "nothing to sweep");
 
-        ERC20Upgradeable(_token).safeTransfer(saleRecipient, amount);
-
         emit Sweep(_token, amount);
+        ERC20Upgradeable(_token).safeTransfer(saleRecipient, amount);
     }
 }
