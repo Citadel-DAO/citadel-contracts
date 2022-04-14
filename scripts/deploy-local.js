@@ -12,7 +12,8 @@ const cvx_minter_address = "0xF403C135812408BFbE8713b5A23a04b3D48AAE31"; // oper
 
 const erc20_mintable_abi = ["function mint(address, uint256)"];
 
-const address = (entity) => entity.address;
+const address = (entity) =>
+  entity.address ? entity.address : ethers.constants.AddressZero;
 
 const hashIt = (str) => ethers.utils.keccak256(ethers.utils.toUtf8Bytes(str));
 
@@ -126,19 +127,24 @@ async function main() {
 
   // mint some tokens to signers[0]
   const user = signers[0];
-  const txWbtcMint = await wbtcMintable.mint(address(user), parseUnits("1"));
+  const txWbtcMint = await wbtcMintable.mint(
+    address(user),
+    parseUnits("100", 8) // 100 btc
+  );
   await txWbtcMint.wait();
-  const txCvxMint = await cvxMintable.mint(address(user), parseUnits("1"));
-  await txCvxMint.wait();
+  await cvxMintable.mint(
+    address(user),
+    parseUnits("100000", 18) // 100000 cvx
+  );
 
   const wbtc = ERC20Upgradeable.attach(wbtc_address); //
   const cvx = ERC20Upgradeable.attach(cvx_address); //
 
   // check the balance
-  const balance_wbtc = await wbtc.callStatic.balanceOf(address(user));
-  console.log(`wbtc balance of signers[0]: ${formatUnits(balance_wbtc)}`);
-  const balance_cvx = await cvx.callStatic.balanceOf(address(user));
-  console.log(`cvx balance of signers[0]: ${formatUnits(balance_cvx)}`);
+  const balance_wbtc = await wbtc.balanceOf(address(user));
+  console.log(`wbtc balance of signers[0]: ${formatUnits(balance_wbtc, 8)}`);
+  const balance_cvx = await cvx.balanceOf(address(user));
+  console.log(`cvx balance of signers[0]: ${formatUnits(balance_cvx, 18)}`);
 
   /// === Variable Setup
   const governance = signers[12];
@@ -166,13 +172,13 @@ async function main() {
 
   /// ======= Citadel Token
 
-  citadel.connect(governance).initialize("Citadel", "CTDL", gac.address);
+  await citadel.connect(governance).initialize("Citadel", "CTDL", gac.address);
 
   /// ======= Staked (x) Citadel Vault Token
 
   const xCitadelFees = [0, 0, 0, 0];
 
-  xCitadel
+  await xCitadel
     .connect(governance)
     .initialize(
       address(citadel),
@@ -189,20 +195,20 @@ async function main() {
     );
 
   /// ======= Vested Exit | xCitadelVester
-  xCitadelVester
+  await xCitadelVester
     .connect(governance)
     .initialize(address(gac), address(citadel), address(xCitadel));
 
   /// =======  xCitadelLocker
-  xCitadelLocker
+  await xCitadelLocker
     .connect(governance)
     .initialize(address(xCitadel), "Vote Locked xCitadel", "vlCTDL");
 
   // ========  SupplySchedule || CTDL Token Distribution
-  schedule.connect(governance).initialize(address(gac));
+  await schedule.connect(governance).initialize(address(gac));
 
   // ========  CitadelMinter || CTDLMinter
-  citadelMinter
+  await citadelMinter
     .connect(governance)
     .initialize(
       address(gac),
@@ -216,33 +222,34 @@ async function main() {
   const knightingRoundParams = {
     start: new Date(new Date().getTime() + 10 * 1000),
     duration: 7 * 24 * 3600 * 1000,
-    citadelWbtcPrice: ethers.utils.parseUnits("23", 18), // 21 CTDL per wBTC
+    citadelWbtcPrice: ethers.utils.parseUnits("21", 18), // 21 CTDL per wBTC
     wbtcLimit: ethers.utils.parseUnits("100", 8), // 100 wBTC
   };
 
-  knightingRound.connect(governance).initialize(
-    address(gac),
-    address(citadel),
-    address(wbtc),
-    knightingRoundParams.start,
-    knightingRoundParams.duration,
-    knightingRoundParams.citadelWbtcPrice,
-    address(governance),
-    address(0), // TODO: Add guest list and test with it
-    knightingRoundParams.wbtcLimit
-  );
+  // TODO: need to deploy a guest list contract, address 0 won't run
+  // await knightingRound.connect(governance).initialize(
+  //   address(gac),
+  //   address(citadel),
+  //   address(wbtc),
+  //   knightingRoundParams.start,
+  //   knightingRoundParams.duration,
+  //   knightingRoundParams.citadelWbtcPrice,
+  //   address(governance),
+  //   address(0), // TODO: Add guest list and test with it
+  //   knightingRoundParams.wbtcLimit
+  // );
 
   /// ========  Funding
-  fundingWbtc.initialize(
+  await fundingWbtc.initialize(
     address(gac),
     address(citadel),
     address(wbtc),
     address(xCitadel),
     address(treasuryVault),
-    eoaOracle,
+    address(eoaOracle),
     ethers.utils.parseUnits("100", 8)
   );
-  fundingCvx.initialize(
+  await fundingCvx.initialize(
     address(gac),
     address(citadel),
     address(cvx),
@@ -254,32 +261,116 @@ async function main() {
 
   /// ======== Grant roles
 
-  gac
+  await gac
     .connect(governance)
     .grantRole(hashIt("CONTRACT_GOVERNANCE_ROLE"), address(governance));
-  gac
+  await gac
     .connect(governance)
     .grantRole(hashIt("TREASURY_GOVERNANCE_ROLE"), address(treasuryVault));
 
-  gac
+  await gac
     .connect(governance)
     .grantRole(hashIt("TECH_OPERATIONS_ROLE"), address(techOps));
-  gac
+  await gac
     .connect(governance)
     .grantRole(hashIt("TREASURY_OPERATIONS_ROLE"), address(treasuryOps));
-  gac
+  await gac
     .connect(governance)
     .grantRole(hashIt("POLICY_OPERATIONS_ROLE"), address(policyOps));
 
-  gac
+  await gac
     .connect(governance)
     .grantRole(hashIt("CITADEL_MINTER_ROLE"), address(citadelMinter));
-  gac
+  await gac
     .connect(governance)
     .grantRole(hashIt("CITADEL_MINTER_ROLE"), address(governance));
 
-  gac.connect(governance).grantRole(hashIt("PAUSER_ROLE"), address(governance));
-  gac.connect(governance).grantRole(hashIt("UNPAUSER_ROLE"), address(techOps));
+  await gac
+    .connect(governance)
+    .grantRole(hashIt("PAUSER_ROLE"), address(governance));
+  await gac
+    .connect(governance)
+    .grantRole(hashIt("UNPAUSER_ROLE"), address(techOps));
+
+  console.log(`finished initialization, now making positions...`);
+
+  // ======== make some positions for the signers[0]
+  // set supply schedule start
+  const blockNumBefore = await ethers.provider.getBlockNumber();
+  const blockBefore = await ethers.provider.getBlock(blockNumBefore);
+  const scheduleStartTime = blockBefore.timestamp + 6;
+  await schedule.connect(governance).setMintingStart(scheduleStartTime);
+
+  // control the time to fast forward
+  const oneDayLater = scheduleStartTime + 1 * 86400;
+  await hre.network.provider.send("evm_setNextBlockTimestamp", [oneDayLater]);
+  await hre.network.provider.send("evm_mine");
+
+  // set distribution split
+  await citadelMinter
+    .connect(policyOps)
+    .setCitadelDistributionSplit(4000, 3000, 3000);
+
+  // set funding pool rate
+  await citadelMinter
+    .connect(policyOps)
+    .setFundingPoolWeight(address(fundingWbtc), 5000);
+  await citadelMinter
+    .connect(policyOps)
+    .setFundingPoolWeight(address(fundingCvx), 5000);
+
+  // mint and distribute xCTDL to the staking contract
+  await citadelMinter.connect(policyOps).mintAndDistribute();
+  console.log(
+    `supply of CTDL in WBTC Funding pool: ${formatUnits(
+      await citadel.balanceOf(address(fundingWbtc)),
+      18
+    )}`
+  );
+  console.log(
+    `supply of CTDL in CVX Funding pool: ${formatUnits(
+      await citadel.balanceOf(address(fundingCvx)),
+      18
+    )}`
+  );
+
+  // approve the tokens to funding
+  const apeWbtcAmount = parseUnits("10", 8);
+  const apeCvxAmount = parseUnits("1000", 18);
+  await wbtc.approve(address(fundingWbtc), apeWbtcAmount);
+  await cvx.approve(address(fundingCvx), apeCvxAmount);
+
+  // eoa oracle update the price
+  await fundingWbtc
+    .connect(eoaOracle)
+    .functions["updateCitadelPriceInAsset(uint256)"](parseUnits("21", 18));
+  await fundingCvx
+    .connect(eoaOracle)
+    .functions["updateCitadelPriceInAsset(uint256)"](parseUnits("0.21", 18));
+
+  // set max discount
+  await fundingWbtc.connect(governance).setDiscountLimits(0, 1000);
+  await fundingCvx.connect(governance).setDiscountLimits(0, 1000);
+
+  // set a discount
+  await fundingWbtc.connect(policyOps).setDiscount(1000); // 10 percent discount
+  await fundingCvx.connect(policyOps).setDiscount(1000); // 10 percent discount
+
+  // bond some WBTC and CVX to get xCTDL
+  await fundingWbtc.connect(user).deposit(apeWbtcAmount, 0); // max slippage as there's no competition
+  await fundingCvx.connect(user).deposit(apeCvxAmount, 0); // max slippage as there's no competition
+  console.log(
+    `balance of xCTDL after two deposits: ${formatUnits(
+      await xCitadel.balanceOf(address(user)),
+      18
+    )}`
+  );
+
+  // withdraw some xCTDL to get some position
+
+  // lock some xCTDL
+
+  // fast forward to get some xCTDL vested
 }
 
 main()

@@ -198,10 +198,11 @@ contract CitadelMinter is
 
             uint256 xCitadelToLockers = afterAmount - beforeAmount;
 
-            xCitadelLocker.notifyRewardAmount(
-                address(cachedXCitadel),
-                xCitadelToLockers
-            );
+            // TODO: check why this one revert
+            // xCitadelLocker.notifyRewardAmount(
+            //     address(cachedXCitadel),
+            //     xCitadelToLockers
+            // );
             emit CitadelDistributionToLocking(
                 cachedLastMintTimestamp,
                 block.timestamp,
