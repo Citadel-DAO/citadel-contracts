@@ -210,6 +210,8 @@ contract Funding is GlobalAccessControlManaged, ReentrancyGuardUpgradeable {
             citadelAmount_ =
                 (citadelAmountWithoutDiscount * MAX_BPS) /
                 (MAX_BPS - funding.discount);
+        } else {
+            citadelAmount_ = citadelAmountWithoutDiscount;
         }
 
         citadelAmount_ = citadelAmount_ / assetDecimalsNormalizationValue;
