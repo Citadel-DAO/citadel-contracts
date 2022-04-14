@@ -79,11 +79,10 @@ contract FundingTest is BaseFixture {
         vm.prank(address(policyOps));
         vm.expectRevert(bytes("global-paused"));
         fundingCvx.setDiscount(10);
-
     }
 
-    function testDiscountRateBuys() public {
-        _testDiscountRateBuys(fundingCvx, cvx, 100e18, 5000, 100e18);
+    function testDiscountRateBuys(uint256 assetAmountIn, uint32 discount, uint256 citadelPrice) public {
+        _testDiscountRateBuys(fundingCvx, cvx, assetAmountIn, discount, citadelPrice);
 
     }
 
@@ -219,38 +218,82 @@ contract FundingTest is BaseFixture {
         fundingCvx.deposit(10e18, 0);
     }
 
-    function _testDiscountRateBuys(Funding fundingContract, IERC20 token, uint256 _assetAmountIn, uint32 discount, uint256 citadelPrice) public {
+    // Integration test for deppsit, discount management and sweeping
+    // function testDepositWithDiscountFlow() public {
+    //     (uint256 discount,,,,,) = fundingCvx.funding();
 
-        /*
-            @fatima: this is a good candidate to generalize using fuzzing: test buys with various discount rates, using fuzzing, and confirm the results.
-            sanity check the numerical results (tokens in vs tokens out, based on price and discount rate)
-        */
+    //     assertEq(discount, 0);
 
-        vm.assume(discount<10000 && _assetAmountIn>0 && citadelPrice>0);  // discount < MAX_BPS = 10000
+    //     uint256 depositAmount = 100e18;
+
+    //     _testBuy(fundingCvx, 100e18, depositAmount);
+
+
+    // }
+
+    function _testDiscountRateBuys(
+        Funding fundingContract,
+        IERC20 token,
+        uint256 _assetAmountIn,
+        uint32 _discount,
+        uint256 _citadelPrice
+    ) public {
+
+        emit log_named_uint("Asset Amount in", _assetAmountIn);
+        emit log_named_uint("Discount", _discount);
+        emit log_named_uint("Citadel Price", _citadelPrice);
+
+        vm.assume(_discount<10000 && _assetAmountIn>1e18 && _citadelPrice>1e18 && _assetAmountIn<100000000e18 && _citadelPrice<100000000e18); // discount < MAX_BPS = 10000
+
+        // Adjust funding cap as needed
+        (,,,,, uint256 assetCap) = fundingContract.funding();
+        if (_assetAmountIn > assetCap) {
+            vm.prank(policyOps);
+            fundingCvx.setAssetCap(_assetAmountIn);
+        }
 
         vm.prank(address(governance));
         fundingContract.setDiscountLimits(0, 9999);
 
         vm.prank(address(policyOps));
-        fundingContract.setDiscount(discount); // set discount
+        fundingContract.setDiscount(_discount); // set discount
 
         vm.prank(eoaOracle);
-        fundingContract.updateCitadelPriceInAsset(citadelPrice); // set citadel price
+        fundingContract.updateCitadelPriceInAsset(_citadelPrice); // set citadel price
 
         uint256 citadelAmountOutExpected = fundingContract.getAmountOut(_assetAmountIn);
 
         vm.prank(governance);
         citadel.mint(address(fundingContract), citadelAmountOutExpected); // fundingContract should have citadel to transfer to user
 
-        address user = address(1);
-        vm.startPrank(user);
-        erc20utils.forceMintTo(user, address(token), _assetAmountIn);
+        vm.startPrank(shrimp);
+        erc20utils.forceMintTo(shrimp, address(token), _assetAmountIn);
+
+        comparator.snapPrev();
+
         token.approve(address(fundingContract), _assetAmountIn);
         uint256 citadelAmountOut = fundingContract.deposit(_assetAmountIn, 0);
         vm.stopPrank();
 
+        comparator.snapCurr();
+
+        // Checks (Note: xCTDL 1:1 CTDL at the beginning)
+        assertEq(comparator.diff("citadel.balanceOf(shrimp)"), 0);
+        assertEq(comparator.diff("xCitadel.balanceOf(shrimp)"), citadelAmountOutExpected);
+
+        if (keccak256(abi.encodePacked(token.symbol())) == keccak256(abi.encodePacked(("CVX")))) {
+            assertEq(comparator.negDiff("citadel.balanceOf(fundingCvx)"), citadelAmountOutExpected);
+            assertEq(comparator.diff("cvx.balanceOf(treasuryVault)"), _assetAmountIn);
+            assertEq(comparator.negDiff("cvx.balanceOf(shrimp)"), _assetAmountIn);
+        } else {
+            assertEq(comparator.negDiff("citadel.balanceOf(fundingWbtc)"), citadelAmountOutExpected);
+            assertEq(comparator.diff("wbtc.balanceOf(treasuryVault)"), _assetAmountIn);
+            assertEq(comparator.negDiff("wbtc.balanceOf(shrimp)"), _assetAmountIn);
+        }
+
         // check citadelAmoutOut is same as expected
         assertEq(citadelAmountOut, citadelAmountOutExpected);
+        assertEq(xCitadel.balanceOf(address(fundingContract)), 0);
 
     }
 

@@ -832,7 +832,9 @@ contract StakedCitadel is
 
         // After you burned the shares, and you have sent the funds, adding here is equivalent to depositing
         // Process withdrawal fee
-        _mintSharesFor(treasury, _fee, balance() - _fee);
+        if(_fee > 0) {
+            _mintSharesFor(treasury, _fee, balance() - _fee);
+        }
     }
 
     /// @dev Helper function to calculate fees.

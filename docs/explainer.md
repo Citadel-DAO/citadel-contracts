@@ -1,6 +1,5 @@
-Citadel is the microstrategy of the people - it’s a community owned BTC focused fund 
-
-The contracts are designed to enable the vision
+# Citadel
+Citadel is the microstrategy of the people - it’s a community owned BTC focused fund. The contracts are designed to enable the vision.
 
 ## Swapping
 
