@@ -203,6 +203,10 @@ async function main() {
   await xCitadelLocker
     .connect(governance)
     .initialize(address(xCitadel), "Vote Locked xCitadel", "vlCTDL");
+  // add reward token to be distributed to staker
+  await xCitadelLocker
+    .connect(governance)
+    .addReward(address(xCitadel), address(citadelMinter), true);
 
   // ========  SupplySchedule || CTDL Token Distribution
   await schedule.connect(governance).initialize(address(gac));
@@ -302,8 +306,10 @@ async function main() {
   await schedule.connect(governance).setMintingStart(scheduleStartTime);
 
   // control the time to fast forward
-  const oneDayLater = scheduleStartTime + 1 * 86400;
-  await hre.network.provider.send("evm_setNextBlockTimestamp", [oneDayLater]);
+  const depositTokenTime = scheduleStartTime + 1 * 86400;
+  await hre.network.provider.send("evm_setNextBlockTimestamp", [
+    depositTokenTime,
+  ]);
   await hre.network.provider.send("evm_mine");
 
   // set distribution split
@@ -359,6 +365,7 @@ async function main() {
   // bond some WBTC and CVX to get xCTDL
   await fundingWbtc.connect(user).deposit(apeWbtcAmount, 0); // max slippage as there's no competition
   await fundingCvx.connect(user).deposit(apeCvxAmount, 0); // max slippage as there's no competition
+  // user should be getting ~200 xCTDL
   console.log(
     `balance of xCTDL after two deposits: ${formatUnits(
       await xCitadel.balanceOf(address(user)),
@@ -366,11 +373,91 @@ async function main() {
     )}`
   );
 
-  // withdraw some xCTDL to get some position
+  // withdraw some xCTDL to start vesting
+  await xCitadel.connect(user).withdraw(parseUnits("50", 18));
 
-  // lock some xCTDL
+  // fast forward to get some CTDL vested
+  console.log(
+    `fast forward to 10 days later to have some vested CTDL unlocked`
+  );
+  const getVestedTime = depositTokenTime + 10 * 86400;
+  await hre.network.provider.send("evm_setNextBlockTimestamp", [getVestedTime]);
+  await hre.network.provider.send("evm_mine");
 
-  // fast forward to get some xCTDL vested
+  // claim some vested CTDL
+  await xCitadelVester.claim(address(user), parseUnits("20", 18));
+  console.log(
+    `got ${formatUnits(
+      await citadel.balanceOf(address(user)),
+      18
+    )} CTDL 10 days later`
+  );
+
+  // before lock up, need to allow xCTDL
+  await xCitadel
+    .connect(user)
+    .approve(address(xCitadelLocker), parseUnits("150", 18));
+
+  // lock up some xCTDL
+  console.log(`locking up 50 xCTDL`);
+  await xCitadelLocker
+    .connect(user)
+    .lock(address(user), parseUnits("50", 18), 0);
+  console.log(
+    `balance of xCTDL after lock: ${formatUnits(
+      await xCitadel.balanceOf(address(user)),
+      18
+    )}`
+  );
+
+  // fast forward to make a position unlockable
+  console.log(`fast forward to 22 weeks later to make the position unlockable`);
+  const unlockTime = getVestedTime + 7 * 22 * 86400; // 22 weeks later
+  await hre.network.provider.send("evm_setNextBlockTimestamp", [unlockTime]);
+  await hre.network.provider.send("evm_mine");
+
+  await xCitadelLocker.checkpointEpoch();
+  await citadelMinter.connect(policyOps).mintAndDistribute();
+  // // test out if i can withdraw
+  // await xCitadelLocker.connect(user).withdrawExpiredLocksTo(address(user));
+  // console.log(
+  //   `rewards: ${await xCitadelLocker.claimableRewards(address(user))}`
+  // );
+
+  // make another locked position
+  console.log(`lock another 100 xCTDL to make the position locked`);
+  await xCitadelLocker
+    .connect(user)
+    .lock(address(user), parseUnits("100", 18), 0);
+
+  // to make some rewards available
+  const cannotUnlockTime = unlockTime + 7 * 5 * 86400; // 5 weeks later
+  await hre.network.provider.send("evm_setNextBlockTimestamp", [
+    cannotUnlockTime,
+  ]);
+  await hre.network.provider.send("evm_mine");
+
+  await xCitadelLocker.checkpointEpoch();
+  console.log(
+    `total locked position: ${formatUnits(
+      await xCitadelLocker.lockedBalanceOf(address(user)),
+      18
+    )}`
+  );
+  // // test out if there are rewards available
+  // console.log(
+  //   `balance of xCTDL before claim rewards: ${formatUnits(
+  //     await xCitadel.balanceOf(address(user)),
+  //     18
+  //   )}`
+  // );
+  // await xCitadelLocker.functions["getReward(address)"](address(user));
+  // console.log(
+  //   `balance of xCTDL after second lock: ${formatUnits(
+  //     await xCitadel.balanceOf(address(user)),
+  //     18
+  //   )}`
+  // );
 }
 
 main()
