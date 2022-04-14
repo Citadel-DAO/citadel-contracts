@@ -150,7 +150,6 @@ contract FundingTest is BaseFixture {
     }
 
     function testSweep() public {
-
         vm.stopPrank();
         vm.prank(address(1));
         vm.expectRevert("GAC: invalid-caller-role");
@@ -158,6 +157,13 @@ contract FundingTest is BaseFixture {
 
         vm.prank(treasuryOps);
         vm.expectRevert("nothing to sweep");
+        fundingCvx.sweep(address(cvx));
+
+        // Check that the funding asset can't be sweeped
+        erc20utils.forceMintTo(address(fundingCvx), address(cvx), 100e18);
+
+        vm.prank(treasuryOps);
+        vm.expectRevert("cannot sweep funding asset, use claimAssetToTreasury()");
         fundingCvx.sweep(address(cvx));
     }
 
