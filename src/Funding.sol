@@ -315,6 +315,7 @@ contract Funding is GlobalAccessControlManaged, ReentrancyGuardUpgradeable {
     function sweep(address _token)
         external
         gacPausable
+        nonReentrant
         onlyRole(TREASURY_OPERATIONS_ROLE)
     {
         uint256 amount = IERC20(_token).balanceOf(address(this));
@@ -324,8 +325,8 @@ contract Funding is GlobalAccessControlManaged, ReentrancyGuardUpgradeable {
             "cannot sweep funding asset, use claimAssetToTreasury()"
         );
 
-        IERC20(_token).safeTransfer(saleRecipient, amount);
         emit Sweep(_token, amount);
+        IERC20(_token).safeTransfer(saleRecipient, amount);
     }
 
     /// @notice Claim accumulated asset token to treasury
