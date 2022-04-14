@@ -75,7 +75,7 @@ An informal video offering a [summary of the system](https://drive.google.com/fi
     - e.g. holders of CONTRACT_GOVERNANCE_ROLE won't rug or set malicious permissions for other roles.
     - However, if roles can be set in an unintended manner, this is a very valid finding, 
 
-    See [BaseFixture.sol](./test/BaseFixture.sol) for how the system components are wired together in practice.
+    See [BaseFixture.sol](./src/test/BaseFixture.sol) for how the system components are wired together in practice.
 
 ## What's in scope?
 * All (non-test) contracts in this repo.
