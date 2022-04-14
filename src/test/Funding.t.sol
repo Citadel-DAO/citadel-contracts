@@ -81,15 +81,15 @@ contract FundingTest is BaseFixture {
         fundingCvx.setDiscount(10);
     }
 
-    function testDiscountRateBuys(uint256 assetAmountIn, uint32 discount, uint256 citadelPrice) public {
+    function testDiscountRateBuysCvx(uint256 assetAmountIn, uint32 discount, uint256 citadelPrice) public {
         _testDiscountRateBuys(fundingCvx, cvx, assetAmountIn, discount, citadelPrice);
 
     }
 
-    function testBuyDifferentDecimals() public {
+    function testDiscountRateBuysWbtc(uint256 assetAmountIn, uint32 discount, uint256 citadelPrice) public {
         // wBTC is an 8 decimal example
         // TODO: Fix comparator calls in inner function as per that functions comment
-        _testDiscountRateBuys(fundingWbtc, wbtc, 2e8, 2000, 2e8);
+        _testDiscountRateBuys(fundingWbtc, wbtc, assetAmountIn, discount, citadelPrice);
     }
 
     function testSetAssetCap() public {
@@ -218,19 +218,6 @@ contract FundingTest is BaseFixture {
         fundingCvx.deposit(10e18, 0);
     }
 
-    // Integration test for deppsit, discount management and sweeping
-    // function testDepositWithDiscountFlow() public {
-    //     (uint256 discount,,,,,) = fundingCvx.funding();
-
-    //     assertEq(discount, 0);
-
-    //     uint256 depositAmount = 100e18;
-
-    //     _testBuy(fundingCvx, 100e18, depositAmount);
-
-
-    // }
-
     function _testDiscountRateBuys(
         Funding fundingContract,
         IERC20 token,
@@ -243,13 +230,14 @@ contract FundingTest is BaseFixture {
         emit log_named_uint("Discount", _discount);
         emit log_named_uint("Citadel Price", _citadelPrice);
 
-        vm.assume(_discount<10000 && _assetAmountIn>1e18 && _citadelPrice>1e18 && _assetAmountIn<100000000e18 && _citadelPrice<100000000e18); // discount < MAX_BPS = 10000
+        // discount < MAX_BPS = 10000
+        vm.assume(_discount<10000 && _assetAmountIn>0 && _citadelPrice>0 && _assetAmountIn<1000000000e18 && _citadelPrice<1000000000e18);
 
         // Adjust funding cap as needed
         (,,,,, uint256 assetCap) = fundingContract.funding();
         if (_assetAmountIn > assetCap) {
             vm.prank(policyOps);
-            fundingCvx.setAssetCap(_assetAmountIn);
+            fundingContract.setAssetCap(_assetAmountIn);
         }
 
         vm.prank(address(governance));
@@ -268,11 +256,24 @@ contract FundingTest is BaseFixture {
 
         vm.startPrank(shrimp);
         erc20utils.forceMintTo(shrimp, address(token), _assetAmountIn);
+        token.approve(address(fundingContract), _assetAmountIn);
 
         comparator.snapPrev();
 
-        token.approve(address(fundingContract), _assetAmountIn);
+        // getAmountsOut returns 0 if (amountsIn * price) < 1x10^(decimals)), hence depositFor reverts.
+        // This is acceptable since the price has lower bounds. The transaction will revert if the user
+        // attempts to deposit the extremely small amounts that would trigger this behavior.
+        if(citadelAmountOutExpected == 0) {
+            vm.expectRevert("Amount 0");
+        }
+
         uint256 citadelAmountOut = fundingContract.deposit(_assetAmountIn, 0);
+
+        // If revert with "Amount 0", end the test
+        if (citadelAmountOut == 0) {
+            return;
+        }
+
         vm.stopPrank();
 
         comparator.snapCurr();
