@@ -70,15 +70,6 @@ contract FundingTest is BaseFixture {
         vm.expectRevert(bytes("GAC: invalid-caller-role"));
         fundingCvx.setDiscountLimits(0,20);
 
-        // - pausing freezes these functions appropriately
-        vm.prank(guardian);
-        gac.pause();
-        vm.prank(address(governance));
-        vm.expectRevert(bytes("global-paused"));
-        fundingCvx.setDiscountLimits(0, 50);
-        vm.prank(address(policyOps));
-        vm.expectRevert(bytes("global-paused"));
-        fundingCvx.setDiscount(10);
 
     }
 
@@ -184,14 +175,7 @@ contract FundingTest is BaseFixture {
     }
     
     function testDepositModifiers() public{
-        // pausing should freeze deposit
-        vm.prank(guardian);
-        gac.pause();
-        vm.expectRevert(bytes("global-paused"));
-        fundingCvx.deposit(10e18 , 0);
-        vm.prank(address(techOps));
-        gac.unpause();
-
+       
         // flagging citadelPriceFlag should freeze deposit
         vm.prank(governance);
         fundingCvx.setCitadelAssetPriceBounds(0, 5000);
