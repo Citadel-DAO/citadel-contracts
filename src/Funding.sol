@@ -214,6 +214,7 @@ contract Funding is GlobalAccessControlManaged, ReentrancyGuardUpgradeable {
             citadelAmount_ = citadelAmountWithoutDiscount;
         }
 
+        // TODO: if discount is not set, citadelAmount_ in the right reference is 0
         citadelAmount_ = citadelAmount_ / assetDecimalsNormalizationValue;
     }
 
