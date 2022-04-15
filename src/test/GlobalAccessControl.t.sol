@@ -190,4 +190,83 @@ contract GlobalAccessControlTest is BaseFixture {
         knightingRound.sweep(address(cvx));
 
     }
+
+    function testStakedCitadel() public{
+        vm.prank(guardian);
+        xCitadel.pause();
+
+        bytes32[] memory emptyProof = new bytes32[](1);
+
+        vm.expectRevert("Pausable: paused");
+        xCitadel.deposit(1e18);
+
+        vm.expectRevert("Pausable: paused");
+        xCitadel.deposit(1e18, emptyProof);
+
+        vm.expectRevert("Pausable: paused");
+        xCitadel.depositAll();
+
+        vm.expectRevert("Pausable: paused");
+        xCitadel.depositAll(emptyProof);
+
+        vm.expectRevert("Pausable: paused");
+        xCitadel.depositFor(address(1), 1e18);
+
+        vm.expectRevert("Pausable: paused");
+        xCitadel.depositFor(address(1), 1e18, emptyProof);
+
+        vm.expectRevert("Pausable: paused");
+        xCitadel.withdraw(1000);
+
+        vm.expectRevert("Pausable: paused");
+        xCitadel.withdrawAll();
+
+        vm.expectRevert("Pausable: paused");
+        xCitadel.setTreasury(address(1));
+
+        vm.expectRevert("Pausable: paused");
+        xCitadel.setStrategy(address(1));
+
+        vm.expectRevert("Pausable: paused");
+        xCitadel.setToEarnBps(100);
+
+        vm.expectRevert("Pausable: paused");
+        xCitadel.setGuestList(address(1));
+
+        vm.expectRevert("Pausable: paused");
+        xCitadel.setWithdrawalFee(1000);
+
+        vm.expectRevert("Pausable: paused");
+        xCitadel.setPerformanceFeeGovernance(1000);
+
+        vm.expectRevert("Pausable: paused");
+        xCitadel.setManagementFee(1000);
+
+    }
+
+    function testSchedulePausing() public{
+        vm.prank(guardian);
+        schedule.pause();
+
+        vm.startPrank(governance);
+        vm.expectRevert(bytes("local-paused"));
+        schedule.setMintingStart(block.timestamp + 1000);
+
+        vm.expectRevert(bytes("local-paused"));
+        schedule.setEpochRate(8 , 10);
+
+        vm.stopPrank();
+
+        vm.prank(guardian);
+        gac.pause();
+        vm.startPrank(governance);
+        vm.expectRevert(bytes("global-paused"));
+        schedule.setMintingStart(block.timestamp + 1000);
+
+        vm.expectRevert(bytes("global-paused"));
+        schedule.setEpochRate(8 , 10);
+
+        vm.stopPrank();
+
+    }
 }
