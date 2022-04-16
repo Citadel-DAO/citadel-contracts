@@ -54,7 +54,7 @@ Hardhat Ganace is more reliable than ganache itself for UI testing so we provide
 This will be run the deploy script on default network, but don't be shy to use other hardhat options for it
 
 ```
-npx hardhat run scripts/deploy-local.js
+npx hardhat run scripts/deploy-local.js --network localhost
 ```
 
 # System Overview
