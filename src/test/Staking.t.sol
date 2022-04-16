@@ -31,15 +31,15 @@ contract StakingTest is BaseFixture {
 
         // approve staking amount
         citadel.approve(address(xCitadel), 10e18);
-        
-        // deposit 
+
+        // deposit
         xCitadel.deposit(10e18);
 
         uint256 userCitadelAfter = citadel.balanceOf(user);
         uint256 xCitadelBalanceAfter = citadel.balanceOf(address(xCitadel));
         uint256 userXCitadelAfter = xCitadel.balanceOf(user);
 
-        emit log_named_uint("xCitadel received",userXCitadelAfter-userXCitadelBefore );
+        emit log_named_uint("xCitadel received",userXCitadelAfter-userXCitadelBefore);
 
         // check if user has successfully deposited
         assertEq(userCitadelBefore - userCitadelAfter, 10e18);
@@ -50,36 +50,36 @@ contract StakingTest is BaseFixture {
         // user withdraws all amount
         xCitadel.withdrawAll();
 
-        // the amount should go in vesting 
+        // the amount should go in vesting
         uint256 vestingCitadelAfter = citadel.balanceOf(address(xCitadelVester));
 
-        emit log_named_uint("Vesting Citadel received",vestingCitadelAfter-vestingCitadelBefore );
+        emit log_named_uint("Vesting Citadel received",vestingCitadelAfter-vestingCitadelBefore);
 
         // should have sent full amount to vesting
-        assertEq(vestingCitadelAfter-vestingCitadelBefore  , 10e18);
+        assertEq(vestingCitadelAfter-vestingCitadelBefore, 10e18);
 
-        // moving half duration 
-        vm.warp(block.timestamp + xCitadelVester.INITIAL_VESTING_DURATION()/2 );
+        // moving half duration
+        vm.warp(block.timestamp + xCitadelVester.INITIAL_VESTING_DURATION()/2);
 
         uint256 claimableAmount = xCitadelVester.claimableBalance(user);
 
         // at half duration. user should be able claim half amount
-        assertEq(claimableAmount , 10e18/2);
+        assertEq(claimableAmount, 10e18/2);
 
         // move forward so that the vesting period ends
-        vm.warp(block.timestamp + xCitadelVester.INITIAL_VESTING_DURATION() );
+        vm.warp(block.timestamp + xCitadelVester.INITIAL_VESTING_DURATION());
 
         claimableAmount = xCitadelVester.claimableBalance(user);
 
         // as the vesting period is ended. user should be able claim full amount
-        assertEq(claimableAmount , 10e18);
+        assertEq(claimableAmount, 10e18);
 
         userCitadelBefore = citadel.balanceOf(user);
-        xCitadelVester.claim(user , 10e18);
+        xCitadelVester.claim(user, 10e18);
         userCitadelAfter = citadel.balanceOf(user);
 
         // user should have got full amount back
-        assertEq(userCitadelAfter- userCitadelBefore, 10e18);
+        assertEq(userCitadelAfter - userCitadelBefore, 10e18);
         vm.stopPrank();
     }
 }
