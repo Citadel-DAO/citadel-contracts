@@ -222,6 +222,71 @@ contract VestingTest is BaseFixture {
     }
 
 
+    /*
+    Integration flow to test that:
+        - A user can do multiple vesting periods properly
+    */
+    function testDoubleConsecutiveVestingFlow() public {
+        address user = address(1);
+        _stake(user);
+
+        uint256 firstVestAmount = 10e18; // Vesting full amount staked
+
+        // User withdraws half of Staked position to begin vesting
+        vm.expectEmit(true, false, false, true);
+        emit Vest(
+            address(user),
+            firstVestAmount,
+            block.timestamp,
+            block.timestamp + xCitadelVester.vestingDuration()
+        );
+        xCitadel.withdraw(firstVestAmount);
+
+        // Advance to end of first vesting period
+        vm.warp(block.timestamp + xCitadelVester.vestingDuration());
+
+        // Claimable balance should be firstVestAmount
+        assertEq(xCitadelVester.claimableBalance(user), firstVestAmount);
+
+        // User claims full vested amount
+        xCitadelVester.claim(user, firstVestAmount);
+        (,,uint256 lockedAmounts, uint256 claimedAmounts) = xCitadelVester.vesting(user);
+        assertEq(lockedAmounts, firstVestAmount);
+        assertEq(claimedAmounts, firstVestAmount);
+
+        // Advance in time to resemble a real case better
+        vm.warp(block.timestamp + xCitadelVester.vestingDuration()/2);
+
+        // User stakes again
+        vm.stopPrank();
+        _stake(user);
+
+        uint256 secondVestAmount = 10e18/2; // Vesting half of newly staked amount
+
+        // User withdraws ramining staked position
+        vm.expectEmit(true, false, false, true);
+        emit Vest(
+            address(user),
+            secondVestAmount,
+            block.timestamp,
+            block.timestamp + xCitadelVester.vestingDuration()
+        );
+        xCitadel.withdraw(secondVestAmount);
+
+        // Advance to 1/4 of vesting period
+        vm.warp(block.timestamp + xCitadelVester.vestingDuration()/4);
+
+        // User should be able to claim secondVestAmount/4
+        assertEq(xCitadelVester.claimableBalance(user), secondVestAmount/4);
+
+        // User claims 1/4 of secondVestingAmount
+        xCitadelVester.claim(user, secondVestAmount/4);
+        (,,lockedAmounts, claimedAmounts) = xCitadelVester.vesting(user);
+        assertEq(lockedAmounts, firstVestAmount + secondVestAmount);
+        assertEq(claimedAmounts, firstVestAmount + secondVestAmount/4);
+    }
+
+
 
     // Stakes Citadel for a user in preparation for vesting tests
     function _stake(address user) private {
