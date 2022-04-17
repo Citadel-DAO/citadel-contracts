@@ -57,6 +57,20 @@ This will be run the deploy script on default network, but don't be shy to use o
 npx hardhat run scripts/deploy-local.js
 ```
 
+For deploying using mock cvx and wbtc use this script
+
+```
+npx hardhat run scripts/deploy-mock.js --network YOUR_SELECTED_NETWORK
+```
+
+For minting mock wbtc or cvx use this tasks
+
+```
+npx hardhat  --network YOUR_SELECTED_NETWORK  mint-wbtc --address YOUR_SELECTED_ADDRESS --amount YOUR_SELECTED_AMOUNT
+npx hardhat  --network YOUR_SELECTED_NETWORK  mint-cvx --address YOUR_SELECTED_ADDRESS --amount YOUR_SELECTED_AMOUNT
+```
+
+
 # System Overview
 An informal video offering a [summary of the system](https://drive.google.com/file/d/1hCzQrgZEsbd0t2mtuaXm7Cp3YS-ZIlw3/view?usp=sharing).
 
