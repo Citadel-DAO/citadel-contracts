@@ -183,7 +183,7 @@ contract VestingTest is BaseFixture {
         vm.expectEmit(true, false, false, true);
         emit Vest(
             address(user),
-            firstVestAmount + secondVestAmount,
+            firstVestAmount - claimedAmounts + secondVestAmount,
             block.timestamp,
             block.timestamp + xCitadelVester.vestingDuration()
         );
@@ -198,8 +198,8 @@ contract VestingTest is BaseFixture {
             uint256 secondLockedAmounts,
             uint256 secondClaimedAmounts
         ) = xCitadelVester.vesting(user);
-        assertEq(secondLockedAmounts, firstVestAmount + secondVestAmount); // Locked amounts is now the total of the two vestings
-        assertEq(secondClaimedAmounts, firstVestAmount/2); // Claimed amounts is not modified
+        assertEq(secondLockedAmounts, firstVestAmount - claimedAmounts + secondVestAmount); // Total of two vestings minus the already claimed
+        assertEq(secondClaimedAmounts, 0); // Claimed amounts are reset after a new vest
         assertEq(secondUnlockBegin, firstUnlockBegin + (xCitadelVester.vestingDuration() * 3)/4); // 3/4 of duration has elapsed since first lock
         assertEq(secondUnlockEnds, firstUnlockEnds + (xCitadelVester.vestingDuration() * 3)/4); // 3/4 of duration has elapsed since first lock
 
@@ -207,18 +207,18 @@ contract VestingTest is BaseFixture {
         vm.warp(block.timestamp + xCitadelVester.vestingDuration());
 
         // User should be able to claim the remaining amount from the first vest plus the complete second vest amount
-        assertEq(xCitadelVester.claimableBalance(user), firstVestAmount + secondVestAmount - secondClaimedAmounts);
+        assertEq(xCitadelVester.claimableBalance(user), firstVestAmount + secondVestAmount - claimedAmounts);
 
         // User attempts to claim total amount but only receives the claimable (remaining)
         uint256 userCitadelBefore = citadel.balanceOf(user);
 
         vm.expectEmit(true, true, false, true);
-        emit Claimed(user, user, firstVestAmount + secondVestAmount - secondClaimedAmounts);
+        emit Claimed(user, user, firstVestAmount + secondVestAmount - claimedAmounts);
         xCitadelVester.claim(user, firstVestAmount + secondVestAmount);
 
         uint256 userCitadelAfter = citadel.balanceOf(user);
 
-        assertEq(userCitadelAfter - userCitadelBefore, firstVestAmount + secondVestAmount - secondClaimedAmounts);
+        assertEq(userCitadelAfter - userCitadelBefore, firstVestAmount + secondVestAmount - claimedAmounts);
     }
 
 
@@ -282,8 +282,8 @@ contract VestingTest is BaseFixture {
         // User claims 1/4 of secondVestingAmount
         xCitadelVester.claim(user, secondVestAmount/4);
         (,,lockedAmounts, claimedAmounts) = xCitadelVester.vesting(user);
-        assertEq(lockedAmounts, firstVestAmount + secondVestAmount);
-        assertEq(claimedAmounts, firstVestAmount + secondVestAmount/4);
+        assertEq(lockedAmounts, firstVestAmount + secondVestAmount - firstVestAmount); // First vest amount already claimed
+        assertEq(claimedAmounts, secondVestAmount/4); // Claimed amounts reset with every new vest
     }
 
 
@@ -293,7 +293,6 @@ contract VestingTest is BaseFixture {
         // giving user some citadel to stake
         vm.prank(governance);
         citadel.mint(user, 100e18);
-        assertEq(citadel.balanceOf(user), 100e18);
 
         uint256 userCitadelBefore = citadel.balanceOf(user);
         uint256 xCitadelBalanceBefore = citadel.balanceOf(address(xCitadel));
