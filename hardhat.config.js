@@ -32,7 +32,7 @@ task("mint-wbtc")
     console.log(address, amount);
     const scriptsDirectory = path.join(__dirname, "scripts-data");
 
-    const wBTC = await ethers.getContractFactory("WrapBitcoin");
+    const wBTC = await ethers.getContractFactory("MockToken");
 
     const deployData = JSON.parse(
       fs.readFileSync(
@@ -58,7 +58,7 @@ task("mint-cvx")
     console.log(address, amount);
     const scriptsDirectory = path.join(__dirname, "scripts-data");
 
-    const CVX = await ethers.getContractFactory("Convex");
+    const CVX = await ethers.getContractFactory("MockToken");
 
     const deployData = JSON.parse(
       fs.readFileSync(

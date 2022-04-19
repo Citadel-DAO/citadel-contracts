@@ -48,11 +48,16 @@ async function main() {
 
   const Funding = await ethers.getContractFactory("Funding");
 
-  const wBTC = await ethers.getContractFactory("WrapBitcoin");
-  const CVX = await ethers.getContractFactory("Convex");
+  const MockToken = ethers.getContractFactory("MockToken")
 
-  const wbtc = await wBTC.deploy(); //
-  const cvx = await CVX.deploy(); //
+  const wbtc = await MockToken.deploy(); //
+  await wbtc.initiailize("Wrapped Bitcoin", "wBTC");
+
+  const cvx = await MockToken.deploy(); //
+  await cvx.initiailize("Convex", "cvx");
+
+  const usdc = await MockToken.deploy(); //
+  await usdc.initiailize("USD Coin", "USDC");
 
   /// === Deploying Contracts & loggin addresses
   const gac = await GlobalAccessControl.deploy();
@@ -100,8 +105,14 @@ async function main() {
   const whale = signers[7];
   const shrimp = signers[8];
   const shark = signers[9];
+  const tester = signers[0];
 
   const eoaOracle = signers[3];
+
+  // === Mock Token Minting
+  await wbtc.mint(tester, "100000000");
+  await cvx.mint(tester, "1 ether");
+  await usdc.mint(tester, "1000000000");
 
   /// === Initialization and Setup
 
@@ -256,6 +267,7 @@ async function main() {
       knightingRound: address(knightingRound),
       wbtc: address(wbtc),
       cvx: address(cvx),
+      usdc: address(usdc),
     }),
     (err) => {
       if (err) {
