@@ -1,3 +1,5 @@
+const fs = require("fs");
+const path = require("path");
 require("@nomiclabs/hardhat-waffle");
 const { subtask } = require("hardhat/config");
 const {
@@ -22,6 +24,55 @@ task("accounts", "Prints the list of accounts", async (taskArgs, hre) => {
     console.log(account.address);
   }
 });
+
+task("mint-wbtc")
+  .addParam("address", "The address of mints")
+  .addParam("amount", "The amount of wbtc")
+  .setAction(async ({ address, amount }) => {
+    console.log(address, amount);
+    const scriptsDirectory = path.join(__dirname, "scripts-data");
+
+    const wBTC = await ethers.getContractFactory("WrapBitcoin");
+
+    const deployData = JSON.parse(
+      fs.readFileSync(
+        path.join(scriptsDirectory, "testnet-addresses.json"),
+        "utf8"
+      )
+    );
+
+    const wbtc = wBTC.attach(deployData.wbtc);
+
+    await wbtc.mint(address, amount);
+
+    console.log(
+      `Wrap Bitcoin balance of: ${address}`,
+      String(await wbtc.balanceOf(address))
+    );
+  });
+
+task("mint-cvx")
+  .addParam("address", "The address of mints")
+  .addParam("amount", "The amount of wbtc")
+  .setAction(async ({ address, amount }) => {
+    console.log(address, amount);
+    const scriptsDirectory = path.join(__dirname, "scripts-data");
+
+    const CVX = await ethers.getContractFactory("Convex");
+
+    const deployData = JSON.parse(
+      fs.readFileSync(
+        path.join(scriptsDirectory, "testnet-addresses.json"),
+        "utf8"
+      )
+    );
+    const cvx = CVX.attach(deployData.cvx);
+    await cvx.mint(address, amount);
+    console.log(
+      `Convext balance of: ${address}`,
+      String(await cvx.balanceOf(address))
+    );
+  });
 
 subtask(TASK_COMPILE_SOLIDITY_GET_SOURCE_PATHS).setAction(
   async (_, __, runSuper) => {
@@ -58,6 +109,14 @@ module.exports = {
       optimizer: {
         enabled: true,
         runs: 200,
+      },
+    },
+  },
+  networks: {
+    hardhat: {
+      mining: {
+        auto: true,
+        interval: [3000, 4000],
       },
     },
   },
