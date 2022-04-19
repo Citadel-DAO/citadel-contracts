@@ -18,4 +18,16 @@ interface IStakedCitadelLocker {
 
     function notifyRewardAmount(address _rewardsToken, uint256 _reward)
         external;
+
+    function lock(
+        address _account,
+        uint256 _amount,
+        uint256 _spendRatio
+    ) external ;
+
+    function withdrawExpiredLocksTo(address _withdrawTo) external ;
+
+    function getReward(address _account) external;
+    
+
 }
