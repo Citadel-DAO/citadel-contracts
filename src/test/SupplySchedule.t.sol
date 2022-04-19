@@ -28,13 +28,6 @@ contract SupplyScheduleTest is BaseFixture {
         schedule.setMintingStart(block.timestamp + 1000);
         vm.stopPrank();
 
-        // check if pausing freezes setMintingStart
-        vm.prank(guardian);
-        gac.pause();
-        vm.prank(governance);
-        vm.expectRevert(bytes("global-paused"));
-        schedule.setMintingStart(block.timestamp + 1000);
-
     }
 
     function testSetEpochRate() public{
@@ -54,13 +47,6 @@ contract SupplyScheduleTest is BaseFixture {
         assertEq(schedule.epochRate(7) , epochRate); // check if epochRate is set
 
         vm.stopPrank();
-
-        // check if pausing freezes setEpochRate
-        vm.prank(guardian);
-        gac.pause();
-        vm.prank(governance);
-        vm.expectRevert(bytes("global-paused"));
-        schedule.setEpochRate(8 , epochRate);
 
     }
 
