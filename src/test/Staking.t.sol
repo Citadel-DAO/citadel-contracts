@@ -6,7 +6,7 @@ import {GlobalAccessControl} from "../GlobalAccessControl.sol";
 import {Funding} from "../Funding.sol";
 import {FixedPointMathLib} from "solmate/utils/FixedPointMathLib.sol";
 
-import "../interfaces/erc20/IERC20.sol";
+// import "../interfaces/erc20/IERC20.sol";
 
 contract StakingTest is BaseFixture {
     using FixedPointMathLib for uint;

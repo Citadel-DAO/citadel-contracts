@@ -208,9 +208,22 @@ contract FundingTest is BaseFixture {
     }
 
     function _testDiscountRateBuys(
+        Funding fundingContract,
+        IERC20 token,
+        uint256 _assetAmountIn,
+        uint32 _discount,
+        uint256 _citadelPrice
+    ) public {
+
+        emit log_named_uint("Asset Amount in", _assetAmountIn);
+        emit log_named_uint("Discount", _discount);
+        emit log_named_uint("Citadel Price", _citadelPrice);
+
+        // discount < MAX_BPS = 10000
         vm.assume(_discount<10000 && _assetAmountIn>0 && _citadelPrice>0 && _assetAmountIn<1000000000e18 && _citadelPrice<1000000000e18);
 
         // Adjust funding cap as needed
+        (,,,,, uint256 assetCap) = fundingContract.funding();
         if (_assetAmountIn > assetCap) {
             vm.prank(policyOps);
             fundingContract.setAssetCap(_assetAmountIn);
