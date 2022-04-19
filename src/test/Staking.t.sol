@@ -24,8 +24,9 @@ contract StakingTest is BaseFixture {
         assertEq(citadel.balanceOf(user), 100e18);
 
         uint256 userCitadelBefore = citadel.balanceOf(user);
-        uint256 xCitadelBalanceBefore = citadel.balanceOf(address(xCitadel));
+        uint256 xCitadelBalanceBefore = xCitadel.balance();
         uint256 userXCitadelBefore = xCitadel.balanceOf(user);
+        uint256 xCitadelTotalSupplyBefore = xCitadel.totalSupply();
 
         vm.startPrank(user);
 
@@ -35,51 +36,97 @@ contract StakingTest is BaseFixture {
         // deposit
         xCitadel.deposit(10e18);
 
-        uint256 userCitadelAfter = citadel.balanceOf(user);
-        uint256 xCitadelBalanceAfter = citadel.balanceOf(address(xCitadel));
-        uint256 userXCitadelAfter = xCitadel.balanceOf(user);
+        vm.stopPrank();
 
-        emit log_named_uint("xCitadel received",userXCitadelAfter-userXCitadelBefore);
+        uint256 userCitadelAfter = citadel.balanceOf(user);
+        uint256 xCitadelBalanceAfter = xCitadel.balance();
+        uint256 userXCitadelAfter = xCitadel.balanceOf(user);
+        uint256 xCitadelTotalSupplyAfter = xCitadel.totalSupply();
 
         // check if user has successfully deposited
         assertEq(userCitadelBefore - userCitadelAfter, 10e18);
-        assertEq(xCitadelBalanceAfter - xCitadelBalanceBefore, 10e18);
+        assertEq(userXCitadelAfter - userXCitadelBefore, 10e18); // user should have got same amount as totalSupply was zero
+        assertEq(xCitadelBalanceAfter - xCitadelBalanceBefore, 10e18); // xCitadel should have some citadel
+        // total supply should have incremented
+        assertEq(xCitadelTotalSupplyAfter-xCitadelTotalSupplyBefore, 10e18);
+
+        mintAndDistribute();
 
         uint256 vestingCitadelBefore = citadel.balanceOf(address(xCitadelVester));
 
         // user withdraws all amount
+        vm.startPrank(user);
         xCitadel.withdrawAll();
 
         // the amount should go in vesting
         uint256 vestingCitadelAfter = citadel.balanceOf(address(xCitadelVester));
 
-        emit log_named_uint("Vesting Citadel received",vestingCitadelAfter-vestingCitadelBefore);
+        // as pricePerShare is increased, vesting should receive more amount than deposited.
+        uint expectedClaimableBalance = (xCitadel.balance()*userXCitadelAfter)/xCitadel.totalSupply();
 
-        // should have sent full amount to vesting
-        assertEq(vestingCitadelAfter-vestingCitadelBefore, 10e18);
+        assertEq(vestingCitadelAfter-vestingCitadelBefore, expectedClaimableBalance);
 
         // moving half duration
         vm.warp(block.timestamp + xCitadelVester.INITIAL_VESTING_DURATION()/2);
 
-        uint256 claimableAmount = xCitadelVester.claimableBalance(user);
-
         // at half duration. user should be able claim half amount
-        assertEq(claimableAmount, 10e18/2);
+        assertEq(xCitadelVester.claimableBalance(user), expectedClaimableBalance/2);
 
         // move forward so that the vesting period ends
         vm.warp(block.timestamp + xCitadelVester.INITIAL_VESTING_DURATION());
 
-        claimableAmount = xCitadelVester.claimableBalance(user);
-
         // as the vesting period is ended. user should be able claim full amount
-        assertEq(claimableAmount, 10e18);
+        assertEq(xCitadelVester.claimableBalance(user), expectedClaimableBalance);
 
         userCitadelBefore = citadel.balanceOf(user);
-        xCitadelVester.claim(user, 10e18);
+
+        // expectedClaimableBalance is more than deposited amount
+        assertTrue(expectedClaimableBalance > 10e18);
+        xCitadelVester.claim(user, expectedClaimableBalance);
         userCitadelAfter = citadel.balanceOf(user);
 
-        // user should have got full amount back
-        assertEq(userCitadelAfter - userCitadelBefore, 10e18);
+        // user should have got expected amount back
+        assertEq(userCitadelAfter- userCitadelBefore, expectedClaimableBalance);
         vm.stopPrank();
+
     }
+
+    function mintAndDistribute() public{
+        uint pricePerShareBefore = xCitadel.getPricePerFullShare();
+        vm.startPrank(policyOps);
+        citadelMinter.setCitadelDistributionSplit(0,6000,4000);
+
+        vm.stopPrank();
+        vm.startPrank(governance);
+        schedule.setMintingStart(block.timestamp);
+        citadelMinter.initializeLastMintTimestamp();
+        vm.stopPrank();
+
+        vm.warp(block.timestamp + 1000);
+
+        uint expectedMint = schedule.getMintable(citadelMinter.lastMintTimestamp());
+
+        uint xCitadelTotalSupplyBefore = xCitadel.totalSupply();
+        uint citadelBeforeInXcitadel = xCitadel.balance();
+
+        vm.prank(policyOps);
+        citadelMinter.mintAndDistribute();
+
+        uint expectedToStakers = expectedMint * 6000 / 10000;
+        uint expectedToLockers = expectedMint * 4000 / 10000;
+        uint xCitadelTotalSupplyAfter = xCitadel.totalSupply();
+        uint citadelAfterInXcitadel = xCitadel.balance();
+        uint pricePerShareAfter = xCitadel.getPricePerFullShare();
+
+        // total supply should increase as the amount is deposited
+        assertEq(xCitadelTotalSupplyAfter - xCitadelTotalSupplyBefore, expectedToLockers);
+
+        // balance should increase as expectedToLockers is deposited.
+        // And expectedToStakers is transferred to xCitadel.
+        assertEq(citadelAfterInXcitadel - citadelBeforeInXcitadel, expectedToLockers+expectedToStakers);
+
+        // price per share should increase
+        assertEq(pricePerShareAfter - pricePerShareBefore, (expectedToStakers * 1e18)/xCitadelTotalSupplyAfter);
+    }
+
 }
