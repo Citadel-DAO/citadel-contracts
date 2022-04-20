@@ -127,7 +127,7 @@ contract StakedCitadelVester is
      * @param _amount amount that will be vested
      * @param _unlockBegin The time at which unlocking of tokens will begin.
      */
-    function vest(
+    function setupVesting(
         address recipient,
         uint256 _amount,
         uint256 _unlockBegin
@@ -135,7 +135,12 @@ contract StakedCitadelVester is
         require(msg.sender == vault, "StakedCitadelVester: only xCTDL vault");
         require(_amount != 0, "StakedCitadelVester: cannot vest 0");
 
-        vesting[recipient].lockedAmounts += _amount;
+        vesting[recipient].lockedAmounts -= vesting[recipient].claimedAmounts;
+        vesting[recipient].claimedAmounts = 0;
+
+        vesting[recipient].lockedAmounts =
+            vesting[recipient].lockedAmounts +
+            _amount;
         vesting[recipient].unlockBegin = _unlockBegin;
         vesting[recipient].unlockEnd = _unlockBegin + vestingDuration;
 

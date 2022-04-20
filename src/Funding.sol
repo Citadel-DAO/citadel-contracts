@@ -8,6 +8,7 @@ import "./interfaces/badger/IVault.sol";
 import "./interfaces/erc20/IERC20.sol";
 import "./lib/GlobalAccessControlManaged.sol";
 import "./lib/SafeERC20.sol";
+import "./interfaces/citadel/IMedianOracle.sol";
 
 /**
  * @notice Sells a token at a predetermined price to whitelisted buyers.
@@ -209,8 +210,11 @@ contract Funding is GlobalAccessControlManaged, ReentrancyGuardUpgradeable {
             citadelAmount_ =
                 (citadelAmountWithoutDiscount * MAX_BPS) /
                 (MAX_BPS - funding.discount);
+        } else {
+            citadelAmount_ = citadelAmountWithoutDiscount;
         }
 
+        // TODO: if discount is not set, citadelAmount_ in the right reference is 0
         citadelAmount_ = citadelAmount_ / assetDecimalsNormalizationValue;
     }
 
@@ -314,6 +318,7 @@ contract Funding is GlobalAccessControlManaged, ReentrancyGuardUpgradeable {
     function sweep(address _token)
         external
         gacPausable
+        nonReentrant
         onlyRole(TREASURY_OPERATIONS_ROLE)
     {
         uint256 amount = IERC20(_token).balanceOf(address(this));
@@ -323,8 +328,8 @@ contract Funding is GlobalAccessControlManaged, ReentrancyGuardUpgradeable {
             "cannot sweep funding asset, use claimAssetToTreasury()"
         );
 
-        IERC20(_token).safeTransfer(saleRecipient, amount);
         emit Sweep(_token, amount);
+        IERC20(_token).safeTransfer(saleRecipient, amount);
     }
 
     /// @notice Claim accumulated asset token to treasury
@@ -407,6 +412,39 @@ contract Funding is GlobalAccessControlManaged, ReentrancyGuardUpgradeable {
     /// ===== Oracle actions =====
     /// ==========================
 
+    /// @notice Update citadel price in asset terms from oracle source
+    /// @dev Note that the oracle mechanics are abstracted to the oracle address
+    function updateCitadelPriceInAsset()
+        external
+        gacPausable
+        onlyRole(KEEPER_ROLE)
+    {   
+        uint _citadelPriceInAsset;
+        bool _valid;
+
+        (_citadelPriceInAsset, _valid) = IMedianOracle(citadelPriceInAssetOracle).getData();
+
+        require(_citadelPriceInAsset > 0, "citadel price must not be zero");
+        require(_valid, "oracle data must be valid");
+
+        if (
+            _citadelPriceInAsset < minCitadelPriceInAsset ||
+            _citadelPriceInAsset > maxCitadelPriceInAsset
+        ) {
+            citadelPriceFlag = true;
+            emit CitadelPriceFlag(
+                _citadelPriceInAsset,
+                minCitadelPriceInAsset,
+                maxCitadelPriceInAsset
+            );
+        } else {
+            citadelPriceInAsset = _citadelPriceInAsset;
+            emit CitadelPriceInAssetUpdated(_citadelPriceInAsset);
+        }
+    }
+
+
+    /// @dev OUT OF AUDIT SCOPE: This is a test function that will be removed in final code
     /// @notice Update citadel price in asset terms from oracle source
     /// @dev Note that the oracle mechanics are abstracted to the oracle address
     function updateCitadelPriceInAsset(uint256 _citadelPriceInAsset)

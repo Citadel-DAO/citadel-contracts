@@ -5,6 +5,7 @@ __pycache__
 build/
 reports/
 .env
+artifacts/
 
 node_modules/
 hh-cache/
@@ -12,3 +13,5 @@ hh-cache/
 # foundry
 cache/
 out/
+
+scripts-data/
