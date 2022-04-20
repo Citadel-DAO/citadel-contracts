@@ -50,9 +50,18 @@ async function main() {
 
   const wBTC = await ethers.getContractFactory("WrapBitcoin");
   const CVX = await ethers.getContractFactory("Convex");
+  const USDC = await ethers.getContractFactory("USDC");
+
+  const mintTo = signers[0].address
 
   const wbtc = await wBTC.deploy(); //
+  await wbtc.mint(mintTo, ethers.BigNumber.from("100000000"));
+
   const cvx = await CVX.deploy(); //
+  await cvx.mint(mintTo, ethers.constants.WeiPerEther);
+
+  const usdc = await USDC.deploy(); //
+  await usdc.mint(mintTo, ethers.BigNumber.from("100000000000"));
 
   /// === Deploying Contracts & loggin addresses
   const gac = await GlobalAccessControl.deploy();
