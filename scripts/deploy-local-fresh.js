@@ -49,6 +49,8 @@ async function main() {
 
   const ERC20Upgradeable = await ethers.getContractFactory("ERC20Upgradeable");
 
+  const KnightingRoundGuestlist = await ethers.getContractFactory("KnightingRoundGuestlist");
+
   /// === Deploying Contracts & loggin addresses
   const gac = await GlobalAccessControl.deploy();
   console.log("global access control address is: ", gac.address);
@@ -73,6 +75,9 @@ async function main() {
 
   const knightingRound = await KnightingRound.deploy();
   console.log("knightingRound address is: ", knightingRound.address);
+
+  const knightingRoundGuestlist = await KnightingRoundGuestlist.deploy();
+  console.log("knightingRoundGuestlist address is: ", knightingRoundGuestlist.address);
 
   const fundingWbtc = await Funding.deploy();
   console.log("fundingWbtc address is: ", knightingRound.address);
@@ -105,13 +110,20 @@ async function main() {
 
   /// ======= Global Access Control
 
+  console.log(governance)
+  console.log(governance.address)
+
+  console.log("Initialize GAC...")
   await gac.connect(governance).initialize(governance.address);
 
   /// ======= Citadel Token
 
+  console.log("Initialize Citadel Token...")
   await citadel.connect(governance).initialize("Citadel", "CTDL", gac.address);
 
   /// ======= Staked (x) Citadel Vault Token
+
+  console.log("Initialize xCitadel Token...")
 
   const xCitadelFees = [0, 0, 0, 0];
 
@@ -132,11 +144,13 @@ async function main() {
     );
 
   /// ======= Vested Exit | xCitadelVester
+  console.log("Initialize xCitadelVester...")
   await xCitadelVester
     .connect(governance)
     .initialize(address(gac), address(citadel), address(xCitadel));
 
   /// =======  xCitadelLocker
+  console.log("Initialize xCitadelLocker...")
   await xCitadelLocker
     .connect(governance)
     .initialize(address(xCitadel), "Vote Locked xCitadel", "vlCTDL");
@@ -146,9 +160,11 @@ async function main() {
     .addReward(address(xCitadel), address(citadelMinter), true);
 
   // ========  SupplySchedule || CTDL Token Distribution
+  console.log("Initialize supplySchedule...")
   await schedule.connect(governance).initialize(address(gac));
 
   // ========  CitadelMinter || CTDLMinter
+  console.log("Initialize citadelMinter...")
   await citadelMinter
     .connect(governance)
     .initialize(
@@ -159,28 +175,41 @@ async function main() {
       address(schedule)
     );
 
+    console.log("Initialize knightingRoundGuestlist...")
+  // knightingRoundGuestlist.connect(governance).initialize(address(gac));
+  // knightingRoundGuestlist.connect(techOps).setGuestRoot("0xa792f206b3e190ce3670653ece23b5ffac811e402f37d3c6d37638e310c2b081");
+
   /// ========  Knighting Round
   const knightingRoundParams = {
-    start: new Date(new Date().getTime() + 10 * 1000),
-    duration: 7 * 24 * 3600 * 1000,
+    start: ethers.BigNumber.from(((new Date().getTime() + 1000 * 1000) / 1000).toPrecision(10).toString()),
+    duration: ethers.BigNumber.from(14 * 24 * 3600),
     citadelWbtcPrice: ethers.utils.parseUnits("21", 18), // 21 CTDL per wBTC
     wbtcLimit: ethers.utils.parseUnits("100", 8), // 100 wBTC
   };
 
-  // TODO: need to deploy a guest list contract, address 0 won't run
-  // await knightingRound.connect(governance).initialize(
-  //   address(gac),
-  //   address(citadel),
-  //   address(wbtc),
-  //   knightingRoundParams.start,
-  //   knightingRoundParams.duration,
-  //   knightingRoundParams.citadelWbtcPrice,
-  //   address(governance),
-  //   address(0), // TODO: Add guest list and test with it
-  //   knightingRoundParams.wbtcLimit
-  // );
+  console.log(
+    knightingRoundParams.start,
+    knightingRoundParams.duration,
+    knightingRoundParams.citadelWbtcPrice,
+    knightingRoundParams.wbtcLimit
+  )
 
-  /// ========  Funding
+  console.log("Initialize knightingRound...")
+  // TODO: need to deploy a guest list contract, address 0 won't run
+  await knightingRound.connect(governance).initialize(
+    address(gac),
+    address(citadel),
+    address(wbtc),
+    knightingRoundParams.start,
+    knightingRoundParams.duration,
+    knightingRoundParams.citadelWbtcPrice,
+    address(treasuryVault),
+    address(knightingRoundGuestlist), // TODO: Add guest list and test with it
+    knightingRoundParams.wbtcLimit
+  );
+
+  // /// ========  Funding
+  console.log("Initialize funding...")
   await fundingWbtc.initialize(
     address(gac),
     address(citadel),
@@ -201,7 +230,7 @@ async function main() {
   );
 
   /// ======== Grant roles
-
+  console.log("Grant roles...")
   await gac
     .connect(governance)
     .grantRole(hashIt("CONTRACT_GOVERNANCE_ROLE"), address(governance));
