@@ -28,6 +28,9 @@ interface IStakedCitadelLocker {
     function withdrawExpiredLocksTo(address _withdrawTo) external ;
 
     function getReward(address _account) external;
+
+    function rewardPerToken(address _rewardsToken)
+    external returns(uint256);
     
 
 }
