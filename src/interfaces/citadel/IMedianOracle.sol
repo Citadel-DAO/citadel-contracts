@@ -18,9 +18,9 @@ interface IMedianOracle {
     function reportDelaySec() external view returns(uint256);
     function minimumProviders() external view returns(uint256);
 
-    // function providers() external view returns (address[] memory);
+    function providers(uint256) external view returns (address);
     function providersSize() external view returns (uint256);
-    // function providerReports(address provider) external view returns (Report[2] memory);
+    function providerReports(address, uint256) external view returns (uint256, uint256);
     function getData() external view returns (uint256, bool);
 
     function addProvider(address provider) external;

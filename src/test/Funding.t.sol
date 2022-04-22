@@ -6,8 +6,9 @@ import {SupplySchedule} from "../SupplySchedule.sol";
 import {GlobalAccessControl} from "../GlobalAccessControl.sol";
 import {Funding} from "../Funding.sol";
 import {FixedPointMathLib} from "solmate/utils/FixedPointMathLib.sol";
+import {MedianOracle} from "../MedianOracle.sol";
 
-import "../interfaces/erc20/IERC20.sol";
+import {IERC20} from "../interfaces/erc20/IERC20.sol";
 
 contract FundingTest is BaseFixture {
     using FixedPointMathLib for uint;
@@ -74,14 +75,14 @@ contract FundingTest is BaseFixture {
     }
 
     function testDiscountRateBuys() public{
-        _testDiscountRateBuys(fundingCvx, cvx, 100e18, 5000, 100e18 );
+        _testDiscountRateBuys(fundingCvx, medianOracleCvx, cvx, 100e18, 5000, 100e18 );
 
     }
 
     function testBuyDifferentDecimals() public {
         // wBTC is an 8 decimal example
         // TODO: Fix comparator calls in inner function as per that functions comment
-        _testDiscountRateBuys(fundingWbtc, wbtc, 2e8, 2000, 2e8 );
+        _testDiscountRateBuys(fundingWbtc, medianOracleWbtc, wbtc, 2e8, 2000, 2e8 );
 
     }
 
@@ -97,7 +98,7 @@ contract FundingTest is BaseFixture {
         assertEq(assetCap, 1000e18); // check if assetCap is set
 
         // checking assetCap can not be less than accumulated funds.
-         _testDiscountRateBuys(fundingCvx, cvx, 100e18, 3000, 100e18 );
+         _testDiscountRateBuys(fundingCvx, medianOracleCvx, cvx, 100e18, 3000, 100e18 );
         vm.prank(policyOps);
         vm.expectRevert("cannot decrease cap below global sum of assets in");
         fundingCvx.setAssetCap(10e18);
@@ -148,17 +149,21 @@ contract FundingTest is BaseFixture {
         assertEq(discountManager, address(2)); // check if discountManager is set
 
         vm.prank(address(1));
-        vm.expectRevert("onlyCitadelPriceInAssetOracle");
-        fundingCvx.updateCitadelPriceInAsset(1000);
+        vm.expectRevert("GAC: invalid-caller-role");
+        fundingCvx.updateCitadelPriceInAsset();
 
         // setting citadelPriceInAsset from correct account
-        vm.prank(eoaOracle);
-        fundingCvx.updateCitadelPriceInAsset(1000);
+        vm.startPrank(keeper);
+        medianOracleCvx.pushReport(1000);
+        fundingCvx.updateCitadelPriceInAsset();
+        vm.stopPrank();
         assertEq(fundingCvx.citadelPriceInAsset(), 1000); // check if citadelPriceInAsset is set
         
-        vm.prank(eoaOracle);
+        vm.startPrank(keeper);
+        medianOracleCvx.pushReport(0);
         vm.expectRevert("citadel price must not be zero");
-        fundingCvx.updateCitadelPriceInAsset(0);
+        fundingCvx.updateCitadelPriceInAsset();
+        vm.stopPrank();
 
         vm.prank(address(1));
         vm.expectRevert("GAC: invalid-caller-role");
@@ -179,14 +184,18 @@ contract FundingTest is BaseFixture {
         // flagging citadelPriceFlag should freeze deposit
         vm.prank(governance);
         fundingCvx.setCitadelAssetPriceBounds(0, 5000);
-        vm.prank(eoaOracle);
-        fundingCvx.updateCitadelPriceInAsset(6000);
+
+        vm.startPrank(keeper);
+        medianOracleCvx.pushReport(6000);
+        fundingCvx.updateCitadelPriceInAsset();
+        vm.stopPrank();
+
         vm.expectRevert(bytes("Funding: citadel price from oracle flagged and pending review"));
         fundingCvx.deposit(10e18 , 0);
 
     }
 
-    function _testDiscountRateBuys(Funding fundingContract, IERC20 token, uint256 _assetAmountIn, uint32 discount, uint256 citadelPrice) public {
+    function _testDiscountRateBuys(Funding fundingContract, MedianOracle medianOracleContract, IERC20 token, uint256 _assetAmountIn, uint32 discount, uint256 citadelPrice) public {
         
         /**
             @fatima: this is a good candidate to generalize using fuzzing: test buys with various discount rates, using fuzzing, and confirm the results.
@@ -201,8 +210,10 @@ contract FundingTest is BaseFixture {
         vm.prank(address(policyOps));
         fundingContract.setDiscount(discount); // set discount
 
-        vm.prank(eoaOracle);
-        fundingContract.updateCitadelPriceInAsset(citadelPrice); // set citadel price
+        vm.startPrank(keeper);
+        medianOracleContract.pushReport(citadelPrice);
+        fundingContract.updateCitadelPriceInAsset();
+        vm.stopPrank();
 
         uint256 citadelAmountOutExpected = fundingContract.getAmountOut(_assetAmountIn);
 
@@ -221,14 +232,15 @@ contract FundingTest is BaseFixture {
 
     }
     
-    function _testBuy(Funding fundingContract, uint assetIn, uint citadelPrice) internal {
+    function _testBuy(Funding fundingContract, MedianOracle medianOracleContract, uint assetIn, uint citadelPrice) internal {
         // just make citadel appear rather than going through minting flow here
         erc20utils.forceMintTo(address(fundingContract), address(citadel), 100000e18);
         
-        vm.prank(eoaOracle);
-
         // CVX funding contract gives us an 18 decimal example
-        fundingContract.updateCitadelPriceInAsset(citadelPrice);
+        vm.startPrank(keeper);
+        medianOracleContract.pushReport(citadelPrice);
+        fundingContract.updateCitadelPriceInAsset();
+        vm.stopPrank();
 
         uint expectedAssetOut = assetIn.divWadUp(citadelPrice);
         

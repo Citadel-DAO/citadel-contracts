@@ -442,31 +442,4 @@ contract Funding is GlobalAccessControlManaged, ReentrancyGuardUpgradeable {
             emit CitadelPriceInAssetUpdated(_citadelPriceInAsset);
         }
     }
-
-
-    /// @dev OUT OF AUDIT SCOPE: This is a test function that will be removed in final code
-    /// @notice Update citadel price in asset terms from oracle source
-    /// @dev Note that the oracle mechanics are abstracted to the oracle address
-    function updateCitadelPriceInAsset(uint256 _citadelPriceInAsset)
-        external
-        gacPausable
-        onlyCitadelPriceInAssetOracle
-    {
-        require(_citadelPriceInAsset > 0, "citadel price must not be zero");
-
-        if (
-            _citadelPriceInAsset < minCitadelPriceInAsset ||
-            _citadelPriceInAsset > maxCitadelPriceInAsset
-        ) {
-            citadelPriceFlag = true;
-            emit CitadelPriceFlag(
-                _citadelPriceInAsset,
-                minCitadelPriceInAsset,
-                maxCitadelPriceInAsset
-            );
-        } else {
-            citadelPriceInAsset = _citadelPriceInAsset;
-            emit CitadelPriceInAssetUpdated(_citadelPriceInAsset);
-        }
-    }
 }
