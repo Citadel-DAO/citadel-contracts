@@ -18,6 +18,7 @@ import {SupplySchedule} from "../SupplySchedule.sol";
 import {CitadelMinter} from "../CitadelMinter.sol";
 
 import {KnightingRound} from "../KnightingRound.sol";
+import {KnightingRoundGuestlist} from "../KnightingRoundGuestlist.sol";
 import {Funding} from "../Funding.sol";
 
 import "../interfaces/erc20/IERC20.sol";
@@ -96,6 +97,7 @@ contract BaseFixture is DSTest, Utils, stdCheats {
     CitadelMinter citadelMinter = new CitadelMinter();
 
     KnightingRound knightingRound = new KnightingRound();
+    KnightingRoundGuestlist guestList = new KnightingRoundGuestlist();
 
     Funding fundingWbtc = new Funding();
     Funding fundingCvx = new Funding();
@@ -125,8 +127,13 @@ contract BaseFixture is DSTest, Utils, stdCheats {
 
         vm.label(rando, "rando");
 
+        vm.label(address(knightingRound), "knightingRound");
+        vm.label(address(guestList), "guestList");
         vm.label(address(schedule), "schedule");
         vm.label(address(gac), "gac");
+
+        vm.label(wbtc_address, "wbtc");
+        vm.label(cvx_address, "cvx");
 
         vm.label(whale, "whale"); // whale attempts large token actions, testing upper bounds
         vm.label(shrimp, "shrimp"); // shrimp attempts small token actions, testing lower bounds
@@ -200,6 +207,8 @@ contract BaseFixture is DSTest, Utils, stdCheats {
             wbtcLimit: 100e8 // 100 wBTC
         });
 
+        guestList.initialize(address(gac));
+
         knightingRound.initialize(
             address(gac),
             address(citadel),
@@ -208,7 +217,7 @@ contract BaseFixture is DSTest, Utils, stdCheats {
             knightingRoundParams.duration,
             knightingRoundParams.citadelWbtcPrice,
             address(governance),
-            address(0), // TODO: Add guest list and test with it
+            address(guestList),
             knightingRoundParams.wbtcLimit
         );
         vm.stopPrank();
