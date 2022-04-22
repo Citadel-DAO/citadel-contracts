@@ -88,9 +88,9 @@ contract KnightingRoundGuestlist is GlobalAccessControlManaged {
         address _guest,
         bytes32[] calldata _merkleProof
     ) external view returns (bool) {
-        // Yes: If the user is on the list
+        // Yes: If the user is on the list or there's no guestRoot set
         // No: If the user is not on the list
-        bool invited = guests[_guest] || _verifyInvitationProof(_guest, _merkleProof);
+        bool invited = guests[_guest] || _verifyInvitationProof(_guest, _merkleProof) || guestRoot == bytes32(0);
 
         // If the user was previously invited, or proved invitiation via list, verify if the amount to deposit keeps them under the cap
         if (invited) {
