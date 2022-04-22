@@ -36,7 +36,7 @@ contract CtdlCvxPriceFeed {
         return 18;
     }
 
-    function latestAnswer() public view returns (uint256 ctdlPriceInCvx_) {
+    function latestAnswer() public view returns (uint256 cvxPriceInCtdl_) {
         (, int256 wbtcPriceInBtc, , , ) = wbtcBtcPriceFeed.latestRoundData();
         (, int256 btcPriceInUsd, , , ) = btcUsdPriceFeed.latestRoundData();
         (, int256 cvxPriceInUsd, , , ) = cvxUsdPriceFeed.latestRoundData();
@@ -52,7 +52,7 @@ contract CtdlCvxPriceFeed {
         // 18 decimals
         uint256 wbtcPriceInCtdl = ctdlWbtcCurvePool.price_oracle();
 
-        ctdlPriceInCvx_ = (wbtcPriceInCtdl * PRECISION) / wbtcPriceInCvx;
+        cvxPriceInCtdl_ = (wbtcPriceInCtdl * PRECISION) / wbtcPriceInCvx;
     }
 
     function pushReport() external {

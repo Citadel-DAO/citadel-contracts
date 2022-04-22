@@ -17,8 +17,8 @@ contract CtdlWbtcCurveV2PriceFeed {
         return 18;
     }
 
-    function latestAnswer() public view returns (uint256) {
-        return curvePool.price_oracle();
+    function latestAnswer() public view returns (uint256 wbtcPriceInCtdl_) {
+        wbtcPriceInCtdl_ = curvePool.price_oracle();
     }
 
     function pushReport() external {
