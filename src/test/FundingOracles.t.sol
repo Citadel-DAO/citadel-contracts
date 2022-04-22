@@ -11,6 +11,8 @@ contract FundingOraclesTest is BaseFixture {
     }
 
     function testFundingOraclesFlow() public {
+
+
         /*
             - update CTDL/USD
             - update ASSET/USD
