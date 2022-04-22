@@ -6,9 +6,9 @@ import {SupplySchedule} from "../SupplySchedule.sol";
 import {GlobalAccessControl} from "../GlobalAccessControl.sol";
 import {Funding} from "../Funding.sol";
 import {FixedPointMathLib} from "solmate/utils/FixedPointMathLib.sol";
-import {MedianOracle} from "../MedianOracle.sol";
 
 import {IERC20} from "../interfaces/erc20/IERC20.sol";
+import {IMedianOracle} from "../interfaces/citadel/IMedianOracle.sol";
 
 contract FundingTest is BaseFixture {
     using FixedPointMathLib for uint;
@@ -217,7 +217,7 @@ contract FundingTest is BaseFixture {
 
     function _testDiscountRateBuys(
         Funding fundingContract,
-        MedianOracle medianOracleContract,
+        IMedianOracle medianOracleContract,
         IERC20 token,
         uint256 _assetAmountIn,
         uint32 _discount,
@@ -298,7 +298,7 @@ contract FundingTest is BaseFixture {
 
     }
 
-    function _testBuy(Funding fundingContract, MedianOracle medianOracleContract, uint assetIn, uint citadelPrice) internal {
+    function _testBuy(Funding fundingContract, IMedianOracle medianOracleContract, uint assetIn, uint citadelPrice) internal {
         // just make citadel appear rather than going through minting flow here
         erc20utils.forceMintTo(address(fundingContract), address(citadel), 100000e18);
         

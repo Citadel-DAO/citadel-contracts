@@ -20,7 +20,6 @@ import {CitadelMinter} from "../CitadelMinter.sol";
 import {KnightingRound} from "../KnightingRound.sol";
 import {KnightingRoundGuestlist} from "../KnightingRoundGuestlist.sol";
 import {Funding} from "../Funding.sol";
-import {MedianOracle} from "../MedianOracle.sol";
 
 import "../interfaces/erc20/IERC20.sol";
 import "../interfaces/badger/IEmptyStrategy.sol";
@@ -28,6 +27,7 @@ import "../interfaces/citadel/IStakedCitadelLocker.sol";
 import {IMedianOracle} from "../interfaces/citadel/IMedianOracle.sol";
 
 string constant lockerArtifact = "artifacts-external/StakedCitadelLocker.json";
+string constant medianOracleArtifact = "artifacts-external/MedianOracle.json";
 
 contract BaseFixture is DSTest, Utils, stdCheats {
     Vm constant vm = Vm(HEVM_ADDRESS);
@@ -100,8 +100,8 @@ contract BaseFixture is DSTest, Utils, stdCheats {
     KnightingRound knightingRound = new KnightingRound();
     KnightingRoundGuestlist guestList = new KnightingRoundGuestlist();
 
-    MedianOracle medianOracleWbtc = new MedianOracle(1 days, 0, 1);
-    MedianOracle medianOracleCvx = new MedianOracle(1 days, 0, 1);
+    IMedianOracle medianOracleWbtc = IMedianOracle(deployCode(medianOracleArtifact, abi.encode(1 days, 0, 1)));
+    IMedianOracle medianOracleCvx = IMedianOracle(deployCode(medianOracleArtifact, abi.encode(1 days, 0, 1)));
 
     Funding fundingWbtc = new Funding();
     Funding fundingCvx = new Funding();
