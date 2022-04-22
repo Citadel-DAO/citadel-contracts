@@ -127,9 +127,13 @@ contract BaseFixture is DSTest, Utils, stdCheats {
 
         vm.label(rando, "rando");
 
+        vm.label(address(knightingRound), "knightingRound");
         vm.label(address(guestList), "guestList");
         vm.label(address(schedule), "schedule");
         vm.label(address(gac), "gac");
+
+        vm.label(wbtc_address, "wbtc");
+        vm.label(cvx_address, "cvx");
 
         vm.label(whale, "whale"); // whale attempts large token actions, testing upper bounds
         vm.label(shrimp, "shrimp"); // shrimp attempts small token actions, testing lower bounds
