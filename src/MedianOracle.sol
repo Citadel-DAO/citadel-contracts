@@ -125,12 +125,12 @@ contract MedianOracle is Ownable, IOracle {
         uint8 index_past = 1 - index_recent;
 
         // Check that the push is not too soon after the last one.
-        require(timestamps[index_recent].add(reportDelaySec) <= now);
+        require(timestamps[index_recent].add(reportDelaySec) <= block.timestamp);
 
-        reports[index_past].timestamp = now;
+        reports[index_past].timestamp = block.timestamp;
         reports[index_past].payload = payload;
 
-        emit ProviderReportPushed(providerAddress, payload, now);
+        emit ProviderReportPushed(providerAddress, payload, block.timestamp);
     }
 
     /**
@@ -157,8 +157,8 @@ contract MedianOracle is Ownable, IOracle {
         uint256 reportsCount = providers.length;
         uint256[] memory validReports = new uint256[](reportsCount);
         uint256 size = 0;
-        uint256 minValidTimestamp =  now.sub(reportExpirationTimeSec);
-        uint256 maxValidTimestamp =  now.sub(reportDelaySec);
+        uint256 minValidTimestamp =  block.timestamp.sub(reportExpirationTimeSec);
+        uint256 maxValidTimestamp =  block.timestamp.sub(reportDelaySec);
 
         for (uint256 i = 0; i < reportsCount; i++) {
             address providerAddress = providers[i];
@@ -227,7 +227,7 @@ contract MedianOracle is Ownable, IOracle {
                 if (i + 1  != providers.length) {
                     providers[i] = providers[providers.length-1];
                 }
-                providers.length--;
+                providers.pop();
                 emit ProviderRemoved(provider);
                 break;
             }

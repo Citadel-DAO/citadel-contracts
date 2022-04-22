@@ -14,7 +14,7 @@ library Select {
      * @param size Number of elements in array to compute the median for.
      * @return Median of array.
      */
-    function computeMedian(uint256[] array, uint256 size)
+    function computeMedian(uint256[] memory array, uint256 size)
         internal
         pure
         returns (uint256)
