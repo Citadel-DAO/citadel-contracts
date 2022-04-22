@@ -15,9 +15,14 @@ interface IMedianOracle {
     event ProviderReportPushed(address indexed provider, uint256 payload, uint256 timestamp);
 
     function reportExpirationTimeSec() external view returns(uint256);
-    function getData() external view returns (uint256, bool);
-    function providerReports(address provider) external view returns (Report[2] calldata);
+    function reportDelaySec() external view returns(uint256);
+    function minimumProviders() external view returns(uint256);
 
+    // function providers() external view returns (address[] memory);
+    function providersSize() external view returns (uint256);
+    // function providerReports(address provider) external view returns (Report[2] memory);
+    function getData() external view returns (uint256, bool);
+
+    function addProvider(address provider) external;
     function pushReport(uint256 payload) external;
-    
 }
