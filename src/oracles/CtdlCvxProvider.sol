@@ -5,16 +5,28 @@ import {ICurveCryptoSwap} from "../interfaces/curve/ICurveCryptoSwap.sol";
 import {IMedianOracle} from "../interfaces/citadel/IMedianOracle.sol";
 import {IAggregatorV3Interface} from "../interfaces/chainlink/IAggregatorV3Interface.sol";
 
-contract CtdlCvxPriceFeed {
-    IMedianOracle public medianOracle;
-    ICurveCryptoSwap public ctdlWbtcCurvePool;
+contract CtdlCvxProvider {
+    /// =================
+    /// ===== State =====
+    /// =================
+
+    IMedianOracle public immutable medianOracle;
+    ICurveCryptoSwap public immutable ctdlWbtcCurvePool;
 
     // Price feeds
-    IAggregatorV3Interface wbtcBtcPriceFeed;
-    IAggregatorV3Interface btcUsdPriceFeed;
-    IAggregatorV3Interface cvxUsdPriceFeed;
+    IAggregatorV3Interface public immutable wbtcBtcPriceFeed;
+    IAggregatorV3Interface public immutable btcUsdPriceFeed;
+    IAggregatorV3Interface public immutable cvxUsdPriceFeed;
+
+    /// =====================
+    /// ===== Constants =====
+    /// =====================
 
     uint256 constant PRECISION = 10**18;
+
+    /// =====================
+    /// ===== Functions =====
+    /// =====================
 
     constructor(
         address _medianOracle,
@@ -31,6 +43,10 @@ contract CtdlCvxPriceFeed {
         btcUsdPriceFeed = IAggregatorV3Interface(_btcUsdPriceFeed);
         cvxUsdPriceFeed = IAggregatorV3Interface(_cvxUsdPriceFeed);
     }
+
+    /// =======================
+    /// ===== Public view =====
+    /// =======================
 
     function decimals() external pure returns (uint256) {
         return 18;
@@ -54,6 +70,10 @@ contract CtdlCvxPriceFeed {
 
         cvxPriceInCtdl_ = (wbtcPriceInCtdl * PRECISION) / wbtcPriceInCvx;
     }
+
+    /// ==========================
+    /// ===== Public actions =====
+    /// ==========================
 
     function pushReport() external {
         medianOracle.pushReport(latestAnswer());
