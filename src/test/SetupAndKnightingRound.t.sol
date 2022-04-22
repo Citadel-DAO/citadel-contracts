@@ -12,7 +12,7 @@ contract KnightingRoundTest is BaseFixture {
     }
 
     function testKnightingRoundIntegration() public {
-        bytes32[] memory emptyProof = new bytes32[](1);
+        bytes32[] memory emptyProof = new bytes32[](0);
 
         // Attempt to deposit before knighting round start
         vm.startPrank(shark);
@@ -32,7 +32,9 @@ contract KnightingRoundTest is BaseFixture {
 
         comparator.snapPrev();
 
-        uint256 tokenOutAmountExpected = knightingRound.getAmountOut(1e8);
+        uint256 tokenOutAmountExpected =
+            (1e8 * knightingRound.tokenOutPrice()) /
+            knightingRound.tokenInNormalizationValue();
         wbtc.approve(address(knightingRound), wbtc.balanceOf(shrimp));
 
         uint256 tokenOutAmount = knightingRound.buy(1e8, 0, emptyProof);
@@ -54,9 +56,9 @@ contract KnightingRoundTest is BaseFixture {
         // buying again
 
         uint256 tokenOutAmount2 = knightingRound.buy(1e8, 0, emptyProof);
-        assertEq(knightingRound.totalTokenIn(),2e8); // should increment
-        assertEq(knightingRound.totalTokenOutBought(), tokenOutAmount + tokenOutAmount2);
 
+        assertEq(knightingRound.totalTokenIn(), 2e8); // should increment
+        assertEq(knightingRound.totalTokenOutBought(), tokenOutAmount + tokenOutAmount2);
 
         // giving a different doa ID
         vm.expectRevert("can't vote for multiple daos");
@@ -65,10 +67,11 @@ contract KnightingRoundTest is BaseFixture {
         assertEq(knightingRound.daoVotedFor(shrimp), 0); // daoVotedFor should be same
 
         vm.stopPrank();
-        
+
         // changing the token out price in mid sale
         vm.prank(governance);
         knightingRound.setTokenOutPrice(25e18);
+        assertEq(knightingRound.tokenOutPrice(), 25e18);
 
         vm.prank(shrimp);
         uint256 newTokenAmountOut = knightingRound.buy(1e8, 0, emptyProof);
@@ -88,7 +91,7 @@ contract KnightingRoundTest is BaseFixture {
     }
 
     function testFinalizeAndClaim() public{
-        bytes32[] memory emptyProof = new bytes32[](1);
+        bytes32[] memory emptyProof = new bytes32[](0);
 
         vm.warp(knightingRoundParams.start);
 
@@ -142,7 +145,6 @@ contract KnightingRoundTest is BaseFixture {
         vm.prank(shark);
         vm.expectRevert("nothing to claim");
         knightingRound.claim();
-
     }
 
     function testSetSaleStart() public{
@@ -182,12 +184,10 @@ contract KnightingRoundTest is BaseFixture {
         knightingRound.setSaleStart(block.timestamp + 100);
 
         vm.stopPrank();
-
     }
 
-    function setSaleDuration() public{
+    function testSetSaleDuration() public{
         // tests for setSaleDuration function
-
         vm.prank(address(1));
         vm.expectRevert("GAC: invalid-caller-role");
         knightingRound.setSaleDuration(8 days);
@@ -208,9 +208,18 @@ contract KnightingRoundTest is BaseFixture {
         // check if saleDuration is not updated
         assertEq(knightingRound.saleDuration(), 8 days);
 
-        // move forward to end the sale
-        vm.warp(knightingRound.saleStart()+knightingRoundParams.duration);
+        // move forward to end of original sale
+        vm.warp(knightingRound.saleStart() + knightingRoundParams.duration);
 
+        // Atttempt to finilize reverts due to extended duration
+        require(!knightingRound.saleEnded(), "Sale ended before expected!");
+        vm.expectRevert("KnightingRound: not finished");
+        knightingRound.finalize();
+
+        // Move forward to end of new duration
+        vm.warp(knightingRound.saleStart() + knightingRound.saleDuration());
+
+        // Sale is finilized
         knightingRound.finalize();
 
         // can't set saleDuration after round is finished
@@ -226,34 +235,46 @@ contract KnightingRoundTest is BaseFixture {
     function testSetTokenInLimit() public{
         vm.prank(address(1));
         vm.expectRevert("GAC: invalid-caller-role");
-        knightingRound.setTokenInLimit(25e18);
+        knightingRound.setTokenInLimit(25e8);
 
         // check if it is same as set in BaseFixture
         assertEq(knightingRound.tokenInLimit(), knightingRoundParams.wbtcLimit);
 
         // calling with correct role
         vm.startPrank(techOps);
-        knightingRound.setTokenInLimit(25e18);
+        knightingRound.setTokenInLimit(25e8);
 
         // check if tokenInLimit is updated
-        assertEq(knightingRound.tokenInLimit(), 25e18);
+        assertEq(knightingRound.tokenInLimit(), 25e8);
 
         vm.stopPrank();
 
-        // move forward to end the sale
-        vm.warp(knightingRound.saleStart()+knightingRoundParams.duration);
+        // Move to knighting round start
+        vm.warp(block.timestamp + 100);
 
-        vm.prank(governance);
+        // End sale by depositing the limit amount
+        require(!knightingRound.saleEnded(), "Sale ended before expected!");
+        bytes32[] memory emptyProof = new bytes32[](0);
+        vm.startPrank(shark);
+        wbtc.approve(address(knightingRound), wbtc.balanceOf(shark));
+        knightingRound.buy(25e8, 0, emptyProof);
+        vm.stopPrank();
+        require(knightingRound.saleEnded(), "Sale didn't ended when expected!");
+
+        // Mint citadel bought and finilize
+        vm.startPrank(governance);
+        uint256 citadelBought = knightingRound.totalTokenOutBought();
+        citadel.mint(address(knightingRound), citadelBought);
         knightingRound.finalize();
+        vm.stopPrank();
 
-        vm.prank(techOps);
         // can't set tokenInLimit after round is finished
+        vm.prank(techOps);
         vm.expectRevert("KnightingRound: already finalized");
         knightingRound.setTokenInLimit(20e18);
     }
 
     function testBasicSetFunctions() public{
-
         // tests for setTokenOutPrice
         vm.prank(address(1));
         vm.expectRevert("GAC: invalid-caller-role");
@@ -309,10 +330,23 @@ contract KnightingRoundTest is BaseFixture {
         vm.expectRevert("nothing to sweep");
         knightingRound.sweep(address(citadel));
 
-        // giving some citadel to knightingRound so that can be transfer to saleRecipient in sweep
+        // Mint 22 CTDL to the knightingRound contract
         vm.prank(governance);
-        citadel.mint(address(knightingRound), 1e18);
+        citadel.mint(address(knightingRound), 22e18);
 
+        // Move to knighting round start
+        vm.warp(block.timestamp + 100);
+
+        // A user buys 21 CTDL with 1 wBTC
+        bytes32[] memory emptyProof = new bytes32[](0);
+        vm.startPrank(shark);
+        wbtc.approve(address(knightingRound), wbtc.balanceOf(shark));
+        knightingRound.buy(1e8, 0, emptyProof);
+        vm.stopPrank();
+
+        assertEq(knightingRound.totalTokenOutBought(), 21e18); // 21 CTDL were bought at current price
+
+        // treasuryOps should be able to sweep the leftover CTDL (22 on contract - 21 bought = 1 token)
         address saleRecipient = knightingRound.saleRecipient();
 
         uint256 prevBalance = citadel.balanceOf(saleRecipient);
@@ -324,5 +358,16 @@ contract KnightingRoundTest is BaseFixture {
         // the difference should be 1e18
         assertEq(afterBalance - prevBalance, 1e18);
 
+        // treasuryOps should be able to sweep any amount of any token other than CTDL
+        erc20utils.forceMintTo(address(knightingRound), address(wbtc), 10e8);
+
+        prevBalance = wbtc.balanceOf(saleRecipient);
+        vm.prank(treasuryOps);
+        knightingRound.sweep(address(wbtc));
+
+        afterBalance = wbtc.balanceOf(saleRecipient);
+
+        // the difference should be 10e8
+        assertEq(afterBalance - prevBalance, 10e8);
     }
 }

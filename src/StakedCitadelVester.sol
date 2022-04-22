@@ -137,6 +137,9 @@ contract StakedCitadelVester is
         require(msg.sender == vault, "StakedCitadelVester: only xCTDL vault");
         require(_amount > 0, "StakedCitadelVester: cannot vest 0");
 
+        vesting[recipient].lockedAmounts -= vesting[recipient].claimedAmounts;
+        vesting[recipient].claimedAmounts = 0;
+
         vesting[recipient].lockedAmounts =
             vesting[recipient].lockedAmounts +
             _amount;
