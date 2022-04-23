@@ -28,15 +28,16 @@ task("accounts", "Prints the list of accounts", async (taskArgs, hre) => {
 task("mint-wbtc")
   .addParam("address", "The address of mints")
   .addParam("amount", "The amount of wbtc")
-  .setAction(async ({ address, amount }) => {
-    console.log(address, amount);
+  .setAction(async ({ address, amount, network }) => {
+    const networkName = hre.network.name;
+
     const scriptsDirectory = path.join(__dirname, "scripts-data");
 
     const wBTC = await ethers.getContractFactory("WrapBitcoin");
 
     const deployData = JSON.parse(
       fs.readFileSync(
-        path.join(scriptsDirectory, "testnet-addresses.json"),
+        path.join(scriptsDirectory, `${networkName}-addresses.json`),
         "utf8"
       )
     );
@@ -55,14 +56,15 @@ task("mint-cvx")
   .addParam("address", "The address of mints")
   .addParam("amount", "The amount of wbtc")
   .setAction(async ({ address, amount }) => {
-    console.log(address, amount);
+    const networkName = hre.network.name;
+
     const scriptsDirectory = path.join(__dirname, "scripts-data");
 
     const CVX = await ethers.getContractFactory("Convex");
 
     const deployData = JSON.parse(
       fs.readFileSync(
-        path.join(scriptsDirectory, "testnet-addresses.json"),
+        path.join(scriptsDirectory, `${networkName}-addresses.json`),
         "utf8"
       )
     );
