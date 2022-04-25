@@ -24,5 +24,6 @@ interface IMedianOracle {
     function getData() external view returns (uint256, bool);
 
     function addProvider(address provider) external;
+    function removeProvider(address provider) external;
     function pushReport(uint256 payload) external;
 }
