@@ -19,6 +19,7 @@ import {CitadelMinter} from "../CitadelMinter.sol";
 
 import {KnightingRound} from "../KnightingRound.sol";
 import {Funding} from "../Funding.sol";
+import {MedianOracle} from "../MedianOracle.sol";
 
 import "../interfaces/erc20/IERC20.sol";
 import "../interfaces/badger/IEmptyStrategy.sol";
@@ -98,8 +99,11 @@ contract BaseFixture is DSTest, Utils, stdCheats {
 
     KnightingRound knightingRound = new KnightingRound();
 
-    IMedianOracle medianOracleWbtc = IMedianOracle(deployCode(medianOracleArtifact, abi.encode(1 days, 0, 1)));
-    IMedianOracle medianOracleCvx = IMedianOracle(deployCode(medianOracleArtifact, abi.encode(1 days, 0, 1)));
+    // IMedianOracle medianOracleWbtc = IMedianOracle(deployCode(medianOracleArtifact, abi.encode(1 days, 0, 1)));
+    // IMedianOracle medianOracleCvx = IMedianOracle(deployCode(medianOracleArtifact, abi.encode(1 days, 0, 1)));
+
+    IMedianOracle medianOracleWbtc = IMedianOracle(address(new MedianOracle(1 days, 0, 1)));
+    IMedianOracle medianOracleCvx = IMedianOracle(address(new MedianOracle(1 days, 0, 1)));
 
     Funding fundingWbtc = new Funding();
     Funding fundingCvx = new Funding();
