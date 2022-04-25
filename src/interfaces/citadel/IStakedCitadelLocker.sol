@@ -16,6 +16,25 @@ interface IStakedCitadelLocker {
     ) external;
 
 
-    function notifyRewardAmount(address _rewardsToken, uint256 _reward)
-        external;
+    function notifyRewardAmount(address _rewardsToken, uint256 _reward) external;
+
+    function lock(
+        address _account,
+        uint256 _amount,
+        uint256 _spendRatio
+    ) external ;
+
+    function withdrawExpiredLocksTo(address _withdrawTo) external ;
+
+    function getReward(address _account) external;
+
+    function rewardPerToken(address _rewardsToken) external returns(uint256);
+    
+    function processExpiredLocks(bool _relock) external ;
+
+    function kickExpiredLocks(address _account) external ;
+
+    function recoverERC20(address _tokenAddress, uint256 _tokenAmount) external;
+
+    function shutdown() external ;
 }
