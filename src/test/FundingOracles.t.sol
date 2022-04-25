@@ -55,7 +55,26 @@ contract FundingOraclesTest is BaseFixture {
         medianOracleCvx.removeProvider(keeper);
     }
 
-    function testCvxOracleCanUpdatePrice() public {
+    // function testMedianOracleAccessControl() public {
+    //     vm.startPrank(address(1));
+    //     vm.expectRevert("Ownable: caller is not the owner");
+    //     medianOracleCvx.addProvider(address(1));
+
+    //     vm.expectRevert("Ownable: caller is not the owner");
+    //     medianOracleCvx.removeProvider(address(1));
+
+    //     vm.expectRevert("Ownable: caller is not the owner");
+    //     medianOracleCvx.setReportExpirationTimeSec(0);
+
+    //     vm.expectRevert("Ownable: caller is not the owner");
+    //     medianOracleCvx.setReportDelaySec(0);
+
+    //     vm.expectRevert("Ownable: caller is not the owner");
+    //     medianOracleCvx.setMinimumProviders(0);
+    //     vm.stopPrank();
+    // }
+
+    function testCvxProviderCanUpdatePrice() public {
         uint256 ctdlPriceInCvx = ctdlCvxProvider.latestAnswer();
         emit log_uint(ctdlPriceInCvx);
 
@@ -68,7 +87,7 @@ contract FundingOraclesTest is BaseFixture {
         assertEq(fundingCvx.citadelPriceInAsset(), ctdlPriceInCvx);
     }
 
-    function testWbtcOracleCanUpdatePrice() public {
+    function testWbtcProviderCanUpdatePrice() public {
         uint256 ctdlPriceInWbtc = ctdlWbtcProvider.latestAnswer();
         emit log_uint(ctdlPriceInWbtc);
 
@@ -81,13 +100,39 @@ contract FundingOraclesTest is BaseFixture {
         assertEq(fundingWbtc.citadelPriceInAsset(), ctdlPriceInWbtc);
     }
 
-    function testFundingOraclesFlow() public {
-        /*
-            - update CTDL/USD
-            - update ASSET/USD
-            - update xCTDL/CTDL
-            - permissions
-            - swap oracle addresses
-        */
+    function testCvxOracleCanCombineTwoProviders() public {
+        medianOracleCvx.addProvider(keeper);
+
+        uint256 ctdlPriceInCvx = ctdlCvxProvider.latestAnswer();
+        emit log_uint(ctdlPriceInCvx);
+
+        // Permissionless
+        ctdlCvxProvider.pushReport();
+
+        vm.startPrank(keeper);
+        medianOracleCvx.pushReport(ctdlPriceInCvx + 200);
+        fundingCvx.updateCitadelPriceInAsset();
+        vm.stopPrank();
+
+        // Median should be average of both values
+        assertEq(fundingCvx.citadelPriceInAsset(), ctdlPriceInCvx + 100);
+    }
+
+    function testWbtcOracleCanCombineTwoProviders() public {
+        medianOracleWbtc.addProvider(keeper);
+
+        uint256 ctdlPriceInWbtc = ctdlWbtcProvider.latestAnswer();
+        emit log_uint(ctdlPriceInWbtc);
+
+        // Permissionless
+        ctdlWbtcProvider.pushReport();
+
+        vm.startPrank(keeper);
+        medianOracleCvx.pushReport(ctdlPriceInWbtc);
+        fundingWbtc.updateCitadelPriceInAsset();
+        vm.stopPrank();
+
+        // Median should be average of both values
+        assertEq(fundingWbtc.citadelPriceInAsset(), ctdlPriceInWbtc + 100);
     }
 }
