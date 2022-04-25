@@ -195,9 +195,8 @@ contract FundingTest is BaseFixture {
         vm.expectRevert("Funding: sale recipient should not be zero");
         fundingCvx.setSaleRecipient(address(0));
     }
-    
+
     function testDepositModifiers() public{
-       
         // flagging citadelPriceFlag should freeze deposit
         vm.prank(governance);
         fundingCvx.setCitadelAssetPriceBounds(0, 5000);
