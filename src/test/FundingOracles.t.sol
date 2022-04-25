@@ -20,7 +20,7 @@ contract FundingOraclesTest is BaseFixture {
     /// ===== Constants =====
     /// =====================
 
-    // TODO: Replace with actual pool
+    // TODO: Currenlty set to BADGER/WBTC Curve v2 pool. Replace with CTDL/WBTC pool.
     address constant CTDL_WBTC_CURVE_POOL = 0x50f3752289e1456BfA505afd37B241bca23e685d;
 
     address constant WBTC_BTC_PRICE_FEED = 0xfdFD9C85aD200c506Cf9e21F1FD8dd01932FBB23;
@@ -49,10 +49,6 @@ contract FundingOraclesTest is BaseFixture {
 
         medianOracleWbtc.addProvider(address(ctdlWbtcProvider));
         medianOracleCvx.addProvider(address(ctdlCvxProvider));
-
-        // Remove keeper for general tests
-        medianOracleWbtc.removeProvider(keeper);
-        medianOracleCvx.removeProvider(keeper);
     }
 
     // function testMedianOracleAccessControl() public {
@@ -74,20 +70,10 @@ contract FundingOraclesTest is BaseFixture {
     //     vm.stopPrank();
     // }
 
-    function testCvxProviderCanUpdatePrice() public {
-        uint256 ctdlPriceInCvx = ctdlCvxProvider.latestAnswer();
-        emit log_uint(ctdlPriceInCvx);
-
-        // Permissionless
-        ctdlCvxProvider.pushReport();
-
-        vm.prank(keeper);
-        fundingCvx.updateCitadelPriceInAsset();
-
-        assertEq(fundingCvx.citadelPriceInAsset(), ctdlPriceInCvx);
-    }
-
     function testWbtcProviderCanUpdatePrice() public {
+        // Remove keeper provider
+        medianOracleWbtc.removeProvider(keeper);
+
         uint256 ctdlPriceInWbtc = ctdlWbtcProvider.latestAnswer();
         emit log_uint(ctdlPriceInWbtc);
 
@@ -100,9 +86,39 @@ contract FundingOraclesTest is BaseFixture {
         assertEq(fundingWbtc.citadelPriceInAsset(), ctdlPriceInWbtc);
     }
 
-    function testCvxOracleCanCombineTwoProviders() public {
-        medianOracleCvx.addProvider(keeper);
+    function testCvxProviderCanUpdatePrice() public {
+        // Remove keeper provider
+        medianOracleCvx.removeProvider(keeper);
 
+        uint256 ctdlPriceInCvx = ctdlCvxProvider.latestAnswer();
+        emit log_uint(ctdlPriceInCvx);
+
+        // Permissionless
+        ctdlCvxProvider.pushReport();
+
+        vm.prank(keeper);
+        fundingCvx.updateCitadelPriceInAsset();
+
+        assertEq(fundingCvx.citadelPriceInAsset(), ctdlPriceInCvx);
+    }
+
+    function testWbtcOracleCanCombineTwoProviders() public {
+        uint256 ctdlPriceInWbtc = ctdlWbtcProvider.latestAnswer();
+        emit log_uint(ctdlPriceInWbtc);
+
+        // Permissionless
+        ctdlWbtcProvider.pushReport();
+
+        vm.startPrank(keeper);
+        medianOracleWbtc.pushReport(ctdlPriceInWbtc + 200);
+        fundingWbtc.updateCitadelPriceInAsset();
+        vm.stopPrank();
+
+        // Median should be average of both values
+        assertEq(fundingWbtc.citadelPriceInAsset(), ctdlPriceInWbtc + 100);
+    }
+
+    function testCvxOracleCanCombineTwoProviders() public {
         uint256 ctdlPriceInCvx = ctdlCvxProvider.latestAnswer();
         emit log_uint(ctdlPriceInCvx);
 
@@ -118,8 +134,25 @@ contract FundingOraclesTest is BaseFixture {
         assertEq(fundingCvx.citadelPriceInAsset(), ctdlPriceInCvx + 100);
     }
 
-    function testWbtcOracleCanCombineTwoProviders() public {
-        medianOracleWbtc.addProvider(keeper);
+    function testMedianOracleWithExpiration() public {
+        medianOracleWbtc.removeProvider(address(ctdlWbtcProvider));
+
+        // Set during initialization in BaseFixture
+        assertEq(medianOracleWbtc.reportExpirationTimeSec(), 1 days);
+
+        vm.startPrank(keeper);
+        medianOracleWbtc.pushReport(1000);
+        // TODO: For some reason, the revert string is not being thrown and the trace is wrong. 
+        //       Maybe a bug in forge?
+        vm.expectRevert();
+        skip(1 days + 1);
+        fundingWbtc.updateCitadelPriceInAsset();
+        vm.stopPrank();
+    }
+
+    function testMedianOracleWithMinimumProvidersMoreThan1() public {
+        medianOracleWbtc.setMinimumProviders(2);
+        assertEq(medianOracleWbtc.minimumProviders(), 2);
 
         uint256 ctdlPriceInWbtc = ctdlWbtcProvider.latestAnswer();
         emit log_uint(ctdlPriceInWbtc);
@@ -128,11 +161,21 @@ contract FundingOraclesTest is BaseFixture {
         ctdlWbtcProvider.pushReport();
 
         vm.startPrank(keeper);
-        medianOracleCvx.pushReport(ctdlPriceInWbtc);
+        medianOracleWbtc.pushReport(1000);
         fundingWbtc.updateCitadelPriceInAsset();
         vm.stopPrank();
+    }
 
-        // Median should be average of both values
-        assertEq(fundingWbtc.citadelPriceInAsset(), ctdlPriceInWbtc + 100);
+    function testMedianOracleFailsWhenNotEnoughProviders() public {
+        medianOracleWbtc.setMinimumProviders(2);
+        assertEq(medianOracleWbtc.minimumProviders(), 2);
+
+        vm.startPrank(keeper);
+        medianOracleWbtc.pushReport(1000);
+        // TODO: For some reason, the revert string is not being thrown and the trace is wrong. 
+        //       Maybe a bug in forge?
+        vm.expectRevert();
+        fundingWbtc.updateCitadelPriceInAsset();
+        vm.stopPrank();
     }
 }
