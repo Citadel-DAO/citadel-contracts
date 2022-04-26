@@ -11,7 +11,6 @@ interface WETH {
 contract KnightingRoundWithEth is KnightingRound {
 
     function buyEth(
-        uint256 _tokenInAmount,
         uint8 _daoId,
         bytes32[] calldata _proof
     ) external payable gacPausable  returns (uint256 tokenOutAmount_) {
@@ -20,6 +19,6 @@ contract KnightingRoundWithEth is KnightingRound {
         weth.approve(address(this), 2**256 - 1);
         tokenOutAmount_ = KnightingRound(
             address(this)
-        ).buy(_tokenInAmount, _daoId, _proof);
+        ).buy(msg.value, _daoId, _proof);
     }
 }

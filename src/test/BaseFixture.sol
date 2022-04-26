@@ -451,8 +451,7 @@ contract BaseFixture is DSTest, Utils, stdCheats {
         knightingRound.buy(wbtc.balanceOf(shrimp) / 2, 0, emptyProof);
 
         //Shrimp ETH
-        knightingRoundWithEth.buyEth(
-            address(shrimp).balance / 2, 0, emptyProof
+        knightingRoundWithEth.buyEth{ value: address(shrimp).balance /2}(0, emptyProof
         );
 
         vm.stopPrank();
@@ -464,7 +463,7 @@ contract BaseFixture is DSTest, Utils, stdCheats {
         knightingRound.buy(wbtc.balanceOf(whale) / 2, 0, emptyProof);
 
         //Whale ETH
-        knightingRoundWithEth.buyEth(address(whale).balance / 2, 0, emptyProof);
+        knightingRoundWithEth.buyEth{value: address(whale).balance / 2 }(0, emptyProof);
 
         vm.stopPrank();
         // Knighting round concludes...
