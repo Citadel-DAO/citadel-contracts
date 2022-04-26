@@ -39,9 +39,9 @@ contract KnightingRound is GlobalAccessControlManaged, ReentrancyGuardUpgradeabl
     /// whether the sale has been finalized
     bool public finalized;
 
-    /// tokenIn per tokenOut price
-    /// eg. 1 WBTC (8 decimals) = 40,000 CTDL ==> price = 10^8 / 40,000
-    uint256 public tokenOutPrice;
+    /// CTDL per tokenIn scaled to 10^18
+    /// eg. 1 WBTC = 21 CTDL => 21 x 10^18 
+    uint256 public tokenOutPerTokenIn;
 
     /// Amounts bought by accounts
     mapping(address => uint256) public boughtAmounts;
@@ -84,7 +84,7 @@ contract KnightingRound is GlobalAccessControlManaged, ReentrancyGuardUpgradeabl
 
     event SaleStartUpdated(uint256 saleStart);
     event SaleDurationUpdated(uint256 saleDuration);
-    event TokenOutPriceUpdated(uint256 tokenOutPrice);
+    event TokenOutPerTokenInUpdated(uint256 tokenOutPerTokenIn);
     event SaleRecipientUpdated(address indexed recipient);
     event GuestlistUpdated(address indexed guestlist);
     event TokenInLimitUpdated(uint256 tokenInLimit);
@@ -101,7 +101,7 @@ contract KnightingRound is GlobalAccessControlManaged, ReentrancyGuardUpgradeabl
      * @param _tokenIn The token this contract will receive in a trade
      * @param _saleStart The time when tokens can be first purchased
      * @param _saleDuration The duration of the token sale
-     * @param _tokenOutPrice The tokenOut per tokenIn price
+     * @param _tokenOutPerTokenIn The price i.e. `_tokenOutPerTokenIn` tokenOut per tokenIn
      * @param _saleRecipient The address receiving the proceeds of the sale - will be citadel multisig
      * @param _guestlist Address that will manage auction approvals
      * @param _tokenInLimit The max tokenIn that the contract can take
@@ -112,7 +112,7 @@ contract KnightingRound is GlobalAccessControlManaged, ReentrancyGuardUpgradeabl
         address _tokenIn,
         uint256 _saleStart,
         uint256 _saleDuration,
-        uint256 _tokenOutPrice,
+        uint256 _tokenOutPerTokenIn,
         address _saleRecipient,
         address _guestlist,
         uint256 _tokenInLimit
@@ -126,7 +126,7 @@ contract KnightingRound is GlobalAccessControlManaged, ReentrancyGuardUpgradeabl
             "KnightingRound: the sale duration must not be zero"
         );
         require(
-            _tokenOutPrice > 0,
+            _tokenOutPerTokenIn > 0,
             "KnightingRound: the price must not be zero"
         );
         require(
@@ -140,7 +140,7 @@ contract KnightingRound is GlobalAccessControlManaged, ReentrancyGuardUpgradeabl
         tokenIn = ERC20Upgradeable(_tokenIn);
         saleStart = _saleStart;
         saleDuration = _saleDuration;
-        tokenOutPrice = _tokenOutPrice;
+        tokenOutPerTokenIn = _tokenOutPerTokenIn;
         saleRecipient = _saleRecipient;
         guestlist = IBadgerVipGuestlist(_guestlist);
         tokenInLimit = _tokenInLimit;
@@ -237,7 +237,7 @@ contract KnightingRound is GlobalAccessControlManaged, ReentrancyGuardUpgradeabl
         returns (uint256 tokenOutAmount_)
     {
         tokenOutAmount_ =
-            (_tokenInAmount * tokenOutPrice) /
+            (_tokenInAmount * tokenOutPerTokenIn) /
             tokenInNormalizationValue;
     }
 
@@ -321,21 +321,21 @@ contract KnightingRound is GlobalAccessControlManaged, ReentrancyGuardUpgradeabl
     }
 
     /**
-     * @notice Modify the tokenOut price in. Can only be called by owner
-     * @param _tokenOutPrice New tokenOut price
+     * @notice Modify the price. Can only be called by owner
+     * @param _tokenOutPerTokenIn New price
      */
-    function setTokenOutPrice(uint256 _tokenOutPrice)
+    function setTokenOutPerTokenIn(uint256 _tokenOutPerTokenIn)
         external
         onlyRole(CONTRACT_GOVERNANCE_ROLE)
     {
         require(
-            _tokenOutPrice > 0,
+            _tokenOutPerTokenIn > 0,
             "KnightingRound: the price must not be zero"
         );
 
-        tokenOutPrice = _tokenOutPrice;
+        tokenOutPerTokenIn = _tokenOutPerTokenIn;
 
-        emit TokenOutPriceUpdated(_tokenOutPrice);
+        emit TokenOutPerTokenInUpdated(_tokenOutPerTokenIn);
     }
 
     /**
