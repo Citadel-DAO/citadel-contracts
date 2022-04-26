@@ -18,6 +18,7 @@ import {SupplySchedule} from "../SupplySchedule.sol";
 import {CitadelMinter} from "../CitadelMinter.sol";
 
 import {KnightingRound} from "../KnightingRound.sol";
+import {KnightingRoundWithEth} from "../KnightingRoundWithEth.sol"
 import {KnightingRoundGuestlist} from "../KnightingRoundGuestlist.sol";
 import {Funding} from "../Funding.sol";
 
@@ -81,10 +82,12 @@ contract BaseFixture is DSTest, Utils, stdCheats {
     address immutable xCitadelStrategy_address = getAddress("xCitadelStrategy");
 
     address constant wbtc_address = 0x2260FAC5E5542a773Aa44fBCfeDf7C193bc2C599;
+    address constant weth_address = 0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2
     address constant cvx_address = 0x4e3FBD56CD56c3e72c1403e103b45Db9da5B9D2B;
 
     IERC20 wbtc = IERC20(wbtc_address);
     IERC20 cvx = IERC20(cvx_address);
+    IERC20 weth = IERC20(weth_address)
 
     GlobalAccessControl gac = new GlobalAccessControl();
 
@@ -97,6 +100,7 @@ contract BaseFixture is DSTest, Utils, stdCheats {
     CitadelMinter citadelMinter = new CitadelMinter();
 
     KnightingRound knightingRound = new KnightingRound();
+    KnightingRoundWithEth knightingRoundWithEth = new KnightingRoundWithEth()
     KnightingRoundGuestlist guestList = new KnightingRoundGuestlist();
 
     Funding fundingWbtc = new Funding();
@@ -128,12 +132,14 @@ contract BaseFixture is DSTest, Utils, stdCheats {
         vm.label(rando, "rando");
 
         vm.label(address(knightingRound), "knightingRound");
+        vm.label(address(knightingRoundWithEth), "knightingRoundWithEth")
         vm.label(address(guestList), "guestList");
         vm.label(address(schedule), "schedule");
         vm.label(address(gac), "gac");
 
         vm.label(wbtc_address, "wbtc");
         vm.label(cvx_address, "cvx");
+        vm.label(weth_address, "weth")
 
         vm.label(whale, "whale"); // whale attempts large token actions, testing upper bounds
         vm.label(shrimp, "shrimp"); // shrimp attempts small token actions, testing lower bounds
@@ -220,6 +226,18 @@ contract BaseFixture is DSTest, Utils, stdCheats {
             address(guestList),
             knightingRoundParams.wbtcLimit
         );
+
+        knightingRoundWithEth.initialize(
+            address(gac),
+            address(citadel),
+            address(weth),
+            knightingRoundParams.start,
+            knightingRoundParams.duration,
+            knightingRoundParams.citadelWbtcPrice,
+            address(governance),
+            address(guestList),
+            knightingRoundParams.wbtcLimit
+        );
         vm.stopPrank();
 
         // Funding
@@ -298,6 +316,9 @@ contract BaseFixture is DSTest, Utils, stdCheats {
         accounts_to_track[6] = treasuryVault;
         accounts_to_track_names[6] = "treasuryVault";
 
+        accounts_to_track[7] = address(knightingRoundWithEth)
+        accounts_to_track_names[7] = "knightingRoundWithEth";
+
         // Track balances for all tokens + entities
         for (uint256 i = 0; i < numAddressesToTrack; i++) {
             // wBTC
@@ -340,7 +361,7 @@ contract BaseFixture is DSTest, Utils, stdCheats {
                     "balanceOf(address)",
                     accounts_to_track[i]
                 )
-            );
+            /a);
 
             // xCitadel
             string memory xcitadel_key = concatenate(
@@ -367,6 +388,23 @@ contract BaseFixture is DSTest, Utils, stdCheats {
             comparator.addCall(
                 knighting_round_key,
                 address(knightingRound),
+                abi.encodeWithSignature(
+                    "boughtAmounts(address)",
+                    accounts_to_track[i]
+                )
+            );
+
+            // Knighting Round with Eth Purchases
+            string memory knighting_round_weth_key = concatenate(
+                concatenate(
+                    "knightingRoundWithEth.boughtAmounts(",
+                    accounts_to_track_names[i]
+                ),
+                ")"
+            );
+            comparator.addCall(
+                knighting_round_weth_key,
+                address(KnightingRoundWithEth),
                 abi.encodeWithSignature(
                     "boughtAmounts(address)",
                     accounts_to_track[i]
@@ -408,14 +446,24 @@ contract BaseFixture is DSTest, Utils, stdCheats {
         vm.startPrank(shrimp);
         wbtc.approve(address(knightingRound), wbtc.balanceOf(shrimp));
         knightingRound.buy(wbtc.balanceOf(shrimp) / 2, 0, emptyProof);
+
+        //Shrimp ETH
+        knightingRoundWithEth.buyEth(
+            address(shrimp).balance / 2, 0, emptyProof
+        )
+
         vm.stopPrank();
+        
 
         // Whale BTC
         vm.startPrank(whale);
         wbtc.approve(address(knightingRound), wbtc.balanceOf(whale));
         knightingRound.buy(wbtc.balanceOf(whale) / 2, 0, emptyProof);
-        vm.stopPrank();
 
+        //Whale ETH
+        knightingRoundWithEth.buyEth(address(whale).balance / 2, 0, emptyProff)
+
+        vm.stopPrank();
         // Knighting round concludes...
         uint timeTillEnd = knightingRoundParams.start + knightingRoundParams.duration - block.timestamp;
         vm.warp(timeTillEnd);
@@ -437,12 +485,14 @@ contract BaseFixture is DSTest, Utils, stdCheats {
 
         vm.startPrank(governance);
 
-        uint256 citadelBought = knightingRound.totalTokenOutBought();
+        uint256 citadelBoughtWbtc = knightingRound.totalTokenOutBought();
+        uint256 citadelBoughtWithEth = knightingRoundWithEth.totalTokenOutBought()
+        uint256 citadelBought = citadelBoughtWbtc + citadelBoughtWithEth
         uint256 initialSupply = (citadelBought * 1666666666666666667) / 1e18; // Amount bought = 60% of initial supply, therefore total citadel ~= 1.67 amount bought.
 
         citadel.mint(governance, initialSupply);
-        citadel.transfer(address(knightingRound), citadelBought);
-
+        citadel.transfer(address(knightingRound), citadelBoughtWbtc);
+        citadel.transfer(address(knightingRoundWithEth), citadelBoughtWithEth)
         uint256 remainingSupply = initialSupply - citadelBought - 1e18; // one coin for seeding xCitadel
 
         citadel.approve(address(xCitadel), 1e18);
