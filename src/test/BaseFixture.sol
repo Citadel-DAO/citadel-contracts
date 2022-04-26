@@ -94,7 +94,8 @@ contract BaseFixture is DSTest, Utils, stdCheats {
     CitadelToken citadel = new CitadelToken();
     StakedCitadel xCitadel = new StakedCitadel();
     StakedCitadelVester xCitadelVester = new StakedCitadelVester();
-    IStakedCitadelLocker xCitadelLocker = IStakedCitadelLocker(deployCode(lockerArtifact));
+    IStakedCitadelLocker xCitadelLocker =
+        IStakedCitadelLocker(deployCode(lockerArtifact));
 
     SupplySchedule schedule = new SupplySchedule();
     CitadelMinter citadelMinter = new CitadelMinter();
@@ -194,7 +195,11 @@ contract BaseFixture is DSTest, Utils, stdCheats {
             "vlCTDL"
         );
 
-        xCitadelLocker.addReward(address(xCitadel), address(citadelMinter), false);
+        xCitadelLocker.addReward(
+            address(xCitadel),
+            address(citadelMinter),
+            false
+        );
 
         schedule.initialize(address(gac));
         citadelMinter.initialize(
@@ -435,7 +440,6 @@ contract BaseFixture is DSTest, Utils, stdCheats {
             address(xCitadel),
             abi.encodeWithSignature("getPricePerFullShare()")
         );
-
     }
 
     // @dev simple simulation of knighting round, in order to advance next stages in a 'realistic' manner
@@ -451,11 +455,12 @@ contract BaseFixture is DSTest, Utils, stdCheats {
         knightingRound.buy(wbtc.balanceOf(shrimp) / 2, 0, emptyProof);
 
         //Shrimp ETH
-        knightingRoundWithEth.buyEth{ value: address(shrimp).balance /2}(0, emptyProof
+        knightingRoundWithEth.buyEth{value: address(shrimp).balance / 2}(
+            0,
+            emptyProof
         );
 
         vm.stopPrank();
-        
 
         // Whale BTC
         vm.startPrank(whale);
@@ -463,11 +468,16 @@ contract BaseFixture is DSTest, Utils, stdCheats {
         knightingRound.buy(wbtc.balanceOf(whale) / 2, 0, emptyProof);
 
         //Whale ETH
-        knightingRoundWithEth.buyEth{value: address(whale).balance / 2 }(0, emptyProof);
+        knightingRoundWithEth.buyEth{value: address(whale).balance / 2}(
+            0,
+            emptyProof
+        );
 
         vm.stopPrank();
         // Knighting round concludes...
-        uint timeTillEnd = knightingRoundParams.start + knightingRoundParams.duration - block.timestamp;
+        uint256 timeTillEnd = knightingRoundParams.start +
+            knightingRoundParams.duration -
+            block.timestamp;
         vm.warp(timeTillEnd);
     }
 
@@ -488,7 +498,8 @@ contract BaseFixture is DSTest, Utils, stdCheats {
         vm.startPrank(governance);
 
         uint256 citadelBoughtWbtc = knightingRound.totalTokenOutBought();
-        uint256 citadelBoughtWithEth = knightingRoundWithEth.totalTokenOutBought();
+        uint256 citadelBoughtWithEth = knightingRoundWithEth
+            .totalTokenOutBought();
         uint256 citadelBought = citadelBoughtWbtc + citadelBoughtWithEth;
         uint256 initialSupply = (citadelBought * 1666666666666666667) / 1e18; // Amount bought = 60% of initial supply, therefore total citadel ~= 1.67 amount bought.
 
