@@ -281,10 +281,13 @@ contract BaseFixture is DSTest, Utils, stdCheats {
         erc20utils.forceMintTo(whale, wbtc_address, 1000e8);
         erc20utils.forceMintTo(shrimp, wbtc_address, 10e8);
         erc20utils.forceMintTo(shark, wbtc_address, 100e8);
-
         erc20utils.forceMintTo(whale, cvx_address, 1000000e18);
         erc20utils.forceMintTo(shrimp, cvx_address, 1000e18);
         erc20utils.forceMintTo(shark, cvx_address, 10000e18);
+
+        vm.deal(whale, 1000 ether);
+        vm.deal(shrimp, 10 ether);
+        vm.deal(shark, 100 ether);
 
         // Setup balance tracking
         comparator = new SnapshotComparator();
@@ -491,7 +494,7 @@ contract BaseFixture is DSTest, Utils, stdCheats {
         uint256 initialSupply = (citadelBought * 1666666666666666667) / 1e18; // Amount bought = 60% of initial supply, therefore total citadel ~= 1.67 amount bought.
 
         citadel.mint(governance, initialSupply);
-        citadel.transfer(address(knightingRound), citadelBoughtWbtc);
+        citadel.transfer(address(knightingRound), citadelBought);
         citadel.transfer(address(knightingRoundWithEth), citadelBoughtWithEth)
         uint256 remainingSupply = initialSupply - citadelBought - 1e18; // one coin for seeding xCitadel
 
