@@ -81,9 +81,9 @@ contract FundingOraclesTest is BaseFixture {
         ctdlWbtcProvider.pushReport();
 
         vm.prank(keeper);
-        fundingWbtc.updateCitadelPriceInAsset();
+        fundingWbtc.updateCitadelPerAsset();
 
-        assertEq(fundingWbtc.citadelPriceInAsset(), ctdlPriceInWbtc);
+        assertEq(fundingWbtc.citadelPerAsset(), ctdlPriceInWbtc);
     }
 
     function testCvxProviderCanUpdatePrice() public {
@@ -97,9 +97,9 @@ contract FundingOraclesTest is BaseFixture {
         ctdlCvxProvider.pushReport();
 
         vm.prank(keeper);
-        fundingCvx.updateCitadelPriceInAsset();
+        fundingCvx.updateCitadelPerAsset();
 
-        assertEq(fundingCvx.citadelPriceInAsset(), ctdlPriceInCvx);
+        assertEq(fundingCvx.citadelPerAsset(), ctdlPriceInCvx);
     }
 
     function testWbtcOracleCanCombineTwoProviders() public {
@@ -111,11 +111,11 @@ contract FundingOraclesTest is BaseFixture {
 
         vm.startPrank(keeper);
         medianOracleWbtc.pushReport(ctdlPriceInWbtc + 200);
-        fundingWbtc.updateCitadelPriceInAsset();
+        fundingWbtc.updateCitadelPerAsset();
         vm.stopPrank();
 
         // Median should be average of both values
-        assertEq(fundingWbtc.citadelPriceInAsset(), ctdlPriceInWbtc + 100);
+        assertEq(fundingWbtc.citadelPerAsset(), ctdlPriceInWbtc + 100);
     }
 
     function testCvxOracleCanCombineTwoProviders() public {
@@ -127,11 +127,11 @@ contract FundingOraclesTest is BaseFixture {
 
         vm.startPrank(keeper);
         medianOracleCvx.pushReport(ctdlPriceInCvx + 200);
-        fundingCvx.updateCitadelPriceInAsset();
+        fundingCvx.updateCitadelPerAsset();
         vm.stopPrank();
 
         // Median should be average of both values
-        assertEq(fundingCvx.citadelPriceInAsset(), ctdlPriceInCvx + 100);
+        assertEq(fundingCvx.citadelPerAsset(), ctdlPriceInCvx + 100);
     }
 
     function testMedianOracleWithExpiration() public {
@@ -146,7 +146,7 @@ contract FundingOraclesTest is BaseFixture {
         //       Maybe a bug in forge?
         vm.expectRevert();
         skip(1 days + 1);
-        fundingWbtc.updateCitadelPriceInAsset();
+        fundingWbtc.updateCitadelPerAsset();
         vm.stopPrank();
     }
 
@@ -162,7 +162,7 @@ contract FundingOraclesTest is BaseFixture {
 
         vm.startPrank(keeper);
         medianOracleWbtc.pushReport(1000);
-        fundingWbtc.updateCitadelPriceInAsset();
+        fundingWbtc.updateCitadelPerAsset();
         vm.stopPrank();
     }
 
@@ -175,7 +175,7 @@ contract FundingOraclesTest is BaseFixture {
         // TODO: For some reason, the revert string is not being thrown and the trace is wrong. 
         //       Maybe a bug in forge?
         vm.expectRevert();
-        fundingWbtc.updateCitadelPriceInAsset();
+        fundingWbtc.updateCitadelPerAsset();
         vm.stopPrank();
     }
 }

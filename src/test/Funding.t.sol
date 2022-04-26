@@ -172,19 +172,19 @@ contract FundingTest is BaseFixture {
 
         vm.prank(address(1));
         vm.expectRevert("GAC: invalid-caller-role");
-        fundingCvx.updateCitadelPriceInAsset();
+        fundingCvx.updateCitadelPerAsset();
 
-        // setting citadelPriceInAsset from correct account
+        // setting citadelPerAsset from correct account
         vm.startPrank(keeper);
         medianOracleCvx.pushReport(1000);
-        fundingCvx.updateCitadelPriceInAsset();
+        fundingCvx.updateCitadelPerAsset();
         vm.stopPrank();
-        assertEq(fundingCvx.citadelPriceInAsset(), 1000); // check if citadelPriceInAsset is set
+        assertEq(fundingCvx.citadelPerAsset(), 1000); // check if citadelPerAsset is set
         
         vm.startPrank(keeper);
         medianOracleCvx.pushReport(0);
         vm.expectRevert("citadel price must not be zero");
-        fundingCvx.updateCitadelPriceInAsset();
+        fundingCvx.updateCitadelPerAsset();
         vm.stopPrank();
 
         vm.prank(address(1));
@@ -204,11 +204,11 @@ contract FundingTest is BaseFixture {
     function testDepositModifiers() public{
         // flagging citadelPriceFlag should freeze deposit
         vm.prank(governance);
-        fundingCvx.setCitadelAssetPriceBounds(0, 5000);
+        fundingCvx.setCitadelPerAssetBounds(0, 5000);
 
         vm.startPrank(keeper);
         medianOracleCvx.pushReport(6000);
-        fundingCvx.updateCitadelPriceInAsset();
+        fundingCvx.updateCitadelPerAsset();
         vm.stopPrank();
 
         vm.expectRevert(bytes("Funding: citadel price from oracle flagged and pending review"));
@@ -246,7 +246,7 @@ contract FundingTest is BaseFixture {
 
         vm.startPrank(keeper);
         medianOracleContract.pushReport(_citadelPrice);
-        fundingContract.updateCitadelPriceInAsset();
+        fundingContract.updateCitadelPerAsset();
         vm.stopPrank();
 
         uint256 citadelAmountOutExpected = fundingContract.getAmountOut(_assetAmountIn);
@@ -305,7 +305,7 @@ contract FundingTest is BaseFixture {
         // CVX funding contract gives us an 18 decimal example
         vm.startPrank(keeper);
         medianOracleContract.pushReport(citadelPrice);
-        fundingContract.updateCitadelPriceInAsset();
+        fundingContract.updateCitadelPerAsset();
         vm.stopPrank();
 
         uint expectedAssetOut = assetIn.divWadUp(citadelPrice);

@@ -69,10 +69,10 @@ contract GlobalAccessControlTest is BaseFixture {
         fundingCvx.setSaleRecipient(address(2));
 
         vm.expectRevert("local-paused");
-        fundingCvx.setCitadelAssetPriceBounds(1e18, 100e18);
+        fundingCvx.setCitadelPerAssetBounds(1e18, 100e18);
 
         vm.expectRevert("local-paused");
-        fundingCvx.updateCitadelPriceInAsset();
+        fundingCvx.updateCitadelPerAsset();
 
         // pausing globally
         vm.prank(guardian);
@@ -106,10 +106,10 @@ contract GlobalAccessControlTest is BaseFixture {
         fundingCvx.setSaleRecipient(address(2));
 
         vm.expectRevert("global-paused");
-        fundingCvx.setCitadelAssetPriceBounds(1e18, 100e18);
+        fundingCvx.setCitadelPerAssetBounds(1e18, 100e18);
 
         vm.expectRevert("global-paused");
-        fundingCvx.updateCitadelPriceInAsset();
+        fundingCvx.updateCitadelPerAsset();
     }
 
     function testMintingPausingFunction() public{

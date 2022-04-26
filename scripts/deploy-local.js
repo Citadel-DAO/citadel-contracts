@@ -349,10 +349,10 @@ async function main() {
   // eoa oracle update the price
   await fundingWbtc
     .connect(eoaOracle)
-    .functions["updateCitadelPriceInAsset(uint256)"](parseUnits("21", 18));
+    .functions["updateCitadelPerAsset(uint256)"](parseUnits("21", 18));
   await fundingCvx
     .connect(eoaOracle)
-    .functions["updateCitadelPriceInAsset(uint256)"](parseUnits("0.21", 18));
+    .functions["updateCitadelPerAsset(uint256)"](parseUnits("0.21", 18));
 
   // set max discount
   await fundingWbtc.connect(governance).setDiscountLimits(0, 1000);
