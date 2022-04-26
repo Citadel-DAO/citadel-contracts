@@ -157,7 +157,7 @@ contract Funding is GlobalAccessControlManaged, ReentrancyGuardUpgradeable {
     /**
      * @notice Exchange `_assetAmountIn` of `asset` for `citadel`
      * @param _assetAmountIn Amount of `asset` to give
-     * @param _minCitadelOut ID of DAO to vote for
+     * @param _minCitadelOut Minimum amount of `citadel` to receive
      * @return citadelAmount_ Amount of `xCitadel` bought
      */
     function deposit(uint256 _assetAmountIn, uint256 _minCitadelOut)
