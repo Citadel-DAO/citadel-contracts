@@ -183,7 +183,7 @@ contract FundingTest is BaseFixture {
         
         vm.startPrank(keeper);
         medianOracleCvx.pushReport(0);
-        vm.expectRevert("citadel price must not be zero");
+        vm.expectRevert("price must not be zero");
         fundingCvx.updateCitadelPerAsset();
         vm.stopPrank();
 
