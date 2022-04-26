@@ -135,6 +135,7 @@ contract KnightingRound is GlobalAccessControlManaged, ReentrancyGuardUpgradeabl
         );
 
         __GlobalAccessControlManaged_init(_globalAccessControl);
+        __ReentrancyGuard_init();
 
         tokenOut = ERC20Upgradeable(_tokenOut);
         tokenIn = ERC20Upgradeable(_tokenIn);
