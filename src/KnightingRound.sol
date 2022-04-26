@@ -266,7 +266,7 @@ contract KnightingRound is GlobalAccessControlManaged, ReentrancyGuardUpgradeabl
     /// ====================================
 
     /**
-     * @notice Finalize the sale after sale duration. Can only be called by owner
+     * @notice Finalize the sale after sale duration. Can only be called by governance
        @dev Ensure contract has enough `tokenOut` before calling
      */
     function finalize() external onlyRole(CONTRACT_GOVERNANCE_ROLE) {
@@ -283,7 +283,7 @@ contract KnightingRound is GlobalAccessControlManaged, ReentrancyGuardUpgradeabl
     }
 
     /**
-     * @notice Update the sale start time. Can only be called by owner
+     * @notice Update the sale start time. Can only be called by governance
      * @param _saleStart New start time
      */
     function setSaleStart(uint256 _saleStart)
@@ -302,7 +302,7 @@ contract KnightingRound is GlobalAccessControlManaged, ReentrancyGuardUpgradeabl
     }
 
     /**
-     * @notice Update sale duration. Can only be called by owner
+     * @notice Update sale duration. Can only be called by governance
      * @param _saleDuration New duration
      */
     function setSaleDuration(uint256 _saleDuration)
@@ -321,7 +321,7 @@ contract KnightingRound is GlobalAccessControlManaged, ReentrancyGuardUpgradeabl
     }
 
     /**
-     * @notice Modify the price. Can only be called by owner
+     * @notice Modify the price. Can only be called by governance
      * @param _tokenOutPerTokenIn New price
      */
     function setTokenOutPerTokenIn(uint256 _tokenOutPerTokenIn)
@@ -339,7 +339,7 @@ contract KnightingRound is GlobalAccessControlManaged, ReentrancyGuardUpgradeabl
     }
 
     /**
-     * @notice Update the `tokenIn` receipient address. Can only be called by owner
+     * @notice Update the `tokenIn` receipient address. Can only be called by governance
      * @param _saleRecipient New recipient address
      */
     function setSaleRecipient(address _saleRecipient)
@@ -361,7 +361,7 @@ contract KnightingRound is GlobalAccessControlManaged, ReentrancyGuardUpgradeabl
     /// ============================
 
     /**
-     * @notice Update the guestlist address. Can only be called by owner
+     * @notice Update the guestlist address. Can only be called by governance
      * @param _guestlist New guestlist address
      */
     function setGuestlist(address _guestlist)
@@ -374,7 +374,7 @@ contract KnightingRound is GlobalAccessControlManaged, ReentrancyGuardUpgradeabl
     }
 
     /**
-     * @notice Modify the max tokenIn that this contract can take. Can only be called by owner
+     * @notice Modify the max tokenIn that this contract can take. Can only be called by tech ops role
      * @param _tokenInLimit New max amountIn
      */
     function setTokenInLimit(uint256 _tokenInLimit)
@@ -393,7 +393,7 @@ contract KnightingRound is GlobalAccessControlManaged, ReentrancyGuardUpgradeabl
     /// ================================
 
     /**
-     * @notice Transfers out any tokens accidentally sent to the contract. Can only be called by owner
+     * @notice Transfers out any tokens accidentally sent to the contract. Can only be called by treasury ops role
      * @dev The contract transfers all `tokenIn` directly to `saleRecipient` during a sale so it's safe
      *      to sweep `tokenIn`. For `tokenOut`, the function only sweeps the extra amount
      *      (current contract balance - amount left to be claimed)
