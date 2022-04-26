@@ -46,10 +46,6 @@ contract GlobalAccessControl is
     bytes32 public constant CITADEL_MINTER_ROLE =
         keccak256("CITADEL_MINTER_ROLE");
 
-    // Should the function transferFrom be disabled
-    // NOTE: This is enforced at the contract level, the contract just allows the toggling of the bool
-    bool public transferFromDisabled; // Set to true in initialize
-
     /// =======================
     /// ===== Initializer =====
     /// =======================
