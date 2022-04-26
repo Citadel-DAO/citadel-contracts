@@ -292,7 +292,7 @@ contract BaseFixture is DSTest, Utils, stdCheats {
         // Setup balance tracking
         comparator = new SnapshotComparator();
 
-        uint256 numAddressesToTrack = 7;
+        uint256 numAddressesToTrack = 8;
         address[] memory accounts_to_track = new address[](numAddressesToTrack);
         string[] memory accounts_to_track_names = new string[](
             numAddressesToTrack
