@@ -32,8 +32,8 @@ contract MintAndDistributeTest is BaseFixture {
         assertTrue(address(citadelMinter.supplySchedule()) == address(schedule));
 
         uint fundingBps = 4000;
-        uint stakingBps = 3000;
-        uint lockingBps = 3000;
+        uint stakingBps = 3500;
+        uint lockingBps = 2500;
         uint MAX_BPS = 10000;
 
         uint wbtcFundingPoolWeight = 8000;
@@ -77,6 +77,7 @@ contract MintAndDistributeTest is BaseFixture {
         citadelMinter.setFundingPoolWeight(address(fundingWbtc), wbtcFundingPoolWeight);
         citadelMinter.setFundingPoolWeight(address(fundingCvx), cvxFundingPoolWeight);
 
+        uint xCitadelBalanceBefore = xCitadel.balance();
         comparator.snapPrev();
         uint expectedMint = schedule.getMintable(citadelMinter.lastMintTimestamp());
 
@@ -108,8 +109,21 @@ contract MintAndDistributeTest is BaseFixture {
         emit log_named_uint("xCitadel change in supply", comparator.diff("xCitadel.totalSupply()"));
 
         // locking reward schedule should modulate based on locking bps
-        uint expectedToLockers = expectedMint * stakingBps / MAX_BPS;
+        uint expectedToLockers = expectedMint * lockingBps / MAX_BPS;
+        uint xCitadelBalanceAfter = xCitadel.balance();
 
+        // total supply should increase as the amount is deposited to locker
+        assertEq(comparator.diff("xCitadel.totalSupply()"), expectedToLockers);
+
+        // the difference of total supply and balance should be expectedToStakers
+        // expectedToStakers is directly transferred not deposited, which increases balance of citadel but does not affect totalSupply
+        // which causes ppfs increase
+        assertEq(xCitadelBalanceAfter - comparator.curr("xCitadel.totalSupply()"), expectedToStakers);
+        assertEq(comparator.diff("xCitadel.getPricePerFullShare()"), (expectedToStakers * 1e18)/comparator.curr("xCitadel.totalSupply()"));
+        
+        // expectedToStakers and expectedToLockers both go to xCitadel so 
+        // the difference in balance should be equal to sum of both amounts
+        assertEq(xCitadelBalanceAfter - xCitadelBalanceBefore,expectedToStakers + expectedToLockers);
         vm.stopPrank();
     }
 }
