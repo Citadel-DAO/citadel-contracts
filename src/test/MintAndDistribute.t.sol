@@ -56,13 +56,22 @@ contract MintAndDistributeTest is BaseFixture {
         assertTrue(schedule.globalStartTimestamp() == 0);
 
         vm.stopPrank();
-        vm.prank(governance);
+
+        vm.startPrank(governance);
+        // Attempt to initializeLastMintTimestamp with a globalStartTimestamp set to 0 on the Scheduler
+        vm.expectRevert("CitadelMinter: supply schedule start not initialized");
+        citadelMinter.initializeLastMintTimestamp();
+
         schedule.setMintingStart(block.timestamp);
 
-        vm.prank(governance);
         citadelMinter.initializeLastMintTimestamp();
         assertTrue(schedule.globalStartTimestamp() == block.timestamp);
 
+        // Attempt to initializeLastMintTimestamp with after already initializing lastMintTimestamp
+        vm.expectRevert("CitadelMinter: last mint timestamp already initialized");
+        citadelMinter.initializeLastMintTimestamp();
+
+        vm.stopPrank();
         vm.startPrank(policyOps);
 
         vm.expectRevert("SupplySchedule: already minted up to current block");
