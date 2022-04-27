@@ -115,6 +115,7 @@ contract BaseFixture is DSTest, Utils, stdCheats {
     }
 
     KnightingRoundParams knightingRoundParams;
+    KnightingRoundParams knightingRoundWithEthParams;
 
     function getSelector(string memory _func) public pure returns (bytes4) {
         return bytes4(keccak256(bytes(_func)));
@@ -218,6 +219,14 @@ contract BaseFixture is DSTest, Utils, stdCheats {
             wbtcLimit: 100e8 // 100 wBTC
         });
 
+        knightingRoundWithEthParams = KnightingRoundParams({
+            start: block.timestamp + 100,
+            duration: 7 days,
+            citadelWbtcPrice: 21e18, // 21 CTDL per wBTC
+            wbtcLimit: 100e18 // 100 wBTC
+        });
+
+
         guestList.initialize(address(gac));
 
         knightingRound.initialize(
@@ -236,12 +245,12 @@ contract BaseFixture is DSTest, Utils, stdCheats {
             address(gac),
             address(citadel),
             address(weth),
-            knightingRoundParams.start,
-            knightingRoundParams.duration,
-            knightingRoundParams.citadelWbtcPrice,
+            knightingRoundWithEthParams.start,
+            knightingRoundWithEthParams.duration,
+            knightingRoundWithEthParams.citadelWbtcPrice,
             address(governance),
             address(guestList),
-            knightingRoundParams.wbtcLimit
+            knightingRoundWithEthParams.wbtcLimit
         );
         vm.stopPrank();
 

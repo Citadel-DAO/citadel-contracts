@@ -6,6 +6,9 @@ import {SupplySchedule} from "../SupplySchedule.sol";
 import {GlobalAccessControl} from "../GlobalAccessControl.sol";
 import "../interfaces/badger/IBadgerVipGuestlist.sol";
 
+interface WETH {
+    function deposit() external payable;
+}
 contract KnightingRoundWithEthTest is BaseFixture {
     function setUp() public override {
         BaseFixture.setUp();
@@ -18,7 +21,7 @@ contract KnightingRoundWithEthTest is BaseFixture {
         vm.startPrank(shark);
         weth.approve(address(knightingRoundWithEth), address(shark).balance);
         vm.expectRevert("KnightingRound: not started");
-        knightingRoundWithEth.buyEth{value: 1e8}(0, emptyProof);
+        knightingRoundWithEth.buyEth{value: 1e18}(0, emptyProof);
         vm.stopPrank();
 
         // Move to knighting round start
@@ -32,17 +35,17 @@ contract KnightingRoundWithEthTest is BaseFixture {
 
         comparator.snapPrev();
 
-        uint256 tokenOutAmountExpected = (1e8 *
+        uint256 tokenOutAmountExpected = (1e18 *
             knightingRoundWithEth.tokenOutPrice()) /
             knightingRoundWithEth.tokenInNormalizationValue();
         weth.approve(address(knightingRoundWithEth), type(uint256).max);
-        uint256 tokenOutAmount = knightingRoundWithEth.buyEth{value: 1e8}(
+        uint256 tokenOutAmount = knightingRoundWithEth.buyEth{value: 1e18}(
             0,
             emptyProof
         );
         comparator.snapCurr();
 
-        assertEq(knightingRoundWithEth.totalTokenIn(), 1e8); // totalTokenIn should be equal to deposit
+        assertEq(knightingRoundWithEth.totalTokenIn(), 1e18); // totalTokenIn should be equal to deposit
         assertEq(tokenOutAmount, tokenOutAmountExpected); // transferred amount should be equal to expected
         assertEq(knightingRoundWithEth.totalTokenOutBought(), tokenOutAmount);
         assertEq(knightingRoundWithEth.daoVotedFor(shrimp), 0); // daoVotedFor should be set
@@ -50,21 +53,21 @@ contract KnightingRoundWithEthTest is BaseFixture {
         assertEq(comparator.negDiff("weth.balanceOf(shrimp)"), 0);
         assertEq(
             comparator.diff("knightingRoundWithEth.boughtAmounts(shrimp)"),
-            21e8
+            21e18
         );
 
         // tokenInLimit = 100e8 so transaction should revert
         vm.expectRevert("total amount exceeded");
-        knightingRoundWithEth.buyEth{value: 100e8}(0, emptyProof);
-        assertEq(knightingRoundWithEth.totalTokenIn(), 1e8); // totelTokenIn should be same
+        knightingRoundWithEth.buyEth{value: 100e18}(0, emptyProof);
+        assertEq(knightingRoundWithEth.totalTokenIn(), 1e18); // totelTokenIn should be same
 
         // buying again
 
-        uint256 tokenOutAmount2 = knightingRoundWithEth.buyEth{value: 1e8}(
+        uint256 tokenOutAmount2 = knightingRoundWithEth.buyEth{value: 1e18}(
             0,
             emptyProof
         );
-        assertEq(knightingRoundWithEth.totalTokenIn(), 2e8); // should increment
+        assertEq(knightingRoundWithEth.totalTokenIn(), 2e18); // should increment
         assertEq(
             knightingRoundWithEth.totalTokenOutBought(),
             tokenOutAmount + tokenOutAmount2
@@ -72,8 +75,8 @@ contract KnightingRoundWithEthTest is BaseFixture {
 
         // giving a different doa ID
         vm.expectRevert("can't vote for multiple daos");
-        knightingRoundWithEth.buyEth{value: 10e8}(1, emptyProof);
-        assertEq(knightingRoundWithEth.totalTokenIn(), 2e8); // totelTokenIn should be same
+        knightingRoundWithEth.buyEth{value: 10e18}(1, emptyProof);
+        assertEq(knightingRoundWithEth.totalTokenIn(), 2e18); // totelTokenIn should be same
         assertEq(knightingRoundWithEth.daoVotedFor(shrimp), 0); // daoVotedFor should be same
 
         vm.stopPrank();
@@ -84,7 +87,7 @@ contract KnightingRoundWithEthTest is BaseFixture {
         assertEq(knightingRoundWithEth.tokenOutPrice(), 25e18);
 
         vm.prank(shrimp);
-        uint256 newTokenAmountOut = knightingRoundWithEth.buyEth{value: 1e8}(
+        uint256 newTokenAmountOut = knightingRoundWithEth.buyEth{value: 1e18}(
             0,
             emptyProof
         );
@@ -94,19 +97,19 @@ contract KnightingRoundWithEthTest is BaseFixture {
 
         assertEq(newTokenAmountOut, newTokenAmountOutExpected);
         // Knighting round concludes...
-        vm.warp(knightingRoundParams.start + knightingRoundParams.duration);
+        vm.warp(knightingRoundWithEthParams.start + knightingRoundWithEthParams.duration);
 
         // Can't buy after round ends
         vm.startPrank(shark);
         vm.expectRevert("KnightingRound: already ended");
-        knightingRoundWithEth.buyEth{value: 1e8}(0, emptyProof);
+        knightingRoundWithEth.buyEth{value: 1e18}(0, emptyProof);
         vm.stopPrank();
     }
 
     function testFinalizeAndClaimWithEth() public {
         bytes32[] memory emptyProof = new bytes32[](0);
 
-        vm.warp(knightingRoundParams.start);
+        vm.warp(knightingRoundWithEthParams.start);
 
         vm.expectRevert("sale not finalized");
         knightingRoundWithEth.claim();
@@ -114,8 +117,7 @@ contract KnightingRoundWithEthTest is BaseFixture {
         vm.startPrank(shrimp);
         weth.approve(address(knightingRoundWithEth), type(uint256).max);
 
-        vm.deal(shrimp, 1e8);
-        uint256 tokenOutAmount = knightingRoundWithEth.buyEth{value: 1e8}(
+        uint256 tokenOutAmount = knightingRoundWithEth.buyEth{value: 1e18}(
             0,
             emptyProof
         ); // shrimp bought something
@@ -128,7 +130,7 @@ contract KnightingRoundWithEthTest is BaseFixture {
         knightingRoundWithEth.finalize();
 
         // move forward so that KnightingRound is finished.
-        vm.warp(knightingRoundParams.start + knightingRoundParams.duration); // to saleEnded() true
+        vm.warp(knightingRoundWithEthParams.start + knightingRoundWithEthParams.duration); // to saleEnded() true
 
         vm.expectRevert("KnightingRound: not enough balance");
         knightingRoundWithEth.finalize();
@@ -175,7 +177,7 @@ contract KnightingRoundWithEthTest is BaseFixture {
         knightingRoundWithEth.setSaleStart(startTime);
 
         // check if it is same as set in BaseFixture
-        assertEq(knightingRoundWithEth.saleStart(), knightingRoundParams.start);
+        assertEq(knightingRoundWithEth.saleStart(), knightingRoundWithEthParams.start);
 
         // calling with correct role
         vm.startPrank(governance);
@@ -192,7 +194,7 @@ contract KnightingRoundWithEthTest is BaseFixture {
 
         // move forward to end the sale
         vm.warp(
-            knightingRoundWithEth.saleStart() + knightingRoundParams.duration
+            knightingRoundWithEth.saleStart() + knightingRoundWithEthParams.duration
         );
 
         knightingRoundWithEth.finalize();
@@ -213,7 +215,7 @@ contract KnightingRoundWithEthTest is BaseFixture {
         // check if it is same as set in BaseFixture
         assertEq(
             knightingRoundWithEth.saleDuration(),
-            knightingRoundParams.duration
+            knightingRoundWithEthParams.duration
         );
 
         // calling with correct role
@@ -231,7 +233,7 @@ contract KnightingRoundWithEthTest is BaseFixture {
 
         // move forward to end of original sale
         vm.warp(
-            knightingRoundWithEth.saleStart() + knightingRoundParams.duration
+            knightingRoundWithEth.saleStart() + knightingRoundWithEthParams.duration
         );
 
         // Atttempt to finilize reverts due to extended duration
@@ -263,20 +265,20 @@ contract KnightingRoundWithEthTest is BaseFixture {
     function testSetTokenInLimitWithEth() public {
         vm.prank(address(1));
         vm.expectRevert("GAC: invalid-caller-role");
-        knightingRoundWithEth.setTokenInLimit(25e8);
+        knightingRoundWithEth.setTokenInLimit(25e18);
 
         // check if it is same as set in BaseFixture
         assertEq(
             knightingRoundWithEth.tokenInLimit(),
-            knightingRoundParams.wbtcLimit
+            knightingRoundWithEthParams.wbtcLimit
         );
 
         // calling with correct role
         vm.startPrank(techOps);
-        knightingRoundWithEth.setTokenInLimit(25e8);
+        knightingRoundWithEth.setTokenInLimit(25e18);
 
         // check if tokenInLimit is updated
-        assertEq(knightingRoundWithEth.tokenInLimit(), 25e8);
+        assertEq(knightingRoundWithEth.tokenInLimit(), 25e18);
 
         vm.stopPrank();
 
@@ -291,7 +293,7 @@ contract KnightingRoundWithEthTest is BaseFixture {
         bytes32[] memory emptyProof = new bytes32[](0);
         vm.startPrank(shark);
         weth.approve(address(knightingRoundWithEth), type(uint256).max);
-        knightingRoundWithEth.buyEth{value: 25e8}(0, emptyProof);
+        knightingRoundWithEth.buyEth{value: 25e18}(0, emptyProof);
         vm.stopPrank();
         require(
             knightingRoundWithEth.saleEnded(),
@@ -320,7 +322,7 @@ contract KnightingRoundWithEthTest is BaseFixture {
         // check if it is same as set in BaseFixture
         assertEq(
             knightingRoundWithEth.tokenOutPrice(),
-            knightingRoundParams.citadelWbtcPrice
+            knightingRoundWithEthParams.citadelWbtcPrice
         );
 
         // calling with correct role
@@ -380,7 +382,7 @@ contract KnightingRoundWithEthTest is BaseFixture {
         bytes32[] memory emptyProof = new bytes32[](0);
         vm.startPrank(shark);
         weth.approve(address(knightingRoundWithEth), type(uint256).max);
-        knightingRoundWithEth.buyEth{value: 1e8}(0, emptyProof);
+        knightingRoundWithEth.buyEth{value: 1e18}(0, emptyProof);
         vm.stopPrank();
 
         assertEq(knightingRoundWithEth.totalTokenOutBought(), 21e18); // 21 CTDL were bought at current price
@@ -398,11 +400,9 @@ contract KnightingRoundWithEthTest is BaseFixture {
         assertEq(afterBalance - prevBalance, 1e18);
 
         // treasuryOps should be able to sweep any amount of any token other than CTDL
-        erc20utils.forceMintTo(
-            address(knightingRoundWithEth),
-            address(weth),
-            10e18
-        );
+        vm.deal(address(knightingRoundWithEth), 10e18);
+        vm.prank(address(knightingRoundWithEth));
+        WETH(weth_address).deposit{value:10e18}();
 
         prevBalance = weth.balanceOf(saleRecipient);
         vm.prank(treasuryOps);
@@ -410,7 +410,7 @@ contract KnightingRoundWithEthTest is BaseFixture {
 
         afterBalance = weth.balanceOf(saleRecipient);
 
-        // the difference should be 10e8
-        assertEq(afterBalance - prevBalance, 10e8);
+        // the difference should be 10e18
+        assertEq(afterBalance - prevBalance, 10e18);
     }
 }
