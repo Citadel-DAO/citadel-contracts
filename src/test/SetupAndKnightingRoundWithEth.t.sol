@@ -11,12 +11,12 @@ contract KnightingRoundWithEthTest is BaseFixture {
         BaseFixture.setUp();
     }
 
-    function testKnightingRoundIntegration() public {
+    function testKnightingRoundWithEthIntegration() public {
         bytes32[] memory emptyProof = new bytes32[](0);
 
         // Attempt to deposit before knighting round start
         vm.startPrank(shark);
-        wbtc.approve(address(knightingRoundWithEth), wbtc.balanceOf(shark));
+        weth.approve(address(knightingRoundWithEth), address(shark).balance);
         vm.expectRevert("KnightingRound: not started");
         knightingRoundWithEth.buyEth{value: 1e8}(0, emptyProof);
         vm.stopPrank();
@@ -35,8 +35,7 @@ contract KnightingRoundWithEthTest is BaseFixture {
         uint256 tokenOutAmountExpected = (1e8 *
             knightingRoundWithEth.tokenOutPrice()) /
             knightingRoundWithEth.tokenInNormalizationValue();
-        wbtc.approve(address(knightingRoundWithEth), wbtc.balanceOf(shrimp));
-
+        weth.approve(address(knightingRoundWithEth), type(uint256).max);
         uint256 tokenOutAmount = knightingRoundWithEth.buyEth{value: 1e8}(
             0,
             emptyProof
@@ -48,7 +47,7 @@ contract KnightingRoundWithEthTest is BaseFixture {
         assertEq(knightingRoundWithEth.totalTokenOutBought(), tokenOutAmount);
         assertEq(knightingRoundWithEth.daoVotedFor(shrimp), 0); // daoVotedFor should be set
 
-        assertEq(comparator.negDiff("wbtc.balanceOf(shrimp)"), 1e8);
+        assertEq(comparator.negDiff("weth.balanceOf(shrimp)"), 0);
         assertEq(
             comparator.diff("knightingRoundWithEth.boughtAmounts(shrimp)"),
             21e18
@@ -104,7 +103,7 @@ contract KnightingRoundWithEthTest is BaseFixture {
         vm.stopPrank();
     }
 
-    function testFinalizeAndClaim() public {
+    function testFinalizeAndClaimWithEth() public {
         bytes32[] memory emptyProof = new bytes32[](0);
 
         vm.warp(knightingRoundParams.start);
@@ -113,7 +112,9 @@ contract KnightingRoundWithEthTest is BaseFixture {
         knightingRoundWithEth.claim();
 
         vm.startPrank(shrimp);
-        wbtc.approve(address(knightingRoundWithEth), wbtc.balanceOf(shrimp));
+        weth.approve(address(knightingRoundWithEth), type(uint256).max);
+
+        vm.deal(shrimp, 1e8);
         uint256 tokenOutAmount = knightingRoundWithEth.buyEth{value: 1e8}(
             0,
             emptyProof
@@ -163,7 +164,7 @@ contract KnightingRoundWithEthTest is BaseFixture {
         knightingRoundWithEth.claim();
     }
 
-    function testSetSaleStart() public {
+    function testSetSaleStartWithEth() public {
         // tests for setStartSale function
 
         uint256 startTime = block.timestamp + 200;
@@ -203,7 +204,7 @@ contract KnightingRoundWithEthTest is BaseFixture {
         vm.stopPrank();
     }
 
-    function testSetSaleDuration() public {
+    function testSetSaleDurationWithEth() public {
         // tests for setSaleDuration function
         vm.prank(address(1));
         vm.expectRevert("GAC: invalid-caller-role");
@@ -259,7 +260,7 @@ contract KnightingRoundWithEthTest is BaseFixture {
         vm.stopPrank();
     }
 
-    function testSetTokenInLimit() public {
+    function testSetTokenInLimitWithEth() public {
         vm.prank(address(1));
         vm.expectRevert("GAC: invalid-caller-role");
         knightingRoundWithEth.setTokenInLimit(25e8);
@@ -310,7 +311,7 @@ contract KnightingRoundWithEthTest is BaseFixture {
         knightingRoundWithEth.setTokenInLimit(20e18);
     }
 
-    function testBasicSetFunctions() public {
+    function testBasicSetFunctionsWithEth() public {
         // tests for setTokenOutPrice
         vm.prank(address(1));
         vm.expectRevert("GAC: invalid-caller-role");
@@ -360,7 +361,7 @@ contract KnightingRoundWithEthTest is BaseFixture {
         assertEq(address(knightingRoundWithEth.guestlist()), address(3));
     }
 
-    function testSweep() public {
+    function testSweepWithEth() public {
         vm.expectRevert("GAC: invalid-caller-role");
         knightingRoundWithEth.sweep(address(citadel));
 
@@ -375,10 +376,10 @@ contract KnightingRoundWithEthTest is BaseFixture {
         // Move to knighting round start
         vm.warp(block.timestamp + 100);
 
-        // A user buys 21 CTDL with 1 wBTC
+        // A user buys 21 CTDL with 1 WETH
         bytes32[] memory emptyProof = new bytes32[](0);
         vm.startPrank(shark);
-        wbtc.approve(address(knightingRoundWithEth), wbtc.balanceOf(shark));
+        weth.approve(address(knightingRoundWithEth), type(uint256).max);
         knightingRoundWithEth.buyEth{value: 1e8}(0, emptyProof);
         vm.stopPrank();
 
@@ -399,15 +400,15 @@ contract KnightingRoundWithEthTest is BaseFixture {
         // treasuryOps should be able to sweep any amount of any token other than CTDL
         erc20utils.forceMintTo(
             address(knightingRoundWithEth),
-            address(wbtc),
-            10e8
+            address(weth),
+            10e18
         );
 
-        prevBalance = wbtc.balanceOf(saleRecipient);
+        prevBalance = weth.balanceOf(saleRecipient);
         vm.prank(treasuryOps);
-        knightingRoundWithEth.sweep(address(wbtc));
+        knightingRoundWithEth.sweep(address(weth));
 
-        afterBalance = wbtc.balanceOf(saleRecipient);
+        afterBalance = weth.balanceOf(saleRecipient);
 
         // the difference should be 10e8
         assertEq(afterBalance - prevBalance, 10e8);

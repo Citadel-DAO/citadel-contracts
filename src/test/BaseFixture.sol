@@ -343,6 +343,19 @@ contract BaseFixture is DSTest, Utils, stdCheats {
                 )
             );
 
+            string memory weth_key = concatenate(
+                concatenate("weth.balanceOf(", accounts_to_track_names[i]),
+                ")"
+            );
+            comparator.addCall(
+                weth_key,
+                weth_address,
+                abi.encodeWithSignature(
+                    "balanceOf(address)",
+                    accounts_to_track[i]
+                )
+            );
+
             // Citadel
             string memory citadel_key = concatenate(
                 concatenate("citadel.balanceOf(", accounts_to_track_names[i]),
@@ -452,6 +465,8 @@ contract BaseFixture is DSTest, Utils, stdCheats {
         // Shrimp BTC
         vm.startPrank(shrimp);
         wbtc.approve(address(knightingRound), wbtc.balanceOf(shrimp));
+        weth.approve(address(knightingRound), address(shrimp).balance);
+
         knightingRound.buy(wbtc.balanceOf(shrimp) / 2, 0, emptyProof);
 
         //Shrimp ETH
@@ -465,6 +480,8 @@ contract BaseFixture is DSTest, Utils, stdCheats {
         // Whale BTC
         vm.startPrank(whale);
         wbtc.approve(address(knightingRound), wbtc.balanceOf(whale));
+        weth.approve(address(knightingRound), address(whale).balance);
+
         knightingRound.buy(wbtc.balanceOf(whale) / 2, 0, emptyProof);
 
         //Whale ETH

@@ -5,7 +5,7 @@ import {KnightingRound} from "./KnightingRound.sol";
 
 interface WETH {
     function deposit() external payable;
-
+    function transfer(address to, uint256 amount) external returns (bool);
     function approve(address guy, uint256 wad) external returns (bool);
 }
 
@@ -18,8 +18,8 @@ contract KnightingRoundWithEth is KnightingRound {
     {
         WETH weth = WETH(address(tokenIn));
         weth.deposit{value: msg.value}();
-        weth.approve(address(this), 2**256 - 1);
-        tokenOutAmount_ = KnightingRound(address(this)).buy(
+        weth.transfer(msg.sender, msg.value);
+        tokenOutAmount_ = super.buy(
             msg.value,
             _daoId,
             _proof

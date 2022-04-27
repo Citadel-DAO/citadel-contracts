@@ -163,7 +163,7 @@ contract KnightingRound is GlobalAccessControlManaged, ReentrancyGuardUpgradeabl
         uint256 _tokenInAmount,
         uint8 _daoId,
         bytes32[] calldata _proof
-    ) external gacPausable returns (uint256 tokenOutAmount_) {
+    ) public gacPausable returns (uint256 tokenOutAmount_) {
         require(saleStart <= block.timestamp, "KnightingRound: not started");
         require(
             block.timestamp < saleStart + saleDuration,
