@@ -6,8 +6,6 @@ import {GlobalAccessControl} from "../GlobalAccessControl.sol";
 import {Funding} from "../Funding.sol";
 import {FixedPointMathLib} from "solmate/utils/FixedPointMathLib.sol";
 
-import "../interfaces/erc20/IERC20.sol";
-
 contract StakingTest is BaseFixture {
     using FixedPointMathLib for uint;
 
@@ -36,7 +34,7 @@ contract StakingTest is BaseFixture {
 
     function testUserStakingFlow() public{
         address user = address(1);
-        
+
         // giving user some citadel to stake
         vm.prank(governance);
         citadel.mint(user, 100e18);
@@ -45,14 +43,14 @@ contract StakingTest is BaseFixture {
         uint256 userCitadelBefore = citadel.balanceOf(user);
         uint256 xCitadelBalanceBefore = xCitadel.balance();
         uint256 userXCitadelBefore = xCitadel.balanceOf(user);
-        uint256 xCitadelTotalSupplyBefore = xCitadel.totalSupply(); 
+        uint256 xCitadelTotalSupplyBefore = xCitadel.totalSupply();
 
         vm.startPrank(user);
 
         // approve staking amount
         citadel.approve(address(xCitadel), 10e18);
 
-        // deposit 
+        // deposit
         xCitadel.deposit(10e18);
 
         vm.stopPrank();
@@ -60,10 +58,10 @@ contract StakingTest is BaseFixture {
         uint256 userCitadelAfter = citadel.balanceOf(user);
         uint256 xCitadelBalanceAfter = xCitadel.balance();
         uint256 userXCitadelAfter = xCitadel.balanceOf(user);
-        uint256 xCitadelTotalSupplyAfter = xCitadel.totalSupply(); 
+        uint256 xCitadelTotalSupplyAfter = xCitadel.totalSupply();
 
         // check if user has successfully deposited
-        assertEq(userCitadelBefore - userCitadelAfter, 10e18); 
+        assertEq(userCitadelBefore - userCitadelAfter, 10e18);
         assertEq(userXCitadelAfter - userXCitadelBefore, 10e18); // user should have got same amount as totalSupply was zero
         assertEq(xCitadelBalanceAfter - xCitadelBalanceBefore, 10e18); // xCitadel should have some citadel
         // total supply should have incremented
@@ -77,35 +75,35 @@ contract StakingTest is BaseFixture {
         vm.startPrank(user);
         xCitadel.withdrawAll();
 
-        // the amount should go in vesting 
+        // the amount should go in vesting
         uint256 vestingCitadelAfter = citadel.balanceOf(address(xCitadelVester));
 
         // as pricePerShare is increased, vesting should receive more amount than deposited.
         uint expectedClaimableBalance = (xCitadel.balance()*userXCitadelAfter)/xCitadel.totalSupply();
-        
-        assertEq(vestingCitadelAfter-vestingCitadelBefore , expectedClaimableBalance );
 
-        // moving half duration 
-        vm.warp(block.timestamp + xCitadelVester.INITIAL_VESTING_DURATION()/2 );
+        assertEq(vestingCitadelAfter-vestingCitadelBefore, expectedClaimableBalance);
+
+        // moving half duration
+        vm.warp(block.timestamp + xCitadelVester.INITIAL_VESTING_DURATION()/2);
 
         // at half duration. user should be able claim half amount
-        assertEq(xCitadelVester.claimableBalance(user) , expectedClaimableBalance/2);
+        assertEq(xCitadelVester.claimableBalance(user), expectedClaimableBalance/2);
 
         // move forward so that the vesting period ends
-        vm.warp(block.timestamp + xCitadelVester.INITIAL_VESTING_DURATION() );
+        vm.warp(block.timestamp + xCitadelVester.INITIAL_VESTING_DURATION());
 
         // as the vesting period is ended. user should be able claim full amount
-        assertEq(xCitadelVester.claimableBalance(user) , expectedClaimableBalance);
+        assertEq(xCitadelVester.claimableBalance(user), expectedClaimableBalance);
 
         userCitadelBefore = citadel.balanceOf(user);
 
         // expectedClaimableBalance is more than deposited amount
         assertTrue(expectedClaimableBalance > 10e18);
-        xCitadelVester.claim(user , expectedClaimableBalance);
+        xCitadelVester.claim(user, expectedClaimableBalance);
         userCitadelAfter = citadel.balanceOf(user);
 
         // user should have got expected amount back
-        assertEq(userCitadelAfter- userCitadelBefore, expectedClaimableBalance);
+        assertEq(userCitadelAfter - userCitadelBefore, expectedClaimableBalance);
         vm.stopPrank();
     }
 
@@ -124,7 +122,7 @@ contract StakingTest is BaseFixture {
 
         uint expectedMint = schedule.getMintable(citadelMinter.lastMintTimestamp());
 
-        uint xCitadelTotalSupplyBefore = xCitadel.totalSupply(); 
+        uint xCitadelTotalSupplyBefore = xCitadel.totalSupply();
         uint citadelBeforeInXcitadel = xCitadel.balance();
 
         vm.prank(policyOps);
@@ -132,20 +130,20 @@ contract StakingTest is BaseFixture {
 
         uint expectedToStakers = expectedMint * 6000 / 10000;
         uint expectedToLockers = expectedMint * 4000 / 10000;
-        uint xCitadelTotalSupplyAfter = xCitadel.totalSupply(); 
+        uint xCitadelTotalSupplyAfter = xCitadel.totalSupply();
         uint citadelAfterInXcitadel = xCitadel.balance();
         uint pricePerShareAfter = xCitadel.getPricePerFullShare();
 
-        // total supply should increase as the amount is deposited 
+        // total supply should increase as the amount is deposited
         assertEq(xCitadelTotalSupplyAfter - xCitadelTotalSupplyBefore, expectedToLockers);
-        
+
         // balance should increase as expectedToLockers is deposited.
         // And expectedToStakers is transferred to xCitadel.
-        assertEq(citadelAfterInXcitadel -citadelBeforeInXcitadel, expectedToLockers+expectedToStakers);
-    
+        assertEq(citadelAfterInXcitadel - citadelBeforeInXcitadel, expectedToLockers+expectedToStakers);
+
         // price per share should increase
         assertEq(pricePerShareAfter - pricePerShareBefore, (expectedToStakers * 1e18)/xCitadelTotalSupplyAfter);
-    }
+
 
     function testBrickedStrategy() public {
         address user = address(1);
