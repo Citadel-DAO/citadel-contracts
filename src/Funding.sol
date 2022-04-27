@@ -437,9 +437,10 @@ contract Funding is GlobalAccessControlManaged, ReentrancyGuardUpgradeable {
                 minCitadelPerAsset,
                 maxCitadelPerAsset
             );
-        } else {
-            citadelPerAsset = _citadelPerAsset;
-            emit CitadelPerAssetUpdated(_citadelPerAsset);
         }
+
+        // Always update the price, even when it is flagged.
+        citadelPerAsset = _citadelPerAsset;
+        emit CitadelPerAssetUpdated(_citadelPerAsset);
     }
 }
