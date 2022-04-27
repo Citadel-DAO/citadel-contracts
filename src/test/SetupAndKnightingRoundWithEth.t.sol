@@ -50,7 +50,7 @@ contract KnightingRoundWithEthTest is BaseFixture {
         assertEq(comparator.negDiff("weth.balanceOf(shrimp)"), 0);
         assertEq(
             comparator.diff("knightingRoundWithEth.boughtAmounts(shrimp)"),
-            21e18
+            21e8
         );
 
         // tokenInLimit = 100e8 so transaction should revert
@@ -244,7 +244,7 @@ contract KnightingRoundWithEthTest is BaseFixture {
 
         // Move forward to end of new duration
         vm.warp(
-            knightingRoundWithEth.saleStart() + knightingRound.saleDuration()
+            knightingRoundWithEth.saleStart() + knightingRoundWithEth.saleDuration()
         );
 
         // Sale is finilized
@@ -290,7 +290,7 @@ contract KnightingRoundWithEthTest is BaseFixture {
         );
         bytes32[] memory emptyProof = new bytes32[](0);
         vm.startPrank(shark);
-        wbtc.approve(address(knightingRoundWithEth), wbtc.balanceOf(shark));
+        weth.approve(address(knightingRoundWithEth), type(uint256).max);
         knightingRoundWithEth.buyEth{value: 25e8}(0, emptyProof);
         vm.stopPrank();
         require(
