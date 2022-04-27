@@ -143,7 +143,7 @@ contract StakingTest is BaseFixture {
 
         // price per share should increase
         assertEq(pricePerShareAfter - pricePerShareBefore, (expectedToStakers * 1e18)/xCitadelTotalSupplyAfter);
-
+    }
 
     function testBrickedStrategy() public {
         address user = address(1);
