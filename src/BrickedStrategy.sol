@@ -9,9 +9,8 @@ contract BrickedStrategy is BaseStrategy {
     /// @dev Initialize the Strategy with security settings as well as tokens
     /// @notice Proxies will set any non constant variable you declare as default value
     /// @dev add any extra changeable variable at end of initializer as shown
-    function initialize(address _vault, address _want) public onlyInitializing {
+    function initialize(address _vault, address _want) public initializer {
         __BaseStrategy_init(_vault);
-        /// @dev Add config here
         want = _want;
     }
 
