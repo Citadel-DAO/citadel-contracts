@@ -5,6 +5,7 @@ pragma solidity >= 0.5.0 <= 0.9.0;
 interface IStakedCitadelLocker {
     function initialize(
         address _stakingToken,
+        address _gac,
         string calldata name,
         string calldata symbol
     ) external;
