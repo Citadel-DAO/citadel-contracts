@@ -2,9 +2,9 @@ const { ethers } = require("ethers");
 const axios = require("axios");
 
 const calcTokenoutPrice = (desiredPriceInUsd, priceInUsd, decimals) => {
-  return ethers.BigNumber.from(desiredPriceInUsd)
+  return ethers.BigNumber.from(desiredPriceInUsd * 10 ** 8)
     .mul(ethers.BigNumber.from(10).pow(ethers.BigNumber.from(decimals)))
-    .div(ethers.BigNumber.from(priceInUsd));
+    .div(ethers.BigNumber.from(priceInUsd * 10 ** 8));
 };
 
 const getTokensPrices = (tokensList) => {
@@ -14,18 +14,14 @@ https://api.coingecko.com/api/v3/simple/token_price/ethereum?contract_addresses=
   )}&vs_currencies=usd
 `;
 
-  console.log(reqUrl);
-
   return new Promise((resolve, reject) => {
     axios
       .get(reqUrl)
       .then(function (response) {
-        // handle success
-        console.log(response.data);
+        return resolve(response.data);
       })
       .catch(function (error) {
-        // handle error
-        console.log(error);
+        return reject(error);
       });
   });
 };
