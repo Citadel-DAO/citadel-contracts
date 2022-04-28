@@ -2,14 +2,20 @@
 pragma solidity 0.8.12;
 
 import {KnightingRound} from "./KnightingRound.sol";
+import {IERC20} from "openzeppelin-contracts/token/ERC20/IERC20.sol";
+import {SafeERC20} from "openzeppelin-contracts/token/ERC20/utils/SafeERC20.sol";
 
 interface WETH {
     function deposit() external payable;
+
     function transfer(address to, uint256 amount) external returns (bool);
+
     function approve(address guy, uint256 wad) external returns (bool);
 }
 
 contract KnightingRoundWithEth is KnightingRound {
+    using SafeERC20 for IERC20;
+
     function buyEth(uint8 _daoId, bytes32[] calldata _proof)
         external
         payable
@@ -18,11 +24,7 @@ contract KnightingRoundWithEth is KnightingRound {
     {
         WETH weth = WETH(address(tokenIn));
         weth.deposit{value: msg.value}();
-        weth.transfer(msg.sender, msg.value);
-        tokenOutAmount_ = super.buy(
-            msg.value,
-            _daoId,
-            _proof
-        );
+        IERC20(address(tokenIn)).safeTransfer(msg.sender, msg.value);
+        tokenOutAmount_ = super.buy(msg.value, _daoId, _proof);
     }
 }
