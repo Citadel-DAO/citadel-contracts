@@ -164,29 +164,30 @@ contract LockingTest is BaseFixture {
     }
 
     function testShutDown() public {
-        address user = address(1);
-        vm.expectRevert("Ownable: caller is not the owner");
+        vm.startPrank(rando);
+        vm.expectRevert("GAC: invalid-caller-role");
         xCitadelLocker.shutdown();
+        vm.stopPrank();
 
         vm.prank(governance);
         xCitadelLocker.shutdown();
 
         // giving user some citadel to stake
         vm.prank(governance);
-        citadel.mint(user, 100e18); // so that user can stake and get xCitadel
+        citadel.mint(rando, 100e18); // so that user can stake and get xCitadel
 
-        vm.startPrank(user);
+        vm.startPrank(rando);
         citadel.approve(address(xCitadel), 10e18); // approve staking amount
         xCitadel.deposit(10e18); // stake and get xCitadel
 
-        uint xCitadelUserBalanceBefore = xCitadel.balanceOf(user);
+        uint xCitadelUserBalanceBefore = xCitadel.balanceOf(rando);
         xCitadel.approve(address(xCitadelLocker), xCitadelUserBalanceBefore);
-        
-        vm.expectRevert("shutdown");
-        xCitadelLocker.lock(user, xCitadelUserBalanceBefore, 0); // lock xCitadel
-        uint xCitadelUserBalanceAfter = xCitadel.balanceOf(user);
 
-        assertEq(xCitadelUserBalanceAfter , xCitadelUserBalanceBefore);
+        vm.expectRevert("shutdown");
+        xCitadelLocker.lock(rando, xCitadelUserBalanceBefore, 0); // lock xCitadel
+        uint xCitadelUserBalanceAfter = xCitadel.balanceOf(rando);
+
+        assertEq(xCitadelUserBalanceAfter, xCitadelUserBalanceBefore);
 
     }
 
