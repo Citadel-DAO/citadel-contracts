@@ -224,24 +224,24 @@ async function main() {
 
   /// ========  Knighting Round
   const knightingRoundParams = {
-    start: new Date(new Date().getTime() + 10 * 1000),
+    start: Number(new Date(new Date().getTime())),
     duration: 7 * 24 * 3600 * 1000,
     citadelWbtcPrice: ethers.utils.parseUnits("21", 18), // 21 CTDL per wBTC
     wbtcLimit: ethers.utils.parseUnits("100", 8), // 100 wBTC
   };
 
   // TODO: need to deploy a guest list contract, address 0 won't run
-  // await knightingRound.connect(governance).initialize(
-  //   address(gac),
-  //   address(citadel),
-  //   address(wbtc),
-  //   knightingRoundParams.start,
-  //   knightingRoundParams.duration,
-  //   knightingRoundParams.citadelWbtcPrice,
-  //   address(governance),
-  //   address(0), // TODO: Add guest list and test with it
-  //   knightingRoundParams.wbtcLimit
-  // );
+  await knightingRound.connect(governance).initialize(
+    address(gac),
+    address(citadel),
+    address(wbtc),
+    knightingRoundParams.start,
+    knightingRoundParams.duration,
+    knightingRoundParams.citadelWbtcPrice,
+    address(governance),
+    address(0), // TODO: Add guest list and test with it
+    knightingRoundParams.wbtcLimit
+  );
 
   /// ========  Funding
   await fundingWbtc.initialize(
@@ -377,12 +377,12 @@ async function main() {
   await xCitadel.connect(user).withdraw(parseUnits("50", 18));
 
   // fast forward to get some CTDL vested
-  console.log(
-    `fast forward to 10 days later to have some vested CTDL unlocked`
-  );
-  const getVestedTime = depositTokenTime + 10 * 86400;
-  await hre.network.provider.send("evm_setNextBlockTimestamp", [getVestedTime]);
-  await hre.network.provider.send("evm_mine");
+  // console.log(
+  //   `fast forward to 10 days later to have some vested CTDL unlocked`
+  // );
+  // const getVestedTime = depositTokenTime + 10 * 86400;
+  // await hre.network.provider.send("evm_setNextBlockTimestamp", [getVestedTime]);
+  // await hre.network.provider.send("evm_mine");
 
   // claim some vested CTDL
   await xCitadelVester.claim(address(user), parseUnits("20", 18));
@@ -410,14 +410,16 @@ async function main() {
     )}`
   );
 
-  // fast forward to make a position unlockable
-  console.log(`fast forward to 22 weeks later to make the position unlockable`);
-  const unlockTime = getVestedTime + 7 * 22 * 86400; // 22 weeks later
-  await hre.network.provider.send("evm_setNextBlockTimestamp", [unlockTime]);
-  await hre.network.provider.send("evm_mine");
+  // // fast forward to make a position unlockable
+  // console.log(`fast forward to 22 weeks later to make the position unlockable`);
+  // const unlockTime = getVestedTime + 7 * 22 * 86400; // 22 weeks later
+  // await hre.network.provider.send("evm_setNextBlockTimestamp", [unlockTime]);
+  // await hre.network.provider.send("evm_mine");
 
-  await xCitadelLocker.checkpointEpoch();
-  await citadelMinter.connect(policyOps).mintAndDistribute();
+  // await xCitadelLocker.checkpointEpoch();
+  // await citadelMinter.connect(policyOps).mintAndDistribute();
+
+
   // // test out if i can withdraw
   // await xCitadelLocker.connect(user).withdrawExpiredLocksTo(address(user));
   // console.log(
@@ -431,19 +433,19 @@ async function main() {
     .lock(address(user), parseUnits("100", 18), 0);
 
   // to make some rewards available
-  const cannotUnlockTime = unlockTime + 7 * 5 * 86400; // 5 weeks later
-  await hre.network.provider.send("evm_setNextBlockTimestamp", [
-    cannotUnlockTime,
-  ]);
-  await hre.network.provider.send("evm_mine");
+  // const cannotUnlockTime = unlockTime + 7 * 5 * 86400; // 5 weeks later
+  // await hre.network.provider.send("evm_setNextBlockTimestamp", [
+  //   cannotUnlockTime,
+  // ]);
+  // await hre.network.provider.send("evm_mine");
 
-  await xCitadelLocker.checkpointEpoch();
-  console.log(
-    `total locked position: ${formatUnits(
-      await xCitadelLocker.lockedBalanceOf(address(user)),
-      18
-    )}`
-  );
+  // await xCitadelLocker.checkpointEpoch();
+  // console.log(
+  //   `total locked position: ${formatUnits(
+  //     await xCitadelLocker.lockedBalanceOf(address(user)),
+  //     18
+  //   )}`
+  // );
   // // test out if there are rewards available
   // console.log(
   //   `balance of xCTDL before claim rewards: ${formatUnits(
