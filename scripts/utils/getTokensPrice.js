@@ -2,9 +2,9 @@ const { ethers } = require("ethers");
 const axios = require("axios");
 
 const calcTokenoutPrice = (desiredPriceInUsd, priceInUsd, decimals) => {
-  return ethers.BigNumber.from(desiredPriceInUsd * 10 ** 8)
+  return ethers.BigNumber.from(parseInt(desiredPriceInUsd * 10 ** 8))
     .mul(ethers.BigNumber.from(10).pow(ethers.BigNumber.from(decimals)))
-    .div(ethers.BigNumber.from(priceInUsd * 10 ** 8));
+    .div(ethers.BigNumber.from(parseInt(priceInUsd * 10 ** 8)));
 };
 
 const getTokensPrices = (tokensList) => {
