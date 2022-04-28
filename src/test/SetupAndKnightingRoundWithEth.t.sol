@@ -58,7 +58,8 @@ contract KnightingRoundWithEthTest is BaseFixture {
 
         // tokenInLimit = 100e8 so transaction should revert
         vm.expectRevert("total amount exceeded");
-        knightingRoundWithEth.buyEth{value: 100e18}(0, emptyProof);
+        vm.deal(address(shrimp), 1000e18);
+        knightingRoundWithEth.buyEth{value: 1000e18}(0, emptyProof);
         assertEq(knightingRoundWithEth.totalTokenIn(), 1e18); // totelTokenIn should be same
 
         // buying again
