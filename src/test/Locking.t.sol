@@ -136,13 +136,14 @@ contract LockingTest is BaseFixture {
     }
 
     function testRecoverERC20() public {
-
-        vm.expectRevert("Ownable: caller is not the owner");
+        vm.startPrank(rando);
+        vm.expectRevert("GAC: invalid-caller-role");
         xCitadelLocker.recoverERC20(address(citadel), 10e18);
+        vm.stopPrank();
 
         vm.startPrank(governance);
-        citadel.mint(address(xCitadelLocker), 10e18); // 
-        xCitadelLocker.addReward(wbtc_address, treasuryVault, false); // add reward so that lockers can receive treasury share 
+        citadel.mint(address(xCitadelLocker), 10e18);
+        xCitadelLocker.addReward(wbtc_address, treasuryVault, false); // add reward so that lockers can receive treasury share
 
         vm.expectRevert("Cannot withdraw staking token");
         xCitadelLocker.recoverERC20(address(xCitadel), 10e18);
@@ -151,16 +152,15 @@ contract LockingTest is BaseFixture {
         xCitadelLocker.recoverERC20(wbtc_address, 10e18);
 
         uint lockerCitadelBefore = citadel.balanceOf(address(xCitadelLocker));
-        uint governanceCitadelBefore = citadel.balanceOf(governance);
+        uint treasuryCitadelBefore = citadel.balanceOf(treasuryVault);
         xCitadelLocker.recoverERC20(address(citadel), 10e18);
         uint lockerCitadelAfter = citadel.balanceOf(address(xCitadelLocker));
-        uint governanceCitadelAfter = citadel.balanceOf(governance);
+        uint treasuryCitadelAfter = citadel.balanceOf(treasuryVault);
 
         assertEq(lockerCitadelBefore - lockerCitadelAfter, 10e18);
-        assertEq(governanceCitadelAfter - governanceCitadelBefore, 10e18); //owner received 
+        assertEq(treasuryCitadelAfter - treasuryCitadelBefore, 10e18); // Transferred to treasuryVault
 
         vm.stopPrank();
-
     }
 
     function testShutDown() public {
