@@ -9,6 +9,7 @@ import "../interfaces/badger/IBadgerVipGuestlist.sol";
 interface WETH {
     function deposit() external payable;
 }
+
 contract KnightingRoundWithEthTest is BaseFixture {
     function setUp() public override {
         BaseFixture.setUp();
@@ -98,7 +99,10 @@ contract KnightingRoundWithEthTest is BaseFixture {
 
         assertEq(newTokenAmountOut, newTokenAmountOutExpected);
         // Knighting round concludes...
-        vm.warp(knightingRoundWithEthParams.start + knightingRoundWithEthParams.duration);
+        vm.warp(
+            knightingRoundWithEthParams.start +
+                knightingRoundWithEthParams.duration
+        );
 
         // Can't buy after round ends
         vm.startPrank(shark);
@@ -131,7 +135,10 @@ contract KnightingRoundWithEthTest is BaseFixture {
         knightingRoundWithEth.finalize();
 
         // move forward so that KnightingRound is finished.
-        vm.warp(knightingRoundWithEthParams.start + knightingRoundWithEthParams.duration); // to saleEnded() true
+        vm.warp(
+            knightingRoundWithEthParams.start +
+                knightingRoundWithEthParams.duration
+        ); // to saleEnded() true
 
         vm.expectRevert("KnightingRound: not enough balance");
         knightingRoundWithEth.finalize();
@@ -178,7 +185,10 @@ contract KnightingRoundWithEthTest is BaseFixture {
         knightingRoundWithEth.setSaleStart(startTime);
 
         // check if it is same as set in BaseFixture
-        assertEq(knightingRoundWithEth.saleStart(), knightingRoundWithEthParams.start);
+        assertEq(
+            knightingRoundWithEth.saleStart(),
+            knightingRoundWithEthParams.start
+        );
 
         // calling with correct role
         vm.startPrank(governance);
@@ -195,7 +205,8 @@ contract KnightingRoundWithEthTest is BaseFixture {
 
         // move forward to end the sale
         vm.warp(
-            knightingRoundWithEth.saleStart() + knightingRoundWithEthParams.duration
+            knightingRoundWithEth.saleStart() +
+                knightingRoundWithEthParams.duration
         );
 
         knightingRoundWithEth.finalize();
@@ -234,7 +245,8 @@ contract KnightingRoundWithEthTest is BaseFixture {
 
         // move forward to end of original sale
         vm.warp(
-            knightingRoundWithEth.saleStart() + knightingRoundWithEthParams.duration
+            knightingRoundWithEth.saleStart() +
+                knightingRoundWithEthParams.duration
         );
 
         // Atttempt to finilize reverts due to extended duration
@@ -247,7 +259,8 @@ contract KnightingRoundWithEthTest is BaseFixture {
 
         // Move forward to end of new duration
         vm.warp(
-            knightingRoundWithEth.saleStart() + knightingRoundWithEth.saleDuration()
+            knightingRoundWithEth.saleStart() +
+                knightingRoundWithEth.saleDuration()
         );
 
         // Sale is finilized
@@ -403,7 +416,7 @@ contract KnightingRoundWithEthTest is BaseFixture {
         // treasuryOps should be able to sweep any amount of any token other than CTDL
         vm.deal(address(knightingRoundWithEth), 10e18);
         vm.prank(address(knightingRoundWithEth));
-        WETH(weth_address).deposit{value:10e18}();
+        WETH(weth_address).deposit{value: 10e18}();
 
         prevBalance = weth.balanceOf(saleRecipient);
         vm.prank(treasuryOps);
