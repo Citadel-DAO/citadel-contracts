@@ -284,7 +284,7 @@ contract KnightingRoundWithEthTest is BaseFixture {
         // check if it is same as set in BaseFixture
         assertEq(
             knightingRoundWithEth.tokenInLimit(),
-            knightingRoundWithEthParams.wbtcLimit
+            knightingRoundWithEthParams.tokenInLimit
         );
 
         // calling with correct role

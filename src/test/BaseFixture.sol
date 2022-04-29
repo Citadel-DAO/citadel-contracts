@@ -113,7 +113,7 @@ contract BaseFixture is DSTest, Utils, stdCheats {
         uint256 start;
         uint256 duration;
         uint256 citadelWbtcPrice;
-        uint256 wbtcLimit;
+        uint256 tokenInLimit;
     }
 
     KnightingRoundParams knightingRoundParams;
@@ -213,14 +213,14 @@ contract BaseFixture is DSTest, Utils, stdCheats {
             start: block.timestamp + 100,
             duration: 7 days,
             citadelWbtcPrice: 21e18, // 21 CTDL per wBTC
-            wbtcLimit: 100e8 // 100 wBTC
+            tokenInLimit: 100e8 // 100 wBTC
         });
 
         knightingRoundWithEthParams = KnightingRoundParams({
             start: block.timestamp + 100,
             duration: 7 days,
-            citadelWbtcPrice: 21e18, // 21 CTDL per wBTC
-            wbtcLimit: 100e18 // 100 wBTC
+            citadelWbtcPrice: 21e18, // 21 CTDL per ETH
+            tokenInLimit: 100e18 // 100 ETH
         });
 
 
@@ -235,7 +235,7 @@ contract BaseFixture is DSTest, Utils, stdCheats {
             knightingRoundParams.citadelWbtcPrice,
             address(governance),
             address(guestList),
-            knightingRoundParams.wbtcLimit
+            knightingRoundParams.tokenInLimit
         );
 
         knightingRoundWithEth.initialize(
@@ -247,7 +247,7 @@ contract BaseFixture is DSTest, Utils, stdCheats {
             knightingRoundWithEthParams.citadelWbtcPrice,
             address(governance),
             address(guestList),
-            knightingRoundWithEthParams.wbtcLimit
+            knightingRoundWithEthParams.tokenInLimit
         );
         vm.stopPrank();
 
