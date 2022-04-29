@@ -6,12 +6,20 @@
     "chai": "^4.3.6",
     "ethereum-waffle": "^3.4.4",
     "ethers": "^5.6.2",
-    "hardhat": "^2.9.3"
+    "hardhat": "^2.9.3",
+    "prettier": "^2.6.2",
+    "prettier-plugin-solidity": "^1.0.0-beta.19",
+    "solhint": "^3.3.7",
+    "solhint-plugin-prettier": "^0.0.5"
   },
   "dependencies": {
     "@openzeppelin/contracts": "^4.5.0",
     "@openzeppelin/contracts-upgradeable": "^4.5.2",
     "axios": "^0.27.2",
     "moment": "^2.29.3"
+  },
+  "scripts": {
+    "solhint": "./node_modules/.bin/solhint -f table src/**/*.sol",
+    "prettier:solidity": "./node_modules/.bin/prettier --write src/**/*.sol"
   }
 }
