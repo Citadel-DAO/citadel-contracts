@@ -187,7 +187,50 @@ contract GlobalAccessControlTest is BaseFixture {
 
         vm.expectRevert("global-paused");
         knightingRound.sweep(address(cvx));
+    }
 
+    function testKnightingRoundEthPausing() public {
+        // pausing locally
+        vm.prank(guardian);
+        knightingRoundWithEth.pause();
+
+        bytes32[] memory emptyProof = new bytes32[](1);
+
+        vm.startPrank(shrimp);
+        vm.expectRevert("local-paused");
+        knightingRoundWithEth.buyEth{value: address(shrimp).balance / 2}(
+            0,
+            emptyProof
+        );
+
+        vm.expectRevert("local-paused");
+        knightingRoundWithEth.claim();
+        vm.stopPrank();
+
+        vm.startPrank(treasuryOps);
+        vm.expectRevert("local-paused");
+        knightingRoundWithEth.sweep(address(cvx));
+        vm.stopPrank();
+
+        // pausing globally
+        vm.prank(guardian);
+        gac.pause();
+
+        vm.startPrank(shrimp);
+        vm.expectRevert("global-paused");
+        knightingRoundWithEth.buyEth{value: address(shrimp).balance / 2}(
+            0,
+            emptyProof
+        );
+
+        vm.expectRevert("global-paused");
+        knightingRoundWithEth.claim();
+        vm.stopPrank();
+
+        vm.startPrank(treasuryOps);
+        vm.expectRevert("global-paused");
+        knightingRoundWithEth.sweep(address(cvx));
+        vm.stopPrank();
     }
 
     function testStakedCitadelPausing() public {

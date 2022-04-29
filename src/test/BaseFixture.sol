@@ -19,6 +19,7 @@ import {SupplySchedule} from "../SupplySchedule.sol";
 import {CitadelMinter} from "../CitadelMinter.sol";
 
 import {KnightingRound} from "../KnightingRound.sol";
+import {KnightingRoundWithEth} from "../KnightingRoundWithEth.sol";
 import {KnightingRoundGuestlist} from "../KnightingRoundGuestlist.sol";
 import {Funding} from "../Funding.sol";
 
@@ -82,10 +83,12 @@ contract BaseFixture is DSTest, Utils, stdCheats {
     address immutable xCitadelStrategy_address = getAddress("xCitadelStrategy");
 
     address constant wbtc_address = 0x2260FAC5E5542a773Aa44fBCfeDf7C193bc2C599;
+    address constant weth_address = 0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2;
     address constant cvx_address = 0x4e3FBD56CD56c3e72c1403e103b45Db9da5B9D2B;
 
     IERC20 wbtc = IERC20(wbtc_address);
     IERC20 cvx = IERC20(cvx_address);
+    IERC20 weth = IERC20(weth_address);
 
     GlobalAccessControl gac = new GlobalAccessControl();
 
@@ -93,12 +96,14 @@ contract BaseFixture is DSTest, Utils, stdCheats {
     StakedCitadel xCitadel = new StakedCitadel();
     BrickedStrategy xCitadel_strategy = new BrickedStrategy();
     StakedCitadelVester xCitadelVester = new StakedCitadelVester();
-    IStakedCitadelLocker xCitadelLocker = IStakedCitadelLocker(deployCode(lockerArtifact));
+    IStakedCitadelLocker xCitadelLocker =
+        IStakedCitadelLocker(deployCode(lockerArtifact));
 
     SupplySchedule schedule = new SupplySchedule();
     CitadelMinter citadelMinter = new CitadelMinter();
 
     KnightingRound knightingRound = new KnightingRound();
+    KnightingRoundWithEth knightingRoundWithEth = new KnightingRoundWithEth();
     KnightingRoundGuestlist guestList = new KnightingRoundGuestlist();
 
     Funding fundingWbtc = new Funding();
@@ -108,10 +113,11 @@ contract BaseFixture is DSTest, Utils, stdCheats {
         uint256 start;
         uint256 duration;
         uint256 citadelWbtcPrice;
-        uint256 wbtcLimit;
+        uint256 tokenInLimit;
     }
 
     KnightingRoundParams knightingRoundParams;
+    KnightingRoundParams knightingRoundWithEthParams;
 
     function getSelector(string memory _func) public pure returns (bytes4) {
         return bytes4(keccak256(bytes(_func)));
@@ -130,12 +136,14 @@ contract BaseFixture is DSTest, Utils, stdCheats {
         vm.label(rando, "rando");
 
         vm.label(address(knightingRound), "knightingRound");
+        vm.label(address(knightingRoundWithEth), "knightingRoundWithEth");
         vm.label(address(guestList), "guestList");
         vm.label(address(schedule), "schedule");
         vm.label(address(gac), "gac");
 
         vm.label(wbtc_address, "wbtc");
         vm.label(cvx_address, "cvx");
+        vm.label(weth_address, "weth");
 
         vm.label(whale, "whale"); // whale attempts large token actions, testing upper bounds
         vm.label(shrimp, "shrimp"); // shrimp attempts small token actions, testing lower bounds
@@ -185,7 +193,11 @@ contract BaseFixture is DSTest, Utils, stdCheats {
             "vlCTDL"
         );
 
-        xCitadelLocker.addReward(address(xCitadel), address(citadelMinter), false);
+        xCitadelLocker.addReward(
+            address(xCitadel),
+            address(citadelMinter),
+            false
+        );
 
         schedule.initialize(address(gac));
         citadelMinter.initialize(
@@ -201,8 +213,16 @@ contract BaseFixture is DSTest, Utils, stdCheats {
             start: block.timestamp + 100,
             duration: 7 days,
             citadelWbtcPrice: 21e18, // 21 CTDL per wBTC
-            wbtcLimit: 100e8 // 100 wBTC
+            tokenInLimit: 100e8 // 100 wBTC
         });
+
+        knightingRoundWithEthParams = KnightingRoundParams({
+            start: block.timestamp + 100,
+            duration: 7 days,
+            citadelWbtcPrice: 21e18, // 21 CTDL per ETH
+            tokenInLimit: 100e18 // 100 ETH
+        });
+
 
         guestList.initialize(address(gac));
 
@@ -215,7 +235,19 @@ contract BaseFixture is DSTest, Utils, stdCheats {
             knightingRoundParams.citadelWbtcPrice,
             address(governance),
             address(guestList),
-            knightingRoundParams.wbtcLimit
+            knightingRoundParams.tokenInLimit
+        );
+
+        knightingRoundWithEth.initialize(
+            address(gac),
+            address(citadel),
+            address(weth),
+            knightingRoundWithEthParams.start,
+            knightingRoundWithEthParams.duration,
+            knightingRoundWithEthParams.citadelWbtcPrice,
+            address(governance),
+            address(guestList),
+            knightingRoundWithEthParams.tokenInLimit
         );
         vm.stopPrank();
 
@@ -260,15 +292,18 @@ contract BaseFixture is DSTest, Utils, stdCheats {
         erc20utils.forceMintTo(whale, wbtc_address, 1000e8);
         erc20utils.forceMintTo(shrimp, wbtc_address, 10e8);
         erc20utils.forceMintTo(shark, wbtc_address, 100e8);
-
         erc20utils.forceMintTo(whale, cvx_address, 1000000e18);
         erc20utils.forceMintTo(shrimp, cvx_address, 1000e18);
         erc20utils.forceMintTo(shark, cvx_address, 10000e18);
 
+        vm.deal(whale, 1000 ether);
+        vm.deal(shrimp, 10 ether);
+        vm.deal(shark, 100 ether);
+
         // Setup balance tracking
         comparator = new SnapshotComparator();
 
-        uint256 numAddressesToTrack = 7;
+        uint256 numAddressesToTrack = 8;
         address[] memory accounts_to_track = new address[](numAddressesToTrack);
         string[] memory accounts_to_track_names = new string[](
             numAddressesToTrack
@@ -295,6 +330,9 @@ contract BaseFixture is DSTest, Utils, stdCheats {
         accounts_to_track[6] = treasuryVault;
         accounts_to_track_names[6] = "treasuryVault";
 
+        accounts_to_track[7] = address(knightingRoundWithEth);
+        accounts_to_track_names[7] = "knightingRoundWithEth";
+
         // Track balances for all tokens + entities
         for (uint256 i = 0; i < numAddressesToTrack; i++) {
             // wBTC
@@ -305,6 +343,19 @@ contract BaseFixture is DSTest, Utils, stdCheats {
             comparator.addCall(
                 wbtc_key,
                 wbtc_address,
+                abi.encodeWithSignature(
+                    "balanceOf(address)",
+                    accounts_to_track[i]
+                )
+            );
+
+            string memory weth_key = concatenate(
+                concatenate("weth.balanceOf(", accounts_to_track_names[i]),
+                ")"
+            );
+            comparator.addCall(
+                weth_key,
+                weth_address,
                 abi.encodeWithSignature(
                     "balanceOf(address)",
                     accounts_to_track[i]
@@ -370,6 +421,23 @@ contract BaseFixture is DSTest, Utils, stdCheats {
                 )
             );
 
+            // Knighting Round with Eth Purchases
+            string memory knighting_round_weth_key = concatenate(
+                concatenate(
+                    "knightingRoundWithEth.boughtAmounts(",
+                    accounts_to_track_names[i]
+                ),
+                ")"
+            );
+            comparator.addCall(
+                knighting_round_weth_key,
+                address(knightingRoundWithEth),
+                abi.encodeWithSignature(
+                    "boughtAmounts(address)",
+                    accounts_to_track[i]
+                )
+            );
+
             // emit log(wbtc_key);
             // emit log(citadel_key);
         }
@@ -391,7 +459,6 @@ contract BaseFixture is DSTest, Utils, stdCheats {
             address(xCitadel),
             abi.encodeWithSignature("getPricePerFullShare()")
         );
-
     }
 
     // @dev simple simulation of knighting round, in order to advance next stages in a 'realistic' manner
@@ -404,17 +471,36 @@ contract BaseFixture is DSTest, Utils, stdCheats {
         // Shrimp BTC
         vm.startPrank(shrimp);
         wbtc.approve(address(knightingRound), wbtc.balanceOf(shrimp));
+        weth.approve(address(knightingRound), address(shrimp).balance);
+
         knightingRound.buy(wbtc.balanceOf(shrimp) / 2, 0, emptyProof);
+
+        //Shrimp ETH
+        knightingRoundWithEth.buyEth{value: address(shrimp).balance / 2}(
+            0,
+            emptyProof
+        );
+
         vm.stopPrank();
 
         // Whale BTC
         vm.startPrank(whale);
         wbtc.approve(address(knightingRound), wbtc.balanceOf(whale));
-        knightingRound.buy(wbtc.balanceOf(whale) / 2, 0, emptyProof);
-        vm.stopPrank();
+        weth.approve(address(knightingRound), address(whale).balance);
 
+        knightingRound.buy(wbtc.balanceOf(whale) / 2, 0, emptyProof);
+
+        //Whale ETH
+        knightingRoundWithEth.buyEth{value: address(whale).balance / 2}(
+            0,
+            emptyProof
+        );
+
+        vm.stopPrank();
         // Knighting round concludes...
-        uint timeTillEnd = knightingRoundParams.start + knightingRoundParams.duration - block.timestamp;
+        uint256 timeTillEnd = knightingRoundParams.start +
+            knightingRoundParams.duration -
+            block.timestamp;
         vm.warp(timeTillEnd);
     }
 
@@ -434,12 +520,15 @@ contract BaseFixture is DSTest, Utils, stdCheats {
 
         vm.startPrank(governance);
 
-        uint256 citadelBought = knightingRound.totalTokenOutBought();
+        uint256 citadelBoughtWbtc = knightingRound.totalTokenOutBought();
+        uint256 citadelBoughtWithEth = knightingRoundWithEth
+            .totalTokenOutBought();
+        uint256 citadelBought = citadelBoughtWbtc + citadelBoughtWithEth;
         uint256 initialSupply = (citadelBought * 1666666666666666667) / 1e18; // Amount bought = 60% of initial supply, therefore total citadel ~= 1.67 amount bought.
 
         citadel.mint(governance, initialSupply);
         citadel.transfer(address(knightingRound), citadelBought);
-
+        citadel.transfer(address(knightingRoundWithEth), citadelBoughtWithEth);
         uint256 remainingSupply = initialSupply - citadelBought - 1e18; // one coin for seeding xCitadel
 
         citadel.approve(address(xCitadel), 1e18);

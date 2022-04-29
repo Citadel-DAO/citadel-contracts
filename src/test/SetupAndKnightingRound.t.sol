@@ -237,7 +237,7 @@ contract KnightingRoundTest is BaseFixture {
         knightingRound.setTokenInLimit(25e8);
 
         // check if it is same as set in BaseFixture
-        assertEq(knightingRound.tokenInLimit(), knightingRoundParams.wbtcLimit);
+        assertEq(knightingRound.tokenInLimit(), knightingRoundParams.tokenInLimit);
 
         // calling with correct role
         vm.startPrank(techOps);
