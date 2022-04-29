@@ -35,7 +35,6 @@ contract GlobalAccessControlTest is BaseFixture {
     }
 
     function testFundingPausing() public {
-
         // pausing locally
         vm.prank(guardian);
         fundingCvx.pause();
@@ -157,7 +156,6 @@ contract GlobalAccessControlTest is BaseFixture {
         vm.prank(governance);
         vm.expectRevert("global-paused");
         citadelMinter.initializeLastMintTimestamp();
-
     }
 
     function testKnightingRoundPausing() public {

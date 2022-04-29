@@ -223,7 +223,6 @@ contract BaseFixture is DSTest, Utils, stdCheats {
             tokenInLimit: 100e18 // 100 ETH
         });
 
-
         guestList.initialize(address(gac));
 
         knightingRound.initialize(

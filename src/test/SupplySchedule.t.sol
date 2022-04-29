@@ -17,22 +17,23 @@ contract SupplyScheduleTest is BaseFixture {
 
         vm.startPrank(governance);
 
-        vm.expectRevert("SupplySchedule: minting must start at or after current time");
-        schedule.setMintingStart(block.timestamp-10);
+        vm.expectRevert(
+            "SupplySchedule: minting must start at or after current time"
+        );
+        schedule.setMintingStart(block.timestamp - 10);
 
-        uint timestamp = block.timestamp + 1000 ; 
+        uint256 timestamp = block.timestamp + 1000;
         schedule.setMintingStart(timestamp);
-        assertEq(schedule.globalStartTimestamp() , timestamp); // check if globalStartTimeStamp is set.
+        assertEq(schedule.globalStartTimestamp(), timestamp); // check if globalStartTimeStamp is set.
 
         vm.expectRevert("SupplySchedule: minting already started");
         schedule.setMintingStart(block.timestamp + 1000);
         vm.stopPrank();
-
     }
 
-    function testSetEpochRate() public{
+    function testSetEpochRate() public {
         uint256 epochLength = schedule.epochLength();
-        uint256 epochRate = 514986000000000000000000 / epochLength ;
+        uint256 epochRate = 514986000000000000000000 / epochLength;
         vm.prank(address(1));
         vm.expectRevert("GAC: invalid-caller-role");
         schedule.setEpochRate(0, epochRate);
@@ -44,10 +45,9 @@ contract SupplyScheduleTest is BaseFixture {
         schedule.setEpochRate(0, epochRate);
 
         schedule.setEpochRate(7, epochRate);
-        assertEq(schedule.epochRate(7) , epochRate); // check if epochRate is set
+        assertEq(schedule.epochRate(7), epochRate); // check if epochRate is set
 
         vm.stopPrank();
-
     }
 
     function testExampleEpochRates() public {

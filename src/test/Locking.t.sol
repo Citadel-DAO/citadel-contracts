@@ -7,7 +7,6 @@ import {GlobalAccessControl} from "../GlobalAccessControl.sol";
 contract LockingTest is BaseFixture {
     function setUp() public override {
         BaseFixture.setUp();
-
     }
 
     // function testUnlockAndReward() public{
@@ -149,11 +148,13 @@ contract LockingTest is BaseFixture {
         vm.expectRevert("Cannot withdraw reward token");
         xCitadelLocker.recoverERC20(wbtc_address, 10e18);
 
-        uint lockerCitadelBefore = citadel.balanceOf(address(xCitadelLocker));
-        uint treasuryCitadelBefore = citadel.balanceOf(treasuryVault);
+        uint256 lockerCitadelBefore = citadel.balanceOf(
+            address(xCitadelLocker)
+        );
+        uint256 treasuryCitadelBefore = citadel.balanceOf(treasuryVault);
         xCitadelLocker.recoverERC20(address(citadel), 10e18);
-        uint lockerCitadelAfter = citadel.balanceOf(address(xCitadelLocker));
-        uint treasuryCitadelAfter = citadel.balanceOf(treasuryVault);
+        uint256 lockerCitadelAfter = citadel.balanceOf(address(xCitadelLocker));
+        uint256 treasuryCitadelAfter = citadel.balanceOf(treasuryVault);
 
         assertEq(lockerCitadelBefore - lockerCitadelAfter, 10e18);
         assertEq(treasuryCitadelAfter - treasuryCitadelBefore, 10e18); // Transferred to treasuryVault
@@ -178,18 +179,17 @@ contract LockingTest is BaseFixture {
         citadel.approve(address(xCitadel), 10e18); // approve staking amount
         xCitadel.deposit(10e18); // stake and get xCitadel
 
-        uint xCitadelUserBalanceBefore = xCitadel.balanceOf(rando);
+        uint256 xCitadelUserBalanceBefore = xCitadel.balanceOf(rando);
         xCitadel.approve(address(xCitadelLocker), xCitadelUserBalanceBefore);
 
         vm.expectRevert("shutdown");
         xCitadelLocker.lock(rando, xCitadelUserBalanceBefore, 0); // lock xCitadel
-        uint xCitadelUserBalanceAfter = xCitadel.balanceOf(rando);
+        uint256 xCitadelUserBalanceAfter = xCitadel.balanceOf(rando);
 
         assertEq(xCitadelUserBalanceAfter, xCitadelUserBalanceBefore);
-
     }
 
-    function lockAmount() public returns(uint){
+    function lockAmount() public returns (uint256) {
         address user = address(1);
 
         // giving user some citadel to stake
@@ -200,11 +200,11 @@ contract LockingTest is BaseFixture {
         citadel.approve(address(xCitadel), 10e18); // approve staking amount
         xCitadel.deposit(10e18); // stake and get xCitadel
 
-        uint xCitadelUserBalanceBefore = xCitadel.balanceOf(user);
+        uint256 xCitadelUserBalanceBefore = xCitadel.balanceOf(user);
         xCitadel.approve(address(xCitadelLocker), xCitadelUserBalanceBefore);
 
         xCitadelLocker.lock(user, xCitadelUserBalanceBefore, 0); // lock xCitadel
-        uint xCitadelUserBalanceAfter = xCitadel.balanceOf(user);
+        uint256 xCitadelUserBalanceAfter = xCitadel.balanceOf(user);
 
         assertEq(xCitadelUserBalanceBefore - xCitadelUserBalanceAfter, 10e18);
 
@@ -213,7 +213,7 @@ contract LockingTest is BaseFixture {
         return xCitadelUserBalanceBefore - xCitadelUserBalanceAfter;
     }
 
-    function mintAndDistribute() public{
+    function mintAndDistribute() public {
         // mint and distribute , lockers will receive xCTDL as rewards
         vm.startPrank(governance);
         schedule.setMintingStart(block.timestamp);
@@ -222,12 +222,12 @@ contract LockingTest is BaseFixture {
         vm.warp(block.timestamp + 1000);
         vm.startPrank(policyOps);
         citadelMinter.setFundingPoolWeight(address(fundingWbtc), 10000);
-        citadelMinter.setCitadelDistributionSplit(5000,2000,3000);
+        citadelMinter.setCitadelDistributionSplit(5000, 2000, 3000);
         citadelMinter.mintAndDistribute();
         vm.stopPrank();
     }
 
-    function treasuryReward() public{
+    function treasuryReward() public {
         vm.startPrank(governance);
         erc20utils.forceMintTo(treasuryVault, wbtc_address, 100e8); // so that treasury can reward lockers
         xCitadelLocker.addReward(wbtc_address, treasuryVault, false); // add reward so that lockers can receive treasury share
@@ -237,6 +237,5 @@ contract LockingTest is BaseFixture {
         wbtc.approve(address(xCitadelLocker), 100e8);
         xCitadelLocker.notifyRewardAmount(wbtc_address, 10e8); // share of treasury yield
         vm.stopPrank();
-
     }
 }
