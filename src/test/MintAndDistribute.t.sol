@@ -6,6 +6,8 @@ import {SupplySchedule} from "../SupplySchedule.sol";
 import {GlobalAccessControl} from "../GlobalAccessControl.sol";
 
 contract MintAndDistributeTest is BaseFixture {
+    uint256 constant MAX_BPS = 10000;
+
     function setUp() public override {
         BaseFixture.setUp();
     }
@@ -18,7 +20,7 @@ contract MintAndDistributeTest is BaseFixture {
                 - we could set a max frequency by governance when we move to permissionless here
             - minted amount should match from epoch data
             - should handle the case at the border of two epochs gracefully
-            - if there is an undefined epoch, it should fail until that epoch is defined. 
+            - if there is an undefined epoch, it should fail until that epoch is defined.
                 -  after this is corrected, it should mint as expected from last mint as if that data had been there.
             - the assets should end up in the proper places in the expected proprotions
                 - xCitadel balance and ppfs going up
@@ -36,7 +38,6 @@ contract MintAndDistributeTest is BaseFixture {
         uint256 fundingBps = 4000;
         uint256 stakingBps = 3500;
         uint256 lockingBps = 2500;
-        uint256 MAX_BPS = 10000;
 
         uint256 wbtcFundingPoolWeight = 8000;
         uint256 cvxFundingPoolWeight = 2000;

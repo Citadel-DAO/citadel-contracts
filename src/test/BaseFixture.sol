@@ -533,7 +533,7 @@ contract BaseFixture is DSTest, Utils, stdCheats {
         citadel.approve(address(xCitadel), 1e18);
         xCitadel.deposit(1e18);
 
-        uint256 toLiquidity = (remainingSupply * 4e17) / 1e18; // 15% of total, or 40% of remaining 40%
+        // uint256 toLiquidity = (remainingSupply * 4e17) / 1e18; // 15% of total, or 40% of remaining 40% (not used)
         uint256 toTreasury = (remainingSupply * 6e17) / 1e18; // 25% of total, or 60% of remaining 40%
 
         // TODO: Create curve pool and add liquidity

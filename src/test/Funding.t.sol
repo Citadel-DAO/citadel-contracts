@@ -410,11 +410,11 @@ contract FundingTest is BaseFixture {
 
         require(
             cvx.balanceOf(whale) >= assetIn,
-            "buyer has insufficent assets for specified buy amount"
+            "buyer has insufficent assets for buy amount"
         );
         require(
             citadel.balanceOf(address(fundingContract)) >= expectedAssetOut,
-            "funding has insufficent citadel for specified buy amount"
+            "funding has insufficent citadel for buy amount"
         );
 
         comparator.snapPrev();

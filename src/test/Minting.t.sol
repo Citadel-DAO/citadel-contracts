@@ -8,6 +8,8 @@ import {Funding} from "../Funding.sol";
 import {CitadelMinter} from "../CitadelMinter.sol";
 
 contract MintingTest is BaseFixture {
+    uint256 constant MAX_BPS = 10000;
+
     function setUp() public override {
         BaseFixture.setUp();
     }
@@ -55,7 +57,6 @@ contract MintingTest is BaseFixture {
         uint256 _y,
         uint256 _fundingWeight
     ) public {
-        uint256 MAX_BPS = 10000;
         vm.assume(
             _x <= MAX_BPS &&
                 _y <= MAX_BPS &&
