@@ -10,7 +10,7 @@ contract GlobalAccessControlTest is BaseFixture {
         BaseFixture.setUp();
     }
 
-    function testPauseAndUnPause() public{
+    function testPauseAndUnPausing() public {
         vm.prank(address(1));
         vm.expectRevert("PAUSER_ROLE");
         gac.pause();
@@ -32,10 +32,9 @@ contract GlobalAccessControlTest is BaseFixture {
 
         // check if it unpaused
         assertTrue(!gac.paused());
-        
     }
 
-    function testFundingPausingFunctions() public{
+    function testFundingPausing() public {
 
         // pausing locally
         vm.prank(guardian);
@@ -118,7 +117,7 @@ contract GlobalAccessControlTest is BaseFixture {
         fundingCvx.updateCitadelPriceInAsset(10e18);
     }
 
-    function testMintingPausingFunction() public{
+    function testMintingPausing() public {
         // pausing locally
         vm.prank(guardian);
         citadelMinter.pause();
@@ -161,7 +160,7 @@ contract GlobalAccessControlTest is BaseFixture {
 
     }
 
-    function testKnightingRoundPausingFunction() public{
+    function testKnightingRoundPausing() public {
         // pausing locally
         vm.prank(guardian);
         knightingRound.pause();
@@ -191,7 +190,7 @@ contract GlobalAccessControlTest is BaseFixture {
 
     }
 
-    function testStakedCitadel() public{
+    function testStakedCitadelPausing() public {
         vm.prank(guardian);
         xCitadel.pause();
 
@@ -241,10 +240,42 @@ contract GlobalAccessControlTest is BaseFixture {
 
         vm.expectRevert("Pausable: paused");
         xCitadel.setManagementFee(1000);
-
     }
 
-    function testSchedulePausing() public{
+    function testStakedCitadelVesterPausing() public {
+        vm.prank(guardian);
+        xCitadelVester.pause();
+
+        vm.startPrank(governance);
+        vm.expectRevert("local-paused");
+        xCitadelVester.claim(address(1), 1e18);
+
+        vm.expectRevert("local-paused");
+        xCitadelVester.setupVesting(address(1), 1e18, 1651244600);
+
+        vm.expectRevert("local-paused");
+        xCitadelVester.setVestingDuration(86400);
+        vm.stopPrank();
+
+        vm.prank(techOps);
+        xCitadelVester.unpause();
+
+        vm.prank(guardian);
+        gac.pause();
+
+        vm.startPrank(governance);
+        vm.expectRevert("global-paused");
+        xCitadelVester.claim(address(1), 1e18);
+
+        vm.expectRevert("global-paused");
+        xCitadelVester.setupVesting(address(1), 1e18, 1651244600);
+
+        vm.expectRevert("global-paused");
+        xCitadelVester.setVestingDuration(86400);
+        vm.stopPrank();
+    }
+
+    function testSchedulePausing() public {
         vm.prank(guardian);
         schedule.pause();
 
@@ -253,7 +284,7 @@ contract GlobalAccessControlTest is BaseFixture {
         schedule.setMintingStart(block.timestamp + 1000);
 
         vm.expectRevert(bytes("local-paused"));
-        schedule.setEpochRate(8 , 10);
+        schedule.setEpochRate(8, 10);
 
         vm.stopPrank();
 
@@ -264,9 +295,8 @@ contract GlobalAccessControlTest is BaseFixture {
         schedule.setMintingStart(block.timestamp + 1000);
 
         vm.expectRevert(bytes("global-paused"));
-        schedule.setEpochRate(8 , 10);
+        schedule.setEpochRate(8, 10);
 
         vm.stopPrank();
-
     }
 }
