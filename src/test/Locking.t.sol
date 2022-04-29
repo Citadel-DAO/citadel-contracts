@@ -14,45 +14,45 @@ contract LockingTest is BaseFixture {
     //     address user = address(1);
 
     //     uint xCitadelLocked = lockAmount();
-       
+
     //     mintAndDistribute();
 
     //     treasuryReward();
-        
+
     //     vm.startPrank(user);
 
     //     // try to withdraw before the lock duration ends
     //     vm.expectRevert("no exp locks");
-    //     xCitadelLocker.withdrawExpiredLocksTo(user); // withdraw 
+    //     xCitadelLocker.withdrawExpiredLocksTo(user); // withdraw
 
     //     uint xCitadelUserBalanceBefore = xCitadel.balanceOf(user);
     //     uint wbtcUserBalanceBefore = wbtc.balanceOf(user);
     //     vm.warp(block.timestamp + 148 days); // lock period = 147 days + 1 day(rewards_duration cause 1st time lock)
-        
-    //     xCitadelLocker.getReward(user); // user collects rewards 
+
+    //     xCitadelLocker.getReward(user); // user collects rewards
 
     //     uint xCitadelUserBalanceAfter = xCitadel.balanceOf(user);
-        
+
     //     uint wbtcUserBalanceAfter = wbtc.balanceOf(user);
 
-    //     emit log_named_uint("reward per token xCitadel" , xCitadelLocker.rewardPerToken(address(xCitadel)));
-    //     emit log_named_uint("reward per token wbtc" ,xCitadelLocker.rewardPerToken(wbtc_address));
+    //     emit log_named_uint("reward per token xCitadel", xCitadelLocker.rewardPerToken(address(xCitadel)));
+    //     emit log_named_uint("reward per token wbtc", xCitadelLocker.rewardPerToken(wbtc_address));
 
     //     // the awards received from minting process
-    //     emit log_named_uint("Reward received xCitadel" , xCitadelUserBalanceAfter- xCitadelUserBalanceBefore);
+    //     emit log_named_uint("Reward received xCitadel", xCitadelUserBalanceAfter - xCitadelUserBalanceBefore);
     //     // the awards received from treasury funds
-    //     emit log_named_uint("Reward received Wbtc" , wbtcUserBalanceAfter-wbtcUserBalanceBefore);
+    //     emit log_named_uint("Reward received Wbtc", wbtcUserBalanceAfter-wbtcUserBalanceBefore);
 
-    //     assertTrue(xCitadelUserBalanceAfter- xCitadelUserBalanceBefore > 0);
-    //     assertTrue(wbtcUserBalanceAfter-wbtcUserBalanceBefore > 0) ;
+    //     assertTrue(xCitadelUserBalanceAfter - xCitadelUserBalanceBefore > 0);
+    //     assertTrue(wbtcUserBalanceAfter-wbtcUserBalanceBefore > 0);
 
     //     xCitadelUserBalanceBefore = xCitadel.balanceOf(user);
-    //     xCitadelLocker.withdrawExpiredLocksTo(user); // withdraw 
+    //     xCitadelLocker.withdrawExpiredLocksTo(user); // withdraw
     //     xCitadelUserBalanceAfter = xCitadel.balanceOf(user);
-    //     uint xCitadelUnlocked = xCitadelUserBalanceAfter- xCitadelUserBalanceBefore;
-        
-    //     // user gets unlocked amount 
-    //     assertEq(xCitadelUnlocked , xCitadelLocked);
+    //     uint xCitadelUnlocked = xCitadelUserBalanceAfter - xCitadelUserBalanceBefore;
+
+    //     // user gets unlocked amount
+    //     assertEq(xCitadelUnlocked, xCitadelLocked);
 
     //     xCitadelUserBalanceBefore = xCitadel.balanceOf(user);
     //     wbtcUserBalanceBefore = wbtc.balanceOf(user);
@@ -63,7 +63,7 @@ contract LockingTest is BaseFixture {
     //     wbtcUserBalanceAfter = wbtc.balanceOf(user);
 
     //     assertEq(xCitadelUserBalanceBefore, xCitadelUserBalanceAfter); // user's balance should not change
-    //     assertEq(wbtcUserBalanceBefore , wbtcUserBalanceAfter);
+    //     assertEq(wbtcUserBalanceBefore, wbtcUserBalanceAfter);
 
     //     vm.stopPrank();
 
@@ -73,8 +73,7 @@ contract LockingTest is BaseFixture {
     //     address user = address(1);
 
     //     uint xCitadelLocked = lockAmount();
-    //     // lock period + rewards_duration (cause 1st time lock)
-    //     vm.warp(block.timestamp + xCitadelLocker.lockDuration() + xCitadelLocker.rewardsDuration());
+    //     vm.warp(block.timestamp + 148 days); // lock period = 147 days + 1 day(rewards_duration cause 1st time lock)
 
     //     vm.startPrank(user);
     //     uint xCitadelUserBalanceBefore = xCitadel.balanceOf(user);
