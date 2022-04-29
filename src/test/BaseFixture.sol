@@ -12,6 +12,7 @@ import {GlobalAccessControl} from "../GlobalAccessControl.sol";
 
 import {CitadelToken} from "../CitadelToken.sol";
 import {StakedCitadel} from "../StakedCitadel.sol";
+import {BrickedStrategy} from "../BrickedStrategy.sol";
 import {StakedCitadelVester} from "../StakedCitadelVester.sol";
 
 import {SupplySchedule} from "../SupplySchedule.sol";
@@ -90,6 +91,7 @@ contract BaseFixture is DSTest, Utils, stdCheats {
 
     CitadelToken citadel = new CitadelToken();
     StakedCitadel xCitadel = new StakedCitadel();
+    BrickedStrategy xCitadel_strategy = new BrickedStrategy();
     StakedCitadelVester xCitadelVester = new StakedCitadelVester();
     IStakedCitadelLocker xCitadelLocker = IStakedCitadelLocker(deployCode(lockerArtifact));
 
@@ -167,15 +169,9 @@ contract BaseFixture is DSTest, Utils, stdCheats {
             xCitadelFees
         );
 
-        // vm.etch(xCitadelStrategy_address, staticCode.getEmptyStrategyCode());
+        xCitadel_strategy.initialize(address(xCitadel), address(citadel));
 
-        // emit log_address(xCitadelStrategy_address);
-
-        // IEmptyStrategy xCitadelStrategy = IEmptyStrategy(xCitadelStrategy_address);
-        // emit log(xCitadelStrategy.getName());
-        // xCitadelStrategy.initialize(address(xCitadel), address(citadel));
-
-        // xCitadel.setStrategy(xCitadelStrategy_address);
+        xCitadel.setStrategy(address(xCitadel_strategy));
 
         xCitadelVester.initialize(
             address(gac),
@@ -184,6 +180,7 @@ contract BaseFixture is DSTest, Utils, stdCheats {
         );
         xCitadelLocker.initialize(
             address(xCitadel),
+            address(gac),
             "Vote Locked xCitadel",
             "vlCTDL"
         );

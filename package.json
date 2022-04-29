@@ -10,6 +10,8 @@
   },
   "dependencies": {
     "@openzeppelin/contracts": "^4.5.0",
-    "@openzeppelin/contracts-upgradeable": "^4.5.2"
+    "@openzeppelin/contracts-upgradeable": "^4.5.2",
+    "axios": "^0.27.2",
+    "moment": "^2.29.3"
   }
 }
