@@ -180,6 +180,7 @@ contract BaseFixture is DSTest, Utils, stdCheats {
         );
         xCitadelLocker.initialize(
             address(xCitadel),
+            address(gac),
             "Vote Locked xCitadel",
             "vlCTDL"
         );
