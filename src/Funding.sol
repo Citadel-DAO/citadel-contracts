@@ -403,6 +403,7 @@ contract Funding is GlobalAccessControlManaged, ReentrancyGuardUpgradeable {
         gacPausable
         onlyRole(CONTRACT_GOVERNANCE_ROLE)
     {
+        require(_minPrice <= _maxPrice, "minPrice > maxPrice");
         minCitadelPriceInAsset = _minPrice;
         maxCitadelPriceInAsset = _maxPrice;
 
