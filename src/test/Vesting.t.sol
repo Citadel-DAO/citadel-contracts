@@ -25,6 +25,7 @@ contract VestingTest is BaseFixture {
 
     function setUp() public override {
         BaseFixture.setUp();
+        
     }
 
     /*
