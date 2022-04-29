@@ -42,4 +42,10 @@ interface IStakedCitadelLocker {
     function recoverERC20(address _tokenAddress, uint256 _tokenAmount) external;
 
     function shutdown() external;
+
+    function approveRewardDistributor(
+        address _rewardsToken,
+        address _distributor,
+        bool _approved
+    ) external;
 }
