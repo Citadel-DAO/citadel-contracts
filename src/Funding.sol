@@ -361,7 +361,8 @@ contract Funding is GlobalAccessControlManaged, ReentrancyGuardUpgradeable {
         gacPausable
         onlyRole(CONTRACT_GOVERNANCE_ROLE)
     {
-        require(_maxDiscount < MAX_BPS , "maxDiscount >= MAX_BPS");
+        require(_minDiscount <= _maxDiscount, "minDiscount > maxDiscount");
+        require(_maxDiscount < MAX_BPS, "maxDiscount >= MAX_BPS");
         funding.minDiscount = _minDiscount;
         funding.maxDiscount = _maxDiscount;
 
