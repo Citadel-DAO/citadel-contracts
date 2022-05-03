@@ -31,6 +31,8 @@ contract CitadelMinter is
         keccak256("CONTRACT_GOVERNANCE_ROLE");
     bytes32 public constant POLICY_OPERATIONS_ROLE =
         keccak256("POLICY_OPERATIONS_ROLE");
+    bytes32 public constant TREASURY_GOVERNANCE_ROLE =
+        keccak256("TREASURY_GOVERNANCE_ROLE");
 
     ICitadelToken public citadelToken;
     IVault public xCitadel;
@@ -48,6 +50,7 @@ contract CitadelMinter is
     uint256 public fundingBps;
     uint256 public stakingBps;
     uint256 public lockingBps;
+    uint256 public daoBps;
 
     /// ==================
     /// ===== Events =====
@@ -61,12 +64,14 @@ contract CitadelMinter is
     event CitadelDistributionSplitSet(
         uint256 fundingBps,
         uint256 stakingBps,
-        uint256 lockingBps
+        uint256 lockingBps,
+        uint256 daoBps
     );
     event CitadelDistribution(
         uint256 fundingAmount,
         uint256 stakingAmount,
-        uint256 lockingAmount
+        uint256 lockingAmount,
+        uint256 daoAmount
     );
 
     event CitadelDistributionToFunding(
@@ -172,6 +177,10 @@ contract CitadelMinter is
         gacPausable
         nonReentrant
     {
+        require(
+            _fundingBps + _stakingBps + _lockingBps + _daoBps == MAX_BPS,
+            "CitadelMinter: Sum of propvalues must be 10000 bps"
+        );
         uint256 cachedLastMintTimestamp = lastMintTimestamp;
 
         uint256 mintable = supplySchedule.getMintable(cachedLastMintTimestamp);
@@ -180,6 +189,7 @@ contract CitadelMinter is
         uint256 lockingAmount = 0;
         uint256 stakingAmount = 0;
         uint256 fundingAmount = 0;
+        uint256 daoAmount = 0;
 
         // 3 gas to store + 3 to read
         // Saves 100 gas for each time we xCitadel
@@ -235,7 +245,17 @@ contract CitadelMinter is
             );
         }
 
-        emit CitadelDistribution(fundingAmount, stakingAmount, lockingAmount);
+        uint256 cachedDaoBps = daoBps;
+        if (cachedDaoBps != 0) {
+
+            // Note: will revert if no treasury governance role set. Assumes only a single member for this role which should be enforced on GAC.
+            address treasuryVault = gac.getRoleMember(TREASURY_GOVERNANCE_ROLE, 0);
+
+            daoAmount = (mintable * cachedDaoBps) / MAX_BPS;
+            IERC20Upgradeable(address(citadelToken)).safeTransfer(treasuryVault, daoAmount);
+        }
+
+        emit CitadelDistribution(fundingAmount, stakingAmount, lockingAmount, daoAmount);
 
         lastMintTimestamp = block.timestamp;
     }
@@ -294,17 +314,20 @@ contract CitadelMinter is
     function setCitadelDistributionSplit(
         uint256 _fundingBps,
         uint256 _stakingBps,
-        uint256 _lockingBps
+        uint256 _lockingBps,
+        uint256 _daoBps
     ) external onlyRole(POLICY_OPERATIONS_ROLE) gacPausable nonReentrant {
         require(
-            _fundingBps + _stakingBps + _lockingBps == MAX_BPS,
+            _fundingBps + _stakingBps + _lockingBps + _daoBps == MAX_BPS,
             "CitadelMinter: Sum of propvalues must be 10000 bps"
         );
+
         fundingBps = _fundingBps;
         stakingBps = _stakingBps;
         lockingBps = _lockingBps;
+        daoBps = _daoBps;
 
-        emit CitadelDistributionSplitSet(_fundingBps, _stakingBps, _lockingBps);
+        emit CitadelDistributionSplitSet(_fundingBps, _stakingBps, _lockingBps, _daoBps);
     }
 
     /// ==============================
