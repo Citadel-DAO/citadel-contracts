@@ -2,7 +2,7 @@ const hre = require("hardhat");
 const ethers = hre.ethers;
 const moment = require("moment");
 const {
-  calcTokenoutPrice,
+  calcTokenOutPerTokenIn,
   getTokensPrices,
 } = require("./utils/getTokensPrice");
 
@@ -108,7 +108,7 @@ async function main() {
   const readyTokensListPhase1 = tokenInsPhase1.map((tk) => ({
     ...tk,
     usdPrice: tokensPrices[tk.address].usd,
-    tokenOutPrice: calcTokenoutPrice(
+    tokenOutPerTokenIn: calcTokenOutPerTokenIn(
       desiredPriceInUsd,
       tokensPrices[tk.address].usd,
       tk.decimals
@@ -133,7 +133,7 @@ async function main() {
       currentToken.address,
       phase1Start,
       phase1Duration,
-      currentToken.tokenOutPrice,
+      currentToken.tokenOutPerTokenIn,
       initialParams.citadelMultising,
       address(knightingRoundGuestList),
       phase1UsdLimit
@@ -173,7 +173,7 @@ async function main() {
     usdPrice: tokens2Prices[tk.address]
       ? tokens2Prices[tk.address].usd
       : tokens2Prices["0x4e3fbd56cd56c3e72c1403e103b45db9da5b9d2b"].usd,
-    tokenOutPrice: calcTokenoutPrice(
+    tokenOutPerTokenIn: calcTokenOutPerTokenIn(
       desiredPriceInUsd,
       tokens2Prices[tk.address]
         ? tokens2Prices[tk.address].usd
@@ -198,7 +198,7 @@ async function main() {
       currentToken.address,
       phase2Start,
       phase2Duration,
-      currentToken.tokenOutPrice,
+      currentToken.tokenOutPerTokenIn,
       initialParams.citadelMultising,
       address(knightingRoundGuestList),
       phase2UsdLimit

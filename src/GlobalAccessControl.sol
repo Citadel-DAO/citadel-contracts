@@ -46,10 +46,6 @@ contract GlobalAccessControl is
     bytes32 public constant CITADEL_MINTER_ROLE =
         keccak256("CITADEL_MINTER_ROLE");
 
-    // Should the function transferFrom be disabled
-    // NOTE: This is enforced at the contract level, the contract just allows the toggling of the bool
-    bool public transferFromDisabled; // Set to true in initialize
-
     /// =======================
     /// ===== Initializer =====
     /// =======================
@@ -72,13 +68,15 @@ contract GlobalAccessControl is
 
         // All roles are managed by CONTRACT_GOVERNANCE_ROLE
         _setRoleAdmin(CONTRACT_GOVERNANCE_ROLE, CONTRACT_GOVERNANCE_ROLE);
-        _setRoleAdmin(POLICY_OPERATIONS_ROLE, CONTRACT_GOVERNANCE_ROLE);
         _setRoleAdmin(TREASURY_GOVERNANCE_ROLE, CONTRACT_GOVERNANCE_ROLE);
+        _setRoleAdmin(TECH_OPERATIONS_ROLE, CONTRACT_GOVERNANCE_ROLE);
+        _setRoleAdmin(POLICY_OPERATIONS_ROLE, CONTRACT_GOVERNANCE_ROLE);
+        _setRoleAdmin(TREASURY_OPERATIONS_ROLE, CONTRACT_GOVERNANCE_ROLE);
+        _setRoleAdmin(KEEPER_ROLE, CONTRACT_GOVERNANCE_ROLE);
         _setRoleAdmin(PAUSER_ROLE, CONTRACT_GOVERNANCE_ROLE);
         _setRoleAdmin(UNPAUSER_ROLE, CONTRACT_GOVERNANCE_ROLE);
         _setRoleAdmin(BLOCKLIST_MANAGER_ROLE, CONTRACT_GOVERNANCE_ROLE);
         _setRoleAdmin(CITADEL_MINTER_ROLE, CONTRACT_GOVERNANCE_ROLE);
-        _setRoleAdmin(KEEPER_ROLE, CONTRACT_GOVERNANCE_ROLE);
 
         // Add default admin role here to avoid governance mistakes
         _setRoleAdmin(DEFAULT_ADMIN_ROLE, CONTRACT_GOVERNANCE_ROLE);

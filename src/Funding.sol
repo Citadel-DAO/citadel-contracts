@@ -23,11 +23,10 @@ contract Funding is GlobalAccessControlManaged, ReentrancyGuardUpgradeable {
     bytes32 public constant POLICY_OPERATIONS_ROLE =
         keccak256("POLICY_OPERATIONS_ROLE");
     bytes32 public constant TREASURY_OPERATIONS_ROLE = keccak256("TREASURY_OPERATIONS_ROLE");
-    bytes32 public constant TREASURY_VAULT_ROLE =
-        keccak256("TREASURY_VAULT_ROLE");
     bytes32 public constant KEEPER_ROLE = keccak256("KEEPER_ROLE");
 
     uint256 public constant MAX_BPS = 10000;
+    uint256 public constant ONE_ETH = 1e18;
 
     IERC20 public citadel; /// token to distribute (in vested xCitadel form)
     IVault public xCitadel; /// wrapped citadel form that is actually distributed
@@ -225,7 +224,7 @@ contract Funding is GlobalAccessControlManaged, ReentrancyGuardUpgradeable {
      */
     function getStakedCitadelAmountOut(uint256 _assetAmountIn) public view returns (uint256 xCitadelAmount_) {
         uint citadelAmount = getAmountOut(_assetAmountIn);
-        xCitadelAmount_ = citadelAmount * 10**citadel.decimals() / xCitadel.getPricePerFullShare();
+        xCitadelAmount_ = citadelAmount * ONE_ETH / xCitadel.getPricePerFullShare();
     }
 
     /**
