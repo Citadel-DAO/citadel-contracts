@@ -172,6 +172,16 @@ contract CitadelMinter is
         gacPausable
         nonReentrant
     {
+        // Saves gas below if non-zero
+        uint256 cachedLockingBps = lockingBps;
+        uint256 cachedStakingBps = stakingBps;
+        uint256 cachedFundingBps = fundingBps;
+
+        require(
+            cachedLockingBps + cachedStakingBps + cachedFundingBps == MAX_BPS,
+            "CitadelMinter: Sum of propvalues must be 10000 bps"
+        );
+
         uint256 cachedLastMintTimestamp = lastMintTimestamp;
 
         uint256 mintable = supplySchedule.getMintable(cachedLastMintTimestamp);
@@ -185,8 +195,6 @@ contract CitadelMinter is
         // Saves 100 gas for each time we xCitadel
         IVault cachedXCitadel = xCitadel;
 
-        // Saves gas below if true
-        uint256 cachedLockingBps = lockingBps;
         if (cachedLockingBps != 0) {
             lockingAmount = (mintable * cachedLockingBps) / MAX_BPS;
 
@@ -210,7 +218,6 @@ contract CitadelMinter is
             );
         }
 
-        uint256 cachedStakingBps = stakingBps;
         if (cachedStakingBps != 0) {
             stakingAmount = (mintable * cachedStakingBps) / MAX_BPS;
 
@@ -222,8 +229,6 @@ contract CitadelMinter is
             );
         }
 
-        /// Saves gas if the if is true, if it's not costs 6 extra gas
-        uint256 cachedFundingBps = fundingBps;
         if (cachedFundingBps != 0) {
             fundingAmount = (mintable * cachedFundingBps) / MAX_BPS;
 

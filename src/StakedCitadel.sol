@@ -291,7 +291,7 @@ contract StakedCitadel is
     /// @notice Gives the total balance of the underlying token within the sett and strategy system.
     /// @return Balance of token handled by the sett.
     function balance() public view returns (uint256) {
-        return token.balanceOf(address(this));
+        return token.balanceOf(address(this)) + IStrategy(strategy).balanceOf();
     }
 
     /// @notice Defines how much of the Setts' underlying is available for strategy to borrow.
@@ -458,11 +458,15 @@ contract StakedCitadel is
             performanceFeeStrategist
         );
 
-        IERC20Upgradeable(_token).safeTransfer(treasury, governanceRewardsFee);
-        IERC20Upgradeable(_token).safeTransfer(
-            strategist,
-            strategistRewardsFee
-        );
+        if(governanceRewardsFee != 0) {
+            IERC20Upgradeable(_token).safeTransfer(treasury, governanceRewardsFee);
+        }
+        if(strategistRewardsFee != 0) {
+            IERC20Upgradeable(_token).safeTransfer(
+                strategist,
+                strategistRewardsFee
+            );
+        }
 
         // Send rest to tree
         uint256 newBalance = IERC20Upgradeable(_token).balanceOf(address(this));
@@ -889,7 +893,9 @@ contract StakedCitadel is
         } else {
             shares = (_amount * totalSupply()) / _pool;
         }
-        _mint(recipient, shares);
+        if (shares != 0) {
+            _mint(recipient, shares);
+        }
     }
 
     /// @dev Helper function that issues shares based on performance and management fee when a harvest is reported.

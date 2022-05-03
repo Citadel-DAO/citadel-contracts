@@ -122,7 +122,7 @@ contract FundingTest is BaseFixture {
         assertEq(citadelAmount, citadelAmountOutExpected);
     }
 
-    function testFailClaimAssetToTreasury() public {
+    function testClaimAssetToTreasury() public {
 
         vm.prank(address(1));
         vm.expectRevert("GAC: invalid-caller-role");
@@ -131,13 +131,32 @@ contract FundingTest is BaseFixture {
         uint256 amount = cvx.balanceOf(address(fundingCvx));
         uint256 balanceBefore = cvx.balanceOf(fundingCvx.saleRecipient());
 
+        assertEq(amount, 0);
         vm.prank(treasuryOps);
+        vm.expectRevert("nothing to claim");
         fundingCvx.claimAssetToTreasury();
 
         uint256 balanceAfter = cvx.balanceOf(fundingCvx.saleRecipient());
 
-        // check the difference of saleRecipient's balance is equal to the amount
-        assertEq(amount, balanceAfter-balanceBefore);
+        // check the saleRecipient's balance is same as before
+        assertEq(balanceAfter, balanceBefore);
+
+        erc20utils.forceMintTo(address(fundingCvx), address(cvx), 100e18); // give some amount to fundingCvx
+
+        amount = cvx.balanceOf(address(fundingCvx));
+
+        assertEq(amount, 100e18);
+
+        balanceBefore = cvx.balanceOf(fundingCvx.saleRecipient());
+
+        vm.prank(treasuryOps);
+        fundingCvx.claimAssetToTreasury();
+
+        balanceAfter = cvx.balanceOf(fundingCvx.saleRecipient());
+
+        // difference should be equal to amount transferred
+        assertEq(balanceAfter-balanceBefore, amount); 
+
     }
 
     function testSweep() public {
@@ -146,16 +165,34 @@ contract FundingTest is BaseFixture {
         vm.expectRevert("GAC: invalid-caller-role");
         fundingCvx.sweep(address(cvx));
 
-        vm.prank(treasuryOps);
+        vm.startPrank(treasuryOps);
         vm.expectRevert("nothing to sweep");
         fundingCvx.sweep(address(cvx));
 
         // Check that the funding asset can't be sweeped
         erc20utils.forceMintTo(address(fundingCvx), address(cvx), 100e18);
 
-        vm.prank(treasuryOps);
         vm.expectRevert("cannot sweep funding asset, use claimAssetToTreasury()");
         fundingCvx.sweep(address(cvx));
+
+        vm.expectRevert("nothing to sweep");
+        fundingCvx.sweep(address(wbtc));
+
+        erc20utils.forceMintTo(address(fundingCvx), address(wbtc), 100e8); // give some wbtc to fundingCvx
+
+        address saleRecipient = fundingCvx.saleRecipient();
+
+        uint saleRecipientWbtcBefore = wbtc.balanceOf(saleRecipient);
+
+        fundingCvx.sweep(address(wbtc));
+
+        uint saleRecipientWbtcAfter = wbtc.balanceOf(saleRecipient);
+
+        assertEq(saleRecipientWbtcAfter-saleRecipientWbtcBefore, 100e8);
+
+        vm.stopPrank();
+
+
     }
 
     function testAccessControl() public {

@@ -82,18 +82,20 @@ contract StakedCitadelVester is
      * @param recipient The account to transfer unlocked tokens to.
      * @param amount The amount to transfer. If greater than the claimable amount, the maximum is transferred.
      */
-    function claim(address recipient, uint256 amount) external {
+    function claim(address recipient, uint256 amount) external gacPausable nonReentrant {
+        require(amount > 0, "StakedCitadelVester: cannot claim 0");
+
         uint256 claimable = claimableBalance(msg.sender);
         if (amount > claimable) {
             amount = claimable;
         }
-        if (amount != 0) {
-            vesting[msg.sender].claimedAmounts =
-                vesting[msg.sender].claimedAmounts +
-                amount;
-            vestingToken.safeTransfer(recipient, amount);
-            emit Claimed(msg.sender, recipient, amount);
-        }
+
+        vesting[msg.sender].claimedAmounts =
+            vesting[msg.sender].claimedAmounts +
+            amount;
+        vestingToken.safeTransfer(recipient, amount);
+
+        emit Claimed(msg.sender, recipient, amount);
     }
 
     /// =======================
@@ -133,7 +135,7 @@ contract StakedCitadelVester is
         address recipient,
         uint256 _amount,
         uint256 _unlockBegin
-    ) external {
+    ) external gacPausable {
         require(msg.sender == vault, "StakedCitadelVester: only xCTDL vault");
         require(_amount > 0, "StakedCitadelVester: cannot vest 0");
 
@@ -165,6 +167,7 @@ contract StakedCitadelVester is
      */
     function setVestingDuration(uint256 _duration)
         external
+        gacPausable
         onlyRole(CONTRACT_GOVERNANCE_ROLE)
     {
         vestingDuration = _duration;
