@@ -83,17 +83,19 @@ contract StakedCitadelVester is
      * @param amount The amount to transfer. If greater than the claimable amount, the maximum is transferred.
      */
     function claim(address recipient, uint256 amount) external gacPausable nonReentrant {
+        require(amount > 0, "StakedCitadelVester: cannot claim 0");
+
         uint256 claimable = claimableBalance(msg.sender);
         if (amount > claimable) {
             amount = claimable;
         }
-        if (amount != 0) {
-            vesting[msg.sender].claimedAmounts =
-                vesting[msg.sender].claimedAmounts +
-                amount;
-            vestingToken.safeTransfer(recipient, amount);
-            emit Claimed(msg.sender, recipient, amount);
-        }
+
+        vesting[msg.sender].claimedAmounts =
+            vesting[msg.sender].claimedAmounts +
+            amount;
+        vestingToken.safeTransfer(recipient, amount);
+
+        emit Claimed(msg.sender, recipient, amount);
     }
 
     /// =======================
