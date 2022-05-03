@@ -18,6 +18,7 @@ interface IStakedCitadelLocker {
 
 
     function notifyRewardAmount(address _rewardsToken, uint256 _reward) external;
+    function notifyRewardAmount(address _rewardsToken, uint256 _reward, bytes32 _dataTypeHash) external;
 
     function lock(
         address _account,
