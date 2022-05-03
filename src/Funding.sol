@@ -404,8 +404,8 @@ contract Funding is GlobalAccessControlManaged, ReentrancyGuardUpgradeable {
     {
 
         require(_minPrice <= _maxPrice, "minPrice > maxPrice");
-        minCitadelPriceInAsset = _minPrice;
-        maxCitadelPriceInAsset = _maxPrice;
+        minCitadelPerAsset = _minPrice;
+        maxCitadelPerAsset = _maxPrice;
 
         emit CitadelPriceBoundsSet(_minPrice, _maxPrice);
     }
