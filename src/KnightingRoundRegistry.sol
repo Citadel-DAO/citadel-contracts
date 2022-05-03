@@ -3,6 +3,7 @@ pragma solidity 0.8.12;
 
 import {Initializable} from "openzeppelin-contracts-upgradeable/proxy/utils/Initializable.sol";
 import {Clones} from "openzeppelin-contracts/proxy/Clones.sol";
+import "ds-test/test.sol";
 
 import "./lib/GlobalAccessControlManaged.sol";
 import "./KnightingRound.sol";
@@ -16,7 +17,6 @@ contract KnightingRoundRegistry is GlobalAccessControlManaged {
         keccak256("CONTRACT_GOVERNANCE_ROLE");
 
     uint256 public immutable PHASE_ONE_DURATION = 3 days;
-    uint256 public immutable PHASE_TWO_DURATION = 2 days;
 
     address public governance;
     address public tokenOut;
@@ -24,7 +24,9 @@ contract KnightingRoundRegistry is GlobalAccessControlManaged {
     address public guestList;
 
     uint256 public phaseOneStart;
-    uint256 public phaseTwoState;
+
+    address public knightingRoundImplementation;
+    address public knightingRoundWithEthImplementation;
 
     /// initialize
     function initialize(
@@ -38,9 +40,30 @@ contract KnightingRoundRegistry is GlobalAccessControlManaged {
             _phaseOneStart >= block.timestamp,
             "Phase one start can not be in past"
         );
+        require(
+            _saleRecipient != address(0),
+            "KnightingRound: sale recipient should not be zero"
+        );
+        require(
+            _tokenOut != address(0),
+            "Tokenout: token out should not be zero"
+        );
+        require(
+            _governance != address(0),
+            "Tokenout: token out should not be zero"
+        );
+        __GlobalAccessControlManaged_init(_governance);
+        governance = _governance;
+        phaseOneStart = _phaseOneStart;
+        tokenOut = _tokenOut;
+        saleRecipient = _saleRecipient;
+        guestList = _guestList;
+        knightingRoundImplementation = address(new KnightingRound());
+        knightingRoundWithEthImplementation = address(
+            new KnightingRoundWithEth()
+        );
     }
     /// initializePhaseOne
-    /// initializePhaseTwo
     /// addToPhaseOne
     /// removeFromPhaseOne
     /// addToPhaseTwo
