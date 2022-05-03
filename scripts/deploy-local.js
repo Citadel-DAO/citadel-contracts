@@ -79,7 +79,10 @@ async function main() {
   console.log("citadelMinter address is: ", citadelMinter.address);
 
   const knightingRound = await KnightingRound.deploy();
-  console.log("knightingRound address is: ", knightingRound.address);
+  console.log("knightingRound wBTC address is: ", knightingRound.address);
+
+  const knightingRoundCVX = await KnightingRound.deploy();
+  console.log("knightingRound cvx address is: ", knightingRoundCVX.address);
 
   const fundingWbtc = await Funding.deploy();
   console.log("fundingWbtc address is: ", knightingRound.address);
@@ -228,6 +231,7 @@ async function main() {
     duration: 7 * 24 * 3600 * 1000,
     citadelWbtcPrice: ethers.utils.parseUnits("21", 18), // 21 CTDL per wBTC
     wbtcLimit: ethers.utils.parseUnits("100", 8), // 100 wBTC
+    cvxLimit: ethers.utils.parseUnits("1000", 18),
   };
 
   // TODO: need to deploy a guest list contract, address 0 won't run
@@ -241,6 +245,18 @@ async function main() {
     address(governance),
     address(0), // TODO: Add guest list and test with it
     knightingRoundParams.wbtcLimit
+  );
+
+  await knightingRoundCVX.connect(governance).initialize(
+    address(gac),
+    address(citadel),
+    address(cvx),
+    knightingRoundParams.start,
+    knightingRoundParams.duration,
+    knightingRoundParams.citadelWbtcPrice,
+    address(governance),
+    address(0), // TODO: Add guest list and test with it
+    knightingRoundParams.cvxLimit
   );
 
   /// ========  Funding
