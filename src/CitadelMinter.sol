@@ -32,6 +32,8 @@ contract CitadelMinter is
     bytes32 public constant POLICY_OPERATIONS_ROLE =
         keccak256("POLICY_OPERATIONS_ROLE");
 
+    bytes32 public constant XCITADEL_LOCKER_EMISSIONS = keccak256("xcitadel-locker-emissions");
+
     ICitadelToken public citadelToken;
     IVault public xCitadel;
     IStakedCitadelLocker public xCitadelLocker;
@@ -208,7 +210,8 @@ contract CitadelMinter is
 
             xCitadelLocker.notifyRewardAmount(
                 address(cachedXCitadel),
-                xCitadelToLockers
+                xCitadelToLockers,
+                XCITADEL_LOCKER_EMISSIONS
             );
             emit CitadelDistributionToLocking(
                 cachedLastMintTimestamp,
