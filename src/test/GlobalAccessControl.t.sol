@@ -130,7 +130,7 @@ contract GlobalAccessControlTest is BaseFixture {
         citadelMinter.setFundingPoolWeight(address(fundingCvx), 6000);
 
         vm.expectRevert("local-paused");
-        citadelMinter.setCitadelDistributionSplit(1000, 5000, 4000);
+        citadelMinter.setCitadelDistributionSplit(1000, 5000, 3000, 1000);
 
         vm.stopPrank();
 
@@ -150,7 +150,7 @@ contract GlobalAccessControlTest is BaseFixture {
         citadelMinter.setFundingPoolWeight(address(fundingCvx), 6000);
 
         vm.expectRevert("global-paused");
-        citadelMinter.setCitadelDistributionSplit(1000, 5000, 4000);
+        citadelMinter.setCitadelDistributionSplit(1000, 5000, 3000, 1000);
 
         vm.stopPrank();
 

@@ -191,7 +191,7 @@ function testMultipleUserFlow() public{
     function mintAndDistribute() public{
         uint pricePerShareBefore = xCitadel.getPricePerFullShare();
         vm.startPrank(policyOps);
-        citadelMinter.setCitadelDistributionSplit(0,6000,4000);
+        citadelMinter.setCitadelDistributionSplit(0, 6000, 4000, 0);
 
         vm.stopPrank();
         vm.startPrank(governance);

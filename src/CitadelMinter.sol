@@ -178,7 +178,7 @@ contract CitadelMinter is
         nonReentrant
     {
         require(
-            _fundingBps + _stakingBps + _lockingBps + _daoBps == MAX_BPS,
+            fundingBps + stakingBps + lockingBps + daoBps == MAX_BPS,
             "CitadelMinter: Sum of propvalues must be 10000 bps"
         );
 

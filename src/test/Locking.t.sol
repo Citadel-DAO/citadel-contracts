@@ -269,7 +269,7 @@ contract LockingTest is BaseFixture {
         vm.warp(block.timestamp + 1000);
         vm.startPrank(policyOps);
         citadelMinter.setFundingPoolWeight(address(fundingWbtc), 10000);
-        citadelMinter.setCitadelDistributionSplit(5000,2000,3000);
+        citadelMinter.setCitadelDistributionSplit(5000, 2000, 2000, 1000);
         citadelMinter.mintAndDistribute();
         vm.stopPrank();
     }

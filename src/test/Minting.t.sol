@@ -14,17 +14,18 @@ contract MintingTest is BaseFixture {
 
     function testSetCitadelDistributionSplit() public{
         vm.expectRevert("GAC: invalid-caller-role");
-        citadelMinter.setCitadelDistributionSplit(5000, 3000, 2000);
+        citadelMinter.setCitadelDistributionSplit(5000, 3000, 1000, 1000);
 
         vm.startPrank(policyOps);
         vm.expectRevert("CitadelMinter: Sum of propvalues must be 10000 bps");
-        citadelMinter.setCitadelDistributionSplit(5000, 2000, 2000);
+        citadelMinter.setCitadelDistributionSplit(5000, 2000, 2000, 500);
 
-        citadelMinter.setCitadelDistributionSplit(5000, 3000, 2000);
+        citadelMinter.setCitadelDistributionSplit(5000, 2500, 1000, 1500);
         // check if distribution split is set.
         assertEq(citadelMinter.fundingBps(),5000);
-        assertEq(citadelMinter.stakingBps(),3000);
-        assertEq(citadelMinter.lockingBps(),2000);
+        assertEq(citadelMinter.stakingBps(),2500);
+        assertEq(citadelMinter.lockingBps(),1000);
+        assertEq(citadelMinter.lockingBps(),1500);
 
         vm.stopPrank();
 
@@ -33,8 +34,7 @@ contract MintingTest is BaseFixture {
         gac.pause();
         vm.prank(address(policyOps));
         vm.expectRevert(bytes("global-paused"));
-        citadelMinter.setCitadelDistributionSplit(5000, 3000, 2000);
-
+        citadelMinter.setCitadelDistributionSplit(5000, 2500, 1000, 1500);
     }
 
     function testSetFundingPoolWeight() public{
@@ -53,7 +53,7 @@ contract MintingTest is BaseFixture {
     }
 
     function testFundingPoolsMintingDistribution(uint _x, uint _y, uint _fundingWeight) public{
-        uint MAX_BPS = 10000 ; 
+        uint MAX_BPS = 10000;
         vm.assume(_x<=MAX_BPS && _y<=MAX_BPS && _fundingWeight<=MAX_BPS && _x>0);
         vm.startPrank(governance);
         schedule.setMintingStart(block.timestamp);
@@ -61,7 +61,7 @@ contract MintingTest is BaseFixture {
         vm.stopPrank();
 
         vm.prank(policyOps);
-        citadelMinter.setCitadelDistributionSplit(_fundingWeight, 10000 - _fundingWeight, 0); // Funding weight = 50%
+        citadelMinter.setCitadelDistributionSplit(_fundingWeight, 10000 - _fundingWeight, 0, 0); // Funding weight = 50%
 
         _testSetFundingPoolWeight(address(fundingCvx), _x);
         _testSetFundingPoolWeight(address(fundingWbtc), _y);
