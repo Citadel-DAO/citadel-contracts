@@ -52,7 +52,7 @@ async function main() {
   const CVX = await ethers.getContractFactory("Convex");
   const USDC = await ethers.getContractFactory("USDC");
 
-  const mintTo = signers[0].address
+  const mintTo = signers[0].address;
 
   const wbtc = await wBTC.deploy(); //
   await wbtc.mint(mintTo, ethers.BigNumber.from("100000000"));
@@ -150,7 +150,7 @@ async function main() {
   /// =======  xCitadelLocker
   await xCitadelLocker
     .connect(governance)
-    .initialize(address(xCitadel), "Vote Locked xCitadel", "vlCTDL");
+    .initialize(address(xCitadel), address(gac), "Vote Locked xCitadel", "vlCTDL");
   // add reward token to be distributed to staker
   await xCitadelLocker
     .connect(governance)
@@ -251,7 +251,7 @@ async function main() {
   if (!fs.existsSync(scriptsDirectory)) {
     fs.mkdirSync(scriptsDirectory);
   }
-  fs.unlinkSync(path.join(scriptsDirectory, "testnet-addresses.json"))
+  fs.unlinkSync(path.join(scriptsDirectory, "testnet-addresses.json"));
   fs.writeFileSync(
     path.join(scriptsDirectory, "testnet-addresses.json"),
     JSON.stringify({
