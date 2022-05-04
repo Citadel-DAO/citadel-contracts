@@ -20,6 +20,26 @@ contract MintingTest is BaseFixture {
         uint256 daoBalanceAfter;
     }
 
+    event CitadelDistributionSplitSet(
+        uint256 fundingBps,
+        uint256 stakingBps,
+        uint256 lockingBps,
+        uint256 daoBps
+    );
+
+    event CitadelDistribution(
+        uint256 fundingAmount,
+        uint256 stakingAmount,
+        uint256 lockingAmount,
+        uint256 daoAmount
+    );
+
+    event FundingPoolWeightSet(
+        address pool,
+        uint256 weight,
+        uint256 totalFundingPoolWeight
+    );
+
     function setUp() public override {
         BaseFixture.setUp();
     }
@@ -32,6 +52,13 @@ contract MintingTest is BaseFixture {
         vm.expectRevert("CitadelMinter: Sum of propvalues must be 10000 bps");
         citadelMinter.setCitadelDistributionSplit(5000, 2000, 2000, 500);
 
+        vm.expectEmit(true, false, false, true);
+        emit CitadelDistributionSplitSet(
+            5000,
+            2500,
+            1000,
+            1500
+        );
         citadelMinter.setCitadelDistributionSplit(5000, 2500, 1000, 1500);
         // check if distribution split is set.
         assertEq(citadelMinter.fundingBps(),5000);
@@ -80,7 +107,7 @@ contract MintingTest is BaseFixture {
         uint fundingCvxPoolBalanceBefore = citadel.balanceOf(address(fundingCvx));
         uint fundingWbtcPoolBalanceBefore = citadel.balanceOf(address(fundingWbtc));
 
-        uint mintedAmount = mintAndDistribute();
+        uint mintedAmount = mintAndDistribute(_fundingWeight, 10000 - _fundingWeight, 0, 0);
 
         uint fundingCvxPoolBalanceAfter = citadel.balanceOf(address(fundingCvx));
         uint fundingWbtcPoolBalanceAfter = citadel.balanceOf(address(fundingWbtc));
@@ -112,7 +139,7 @@ contract MintingTest is BaseFixture {
 
         // Again minting
 
-        mintedAmount = mintAndDistribute();
+        mintedAmount = mintAndDistribute(_fundingWeight, 10000 - _fundingWeight, 0, 0);
 
         fundingCvxPoolBalanceAfter = citadel.balanceOf(address(fundingCvx));
         fundingWbtcPoolBalanceAfter = citadel.balanceOf(address(fundingWbtc));
@@ -184,7 +211,7 @@ contract MintingTest is BaseFixture {
         info.stakingBalanceBefore = citadel.balanceOf(address(xCitadel));
         info.daoBalanceBefore = citadel.balanceOf(address(treasuryVault));
 
-        uint256 mintedAmount = mintAndDistribute();
+        uint256 mintedAmount = mintAndDistribute(_bps_A, _bps_B, _bps_C, _bps_D);
 
         info.fundingCvxPoolBalanceAfter = citadel.balanceOf(address(fundingCvx));
         info.fundingWbtcPoolBalanceAfter = citadel.balanceOf(address(fundingWbtc));
@@ -210,11 +237,24 @@ contract MintingTest is BaseFixture {
         ); // Distributed to Treasury
     }
 
-    function mintAndDistribute() public returns (uint) {
+    function mintAndDistribute(
+        uint256 fundingBps,
+        uint256 stakingBps,
+        uint256 lockingBps,
+        uint256 daoBps
+    ) public returns (uint) {
         vm.warp(block.timestamp + 1000);
         uint expectedMint = schedule.getMintable(citadelMinter.lastMintTimestamp());
-        vm.prank(policyOps);
+        vm.startPrank(policyOps);
+        vm.expectEmit(true, true, true, true);
+        emit CitadelDistribution(
+            (expectedMint * fundingBps)/(10000),
+            (expectedMint * stakingBps)/(10000),
+            (expectedMint * lockingBps)/(10000),
+            (expectedMint * daoBps)/(10000)
+        );
         citadelMinter.mintAndDistribute();
+        vm.stopPrank();
 
         return expectedMint ;
     }
@@ -230,6 +270,31 @@ contract MintingTest is BaseFixture {
             citadelMinter.setFundingPoolWeight(fundingPool, weight);
         }
         else {
+            // If removing
+            if (citadelMinter.fundingPoolWeights(fundingPool) > 0 && weight == 0) {
+                vm.expectEmit(true, true, true, true);
+                emit FundingPoolWeightSet(
+                    fundingPool,
+                    weight,
+                    citadelMinter.totalFundingPoolWeight() - weight
+                );
+                citadelMinter.setFundingPoolWeight(fundingPool, weight);
+                assertEq(citadelMinter.fundingPoolWeights(fundingPool), weight);
+            // if adding
+            } else {
+                vm.expectEmit(true, true, true, true);
+                emit FundingPoolWeightSet(
+                    fundingPool,
+                    weight,
+                    (
+                        citadelMinter.totalFundingPoolWeight() +
+                        weight -
+                        citadelMinter.fundingPoolWeights(fundingPool)
+                    )
+                );
+                citadelMinter.setFundingPoolWeight(fundingPool, weight);
+                assertEq(citadelMinter.fundingPoolWeights(fundingPool), weight);
+            }
             citadelMinter.setFundingPoolWeight(fundingPool, weight);
             assertEq(citadelMinter.fundingPoolWeights(fundingPool), weight);
         }
