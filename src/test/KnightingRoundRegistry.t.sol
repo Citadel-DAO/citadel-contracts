@@ -4,6 +4,7 @@ pragma solidity 0.8.12;
 import {BaseFixture} from "./BaseFixture.sol";
 import {GlobalAccessControl} from "../GlobalAccessControl.sol";
 import "ds-test/test.sol";
+import "forge-std/console.sol";
 
 import {KnightingRoundRegistry} from "../KnightingRoundRegistry.sol";
 
@@ -22,8 +23,8 @@ contract KnightingRoundRegistryTest is BaseFixture {
         assertEq(address(0), knightinRoundRegistry.governance());
         assertEq(address(0), knightinRoundRegistry.tokenOut());
         assertEq(address(0), knightinRoundRegistry.saleRecipient());
-        assertEq(address(0), knightinRoundRegistry.guestList());
-        assertEq(0, knightinRoundRegistry.phaseOneStart());
+        assertEq(address(0), knightinRoundRegistry.guestlist());
+        assertEq(0, knightinRoundRegistry.roundStart());
         assertEq(
             address(0),
             knightinRoundRegistry.knightingRoundImplementation()
@@ -35,7 +36,7 @@ contract KnightingRoundRegistryTest is BaseFixture {
 
         KnightingRoundRegistry.initParam
             memory wethParams = KnightingRoundRegistry.initParam(
-                address(0xc4E15973E6fF2A35cC804c2CF9D2a1b817a8b40F),
+                address(0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2),
                 10e12,
                 500 * 10e8
             );
@@ -56,6 +57,7 @@ contract KnightingRoundRegistryTest is BaseFixture {
         knightinRoundRegistry.initialize(
             address(gac),
             block.timestamp,
+            3 days,
             address(citadel),
             treasuryVault,
             address(guestList),
@@ -63,17 +65,102 @@ contract KnightingRoundRegistryTest is BaseFixture {
             roundParams
         );
 
-        //assertEq(address(gac), knightinRoundRegistry.governance());
-        //assertEq(address(citadel), knightinRoundRegistry.tokenOut());
-        //assertEq(treasuryVault, knightinRoundRegistry.saleRecipient());
-        //assertEq(address(guestList), knightinRoundRegistry.guestList());
-        //assertEq(block.timestamp, knightinRoundRegistry.phaseOneStart());
-        //assertTrue(
-        //    address(0) != knightinRoundRegistry.knightingRoundImplementation()
-        //);
-        //assertTrue(
-        //    address(0) !=
-        //        knightinRoundRegistry.knightingRoundWithEthImplementation()
-        //);
+        //address wethRoundAddress = knightinRoundRegistry
+        //    .knightingRoundImplementation();
+        //address ethRoundAddress = knightinRoundRegistry
+        //    .knightingRoundWithEthImplementation();
+
+        assertEq(knightinRoundRegistry.getAllRounds().length, 4);
+
+        address targetRoundAddress = knightinRoundRegistry.getAllRounds()[1];
+
+        KnightingRoundRegistry.RoundData
+            memory targetRound = knightinRoundRegistry.getRoundData(
+                targetRoundAddress
+            );
+
+        assertEq(targetRound.roundAddress, address(targetRoundAddress));
+        assertEq(targetRound.tokenOut, address(citadel));
+        assertEq(
+            targetRound.tokenIn,
+            address(0x2260FAC5E5542a773Aa44fBCfeDf7C193bc2C599)
+        );
+        assertEq(targetRound.saleStart, block.timestamp);
+        assertEq(targetRound.saleDuration, 3 days);
+        assertTrue(targetRound.finalized == false);
+        assertEq(targetRound.tokenOutPrice, 500 * 10e8);
+        assertEq(targetRound.totalTokenIn, 0);
+        assertEq(targetRound.totalTokenOutBought, 0);
+        assertEq(targetRound.totalTokenOutClaimed, 0);
+        assertEq(targetRound.tokenInLimit, 10e12);
+        assertEq(targetRound.tokenInNormalizationValue, 10**8);
+        assertEq(targetRound.guestlist, address(guestList));
+        assertTrue(targetRound.isEth == false);
+
+        KnightingRoundRegistry.RoundData
+            memory wethRound = knightinRoundRegistry.getRoundData(
+                knightinRoundRegistry.knightingRoundImplementation()
+            );
+
+        assertEq(
+            wethRound.roundAddress,
+            knightinRoundRegistry.knightingRoundImplementation()
+        );
+        assertEq(wethRound.tokenOut, address(citadel));
+        assertEq(
+            wethRound.tokenIn,
+            address(0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2)
+        );
+        assertEq(wethRound.saleStart, block.timestamp);
+        assertEq(wethRound.saleDuration, 3 days);
+        assertTrue(wethRound.finalized == false);
+        assertEq(wethRound.tokenOutPrice, 500 * 10e8);
+        assertEq(wethRound.totalTokenIn, 0);
+        assertEq(wethRound.totalTokenOutBought, 0);
+        assertEq(wethRound.totalTokenOutClaimed, 0);
+        assertEq(wethRound.tokenInLimit, 10e12);
+        assertEq(wethRound.tokenInNormalizationValue, 10**18);
+        assertEq(wethRound.guestlist, address(guestList));
+        assertTrue(wethRound.isEth == false);
+
+        KnightingRoundRegistry.RoundData memory ethRound = knightinRoundRegistry
+            .getRoundData(
+                knightinRoundRegistry.knightingRoundWithEthImplementation()
+            );
+
+        assertEq(
+            ethRound.roundAddress,
+            knightinRoundRegistry.knightingRoundWithEthImplementation()
+        );
+        assertEq(ethRound.tokenOut, address(citadel));
+        assertEq(
+            ethRound.tokenIn,
+            address(0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2)
+        );
+        assertEq(ethRound.saleStart, block.timestamp);
+        assertEq(ethRound.saleDuration, 3 days);
+        assertTrue(ethRound.finalized == false);
+        assertEq(ethRound.tokenOutPrice, 500 * 10e8);
+        assertEq(ethRound.totalTokenIn, 0);
+        assertEq(ethRound.totalTokenOutBought, 0);
+        assertEq(ethRound.totalTokenOutClaimed, 0);
+        assertEq(ethRound.tokenInLimit, 10e12);
+        assertEq(ethRound.tokenInNormalizationValue, 10**18);
+        assertEq(ethRound.guestlist, address(guestList));
+        assertTrue(ethRound.isEth == true);
+
+        KnightingRoundRegistry.RoundData[]
+            memory roundsData = knightinRoundRegistry.getAllRoundsData();
+
+        for (uint256 i = 0; i < roundsData.length; i++) {
+            assertEq(roundsData[i].tokenOut, address(citadel));
+            assertEq(roundsData[i].saleStart, block.timestamp);
+            assertEq(roundsData[i].saleDuration, 3 days);
+            assertTrue(roundsData[i].finalized == false);
+            assertEq(roundsData[i].totalTokenIn, 0);
+            assertEq(roundsData[i].totalTokenOutBought, 0);
+            assertEq(roundsData[i].totalTokenOutClaimed, 0);
+            assertEq(roundsData[i].guestlist, address(guestList));
+        }
     }
 }
