@@ -276,12 +276,12 @@ contract MintingTest is BaseFixture {
                 emit FundingPoolWeightSet(
                     fundingPool,
                     weight,
-                    citadelMinter.totalFundingPoolWeight() - weight
+                    citadelMinter.totalFundingPoolWeight() - citadelMinter.fundingPoolWeights(fundingPool)
                 );
                 citadelMinter.setFundingPoolWeight(fundingPool, weight);
                 assertEq(citadelMinter.fundingPoolWeights(fundingPool), weight);
-            // if adding
-            } else {
+            // if adding with a weight higher than 0
+            } else if (weight > 0) {
                 vm.expectEmit(true, true, true, true);
                 emit FundingPoolWeightSet(
                     fundingPool,
@@ -294,9 +294,11 @@ contract MintingTest is BaseFixture {
                 );
                 citadelMinter.setFundingPoolWeight(fundingPool, weight);
                 assertEq(citadelMinter.fundingPoolWeights(fundingPool), weight);
+            // If weight is zero, nothing changes
+            } else {
+                citadelMinter.setFundingPoolWeight(fundingPool, weight);
+                assertEq(citadelMinter.fundingPoolWeights(fundingPool), 0);
             }
-            citadelMinter.setFundingPoolWeight(fundingPool, weight);
-            assertEq(citadelMinter.fundingPoolWeights(fundingPool), weight);
         }
         vm.stopPrank();
     }
