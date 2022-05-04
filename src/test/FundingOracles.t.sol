@@ -8,6 +8,8 @@ import {GlobalAccessControl} from "../GlobalAccessControl.sol";
 import {CtdlWbtcCurveV2Provider} from "../oracles/CtdlWbtcCurveV2Provider.sol";
 import {CtdlCvxProvider} from "../oracles/CtdlCvxProvider.sol";
 
+import "../interfaces/citadel/IMedianOracle.sol";
+
 contract FundingOraclesTest is BaseFixture {
     /// =================
     /// ===== State =====
@@ -51,24 +53,26 @@ contract FundingOraclesTest is BaseFixture {
         medianOracleCvx.addProvider(address(ctdlCvxProvider));
     }
 
-    // function testMedianOracleAccessControl() public {
-    //     vm.startPrank(address(1));
-    //     vm.expectRevert("Ownable: caller is not the owner");
-    //     medianOracleCvx.addProvider(address(1));
+    function testMedianOracleAccessControl() public {
+        vm.startPrank(address(1));
+        // Revert message for new versions of Ownable.sol is: "Ownable: caller is not the owner".
+        // Version used by MedianOracle might differ or not include a message at all.
+        vm.expectRevert();
+        medianOracleCvx.addProvider(address(1));
 
-    //     vm.expectRevert("Ownable: caller is not the owner");
-    //     medianOracleCvx.removeProvider(address(1));
+        vm.expectRevert();
+        medianOracleCvx.removeProvider(address(1));
 
-    //     vm.expectRevert("Ownable: caller is not the owner");
-    //     medianOracleCvx.setReportExpirationTimeSec(0);
+        vm.expectRevert();
+        medianOracleCvx.setReportExpirationTimeSec(0);
 
-    //     vm.expectRevert("Ownable: caller is not the owner");
-    //     medianOracleCvx.setReportDelaySec(0);
+        vm.expectRevert();
+        medianOracleCvx.setReportDelaySec(0);
 
-    //     vm.expectRevert("Ownable: caller is not the owner");
-    //     medianOracleCvx.setMinimumProviders(0);
-    //     vm.stopPrank();
-    // }
+        vm.expectRevert();
+        medianOracleCvx.setMinimumProviders(0);
+        vm.stopPrank();
+    }
 
     function testWbtcProviderCanUpdatePrice() public {
         // Remove keeper provider
@@ -142,10 +146,8 @@ contract FundingOraclesTest is BaseFixture {
 
         vm.startPrank(keeper);
         medianOracleWbtc.pushReport(1000);
-        // TODO: For some reason, the revert string is not being thrown and the trace is wrong. 
-        //       Maybe a bug in forge?
-        vm.expectRevert();
-        skip(1 days + 1);
+        vm.warp(1 days + 1);
+        vm.expectRevert("price must not be zero"); // When expired returns 0, valid = false
         fundingWbtc.updateCitadelPerAsset();
         vm.stopPrank();
     }
@@ -172,9 +174,26 @@ contract FundingOraclesTest is BaseFixture {
 
         vm.startPrank(keeper);
         medianOracleWbtc.pushReport(1000);
-        // TODO: For some reason, the revert string is not being thrown and the trace is wrong. 
-        //       Maybe a bug in forge?
-        vm.expectRevert();
+        vm.expectRevert("price must not be zero"); //  When not enough providers returns 0, valid = false
+        fundingWbtc.updateCitadelPerAsset();
+        vm.stopPrank();
+    }
+
+    function testValidReportWithZeroPrice() public {
+        medianOracleWbtc.removeProvider(address(ctdlWbtcProvider));
+
+        vm.startPrank(keeper);
+        medianOracleWbtc.pushReport(0);
+
+        uint _citadelPerAsset;
+        bool _valid;
+
+        (_citadelPerAsset, _valid) = IMedianOracle(medianOracleWbtc).getData();
+
+        assertEq(_citadelPerAsset, 0);
+        require(_valid, "Price is not valid");
+
+        vm.expectRevert("price must not be zero"); // Only price feed provided 0
         fundingWbtc.updateCitadelPerAsset();
         vm.stopPrank();
     }
