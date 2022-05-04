@@ -26,8 +26,10 @@ import {Funding} from "../Funding.sol";
 import "../interfaces/erc20/IERC20.sol";
 import "../interfaces/badger/IEmptyStrategy.sol";
 import "../interfaces/citadel/IStakedCitadelLocker.sol";
+import {IMedianOracle} from "../interfaces/citadel/IMedianOracle.sol";
 
 string constant lockerArtifact = "artifacts-external/StakedCitadelLocker.json";
+string constant medianOracleArtifact = "artifacts-external/MedianOracle.json";
 
 contract BaseFixture is DSTest, Utils, stdCheats {
     Vm constant vm = Vm(HEVM_ADDRESS);
@@ -48,6 +50,7 @@ contract BaseFixture is DSTest, Utils, stdCheats {
 
     bytes32 public constant PAUSER_ROLE = keccak256("PAUSER_ROLE");
     bytes32 public constant UNPAUSER_ROLE = keccak256("UNPAUSER_ROLE");
+    bytes32 public constant KEEPER_ROLE = keccak256("KEEPER_ROLE");
 
     bytes32 public constant BLOCKLIST_MANAGER_ROLE =
         keccak256("BLOCKLIST_MANAGER_ROLE");
@@ -78,8 +81,6 @@ contract BaseFixture is DSTest, Utils, stdCheats {
     address immutable shrimp = getAddress("shrimp");
     address immutable shark = getAddress("shark");
 
-    address immutable eoaOracle = getAddress("eoaOracle");
-
     address immutable xCitadelStrategy_address = getAddress("xCitadelStrategy");
 
     address constant wbtc_address = 0x2260FAC5E5542a773Aa44fBCfeDf7C193bc2C599;
@@ -105,6 +106,9 @@ contract BaseFixture is DSTest, Utils, stdCheats {
     KnightingRound knightingRound = new KnightingRound();
     KnightingRoundWithEth knightingRoundWithEth = new KnightingRoundWithEth();
     KnightingRoundGuestlist guestList = new KnightingRoundGuestlist();
+
+    IMedianOracle medianOracleWbtc = IMedianOracle(deployCode(medianOracleArtifact, abi.encode(1 days, 0, 1)));
+    IMedianOracle medianOracleCvx = IMedianOracle(deployCode(medianOracleArtifact, abi.encode(1 days, 0, 1)));
 
     Funding fundingWbtc = new Funding();
     Funding fundingCvx = new Funding();
@@ -148,8 +152,6 @@ contract BaseFixture is DSTest, Utils, stdCheats {
         vm.label(whale, "whale"); // whale attempts large token actions, testing upper bounds
         vm.label(shrimp, "shrimp"); // shrimp attempts small token actions, testing lower bounds
         vm.label(shark, "shark"); // shark attempts malicious actions
-
-        vm.label(eoaOracle, "eoaOracle"); // oracle EOA for testing oracle-based values simply
 
         // Initialization
         vm.startPrank(governance);
@@ -208,7 +210,7 @@ contract BaseFixture is DSTest, Utils, stdCheats {
             address(schedule)
         );
 
-        // // Knighting Round
+        // Knighting Round
         knightingRoundParams = KnightingRoundParams({
             start: block.timestamp + 100,
             duration: 7 days,
@@ -250,15 +252,18 @@ contract BaseFixture is DSTest, Utils, stdCheats {
         );
         vm.stopPrank();
 
-        // Funding
+        // Oracle
+        medianOracleWbtc.addProvider(keeper);
+        medianOracleCvx.addProvider(keeper);
 
+        // Funding
         fundingWbtc.initialize(
             address(gac),
             address(citadel),
             address(wbtc),
             address(xCitadel),
             treasuryVault,
-            eoaOracle,
+            address(medianOracleWbtc),
             100e8
         );
         fundingCvx.initialize(
@@ -267,7 +272,7 @@ contract BaseFixture is DSTest, Utils, stdCheats {
             address(cvx),
             address(xCitadel),
             treasuryVault,
-            eoaOracle,
+            address(medianOracleCvx),
             100000e18
         );
 
@@ -285,6 +290,8 @@ contract BaseFixture is DSTest, Utils, stdCheats {
 
         gac.grantRole(PAUSER_ROLE, guardian);
         gac.grantRole(UNPAUSER_ROLE, techOps);
+
+        gac.grantRole(KEEPER_ROLE, keeper);
         vm.stopPrank();
 
         // Deposit initial assets to users

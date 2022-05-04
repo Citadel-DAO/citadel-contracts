@@ -35,20 +35,18 @@ contract MintAndDistributeTest is BaseFixture {
             address(citadelMinter.supplySchedule()) == address(schedule)
         );
 
-        uint256 fundingBps = 4000;
-        uint256 stakingBps = 3500;
-        uint256 lockingBps = 2500;
+        uint fundingBps = 3500;
+        uint stakingBps = 3000;
+        uint lockingBps = 2000;
+        uint daoBps = 1500;
+        uint MAX_BPS = 10000;
 
         uint256 wbtcFundingPoolWeight = 8000;
         uint256 cvxFundingPoolWeight = 2000;
         uint256 expectedTotalPoolWeight = 10000;
 
         vm.startPrank(policyOps);
-        citadelMinter.setCitadelDistributionSplit(
-            fundingBps,
-            stakingBps,
-            lockingBps
-        );
+        citadelMinter.setCitadelDistributionSplit(fundingBps, stakingBps, lockingBps, daoBps);
         // confirm only policy ops can call
         // bps between three positions must add up to 10000 (100%)
 

@@ -50,6 +50,39 @@ contract SupplyScheduleTest is BaseFixture {
         vm.stopPrank();
     }
 
+    function testGetMintable() public{
+        uint256 epochLength = schedule.epochLength();
+
+        vm.startPrank(governance);
+        schedule.setMintingStart(block.timestamp);
+        citadelMinter.initializeLastMintTimestamp();
+        vm.stopPrank();
+
+        vm.warp(block.timestamp + 1*epochLength); // 1 epoch passed
+
+        uint expectedMintable = schedule.epochRate(0)*epochLength ;
+
+        uint mintable = schedule.getMintable(citadelMinter.lastMintTimestamp());
+
+        assertEq(expectedMintable , mintable);
+
+        vm.warp(block.timestamp + 2*epochLength); // 2 more epoch passed 
+
+        expectedMintable += schedule.epochRate(1)*epochLength +  schedule.epochRate(2)*epochLength ;
+        mintable = schedule.getMintable(citadelMinter.lastMintTimestamp());
+
+        assertEq(expectedMintable , mintable);
+
+        vm.warp(block.timestamp + epochLength + 1000) ;// 1 more epoch and some time passed
+        expectedMintable += schedule.epochRate(3)*epochLength +  schedule.epochRate(4)*1000 ;
+
+        mintable = schedule.getMintable(citadelMinter.lastMintTimestamp());
+
+        assertEq(expectedMintable, mintable);
+
+
+    }
+
     function testExampleEpochRates() public {
         assertTrue(true);
         emit log("Epoch Rates");

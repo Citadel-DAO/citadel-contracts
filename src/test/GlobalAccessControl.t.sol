@@ -67,13 +67,10 @@ contract GlobalAccessControlTest is BaseFixture {
         fundingCvx.setSaleRecipient(address(2));
 
         vm.expectRevert("local-paused");
-        fundingCvx.setCitadelAssetPriceBounds(1e18, 100e18);
+        fundingCvx.setCitadelPerAssetBounds(1e18, 100e18);
 
         vm.expectRevert("local-paused");
-        fundingCvx.updateCitadelPriceInAsset();
-
-        vm.expectRevert("local-paused");
-        fundingCvx.updateCitadelPriceInAsset(10e18);
+        fundingCvx.updateCitadelPerAsset();
 
         // pausing globally
         vm.prank(guardian);
@@ -107,13 +104,10 @@ contract GlobalAccessControlTest is BaseFixture {
         fundingCvx.setSaleRecipient(address(2));
 
         vm.expectRevert("global-paused");
-        fundingCvx.setCitadelAssetPriceBounds(1e18, 100e18);
+        fundingCvx.setCitadelPerAssetBounds(1e18, 100e18);
 
         vm.expectRevert("global-paused");
-        fundingCvx.updateCitadelPriceInAsset();
-
-        vm.expectRevert("global-paused");
-        fundingCvx.updateCitadelPriceInAsset(10e18);
+        fundingCvx.updateCitadelPerAsset();
     }
 
     function testMintingPausing() public {
@@ -129,7 +123,7 @@ contract GlobalAccessControlTest is BaseFixture {
         citadelMinter.setFundingPoolWeight(address(fundingCvx), 6000);
 
         vm.expectRevert("local-paused");
-        citadelMinter.setCitadelDistributionSplit(1000, 5000, 4000);
+        citadelMinter.setCitadelDistributionSplit(1000, 5000, 3000, 1000);
 
         vm.stopPrank();
 
@@ -149,7 +143,7 @@ contract GlobalAccessControlTest is BaseFixture {
         citadelMinter.setFundingPoolWeight(address(fundingCvx), 6000);
 
         vm.expectRevert("global-paused");
-        citadelMinter.setCitadelDistributionSplit(1000, 5000, 4000);
+        citadelMinter.setCitadelDistributionSplit(1000, 5000, 3000, 1000);
 
         vm.stopPrank();
 

@@ -32,8 +32,8 @@ contract KnightingRoundTest is BaseFixture {
 
         comparator.snapPrev();
 
-        uint256 tokenOutAmountExpected = (1e8 *
-            knightingRound.tokenOutPrice()) /
+        uint256 tokenOutAmountExpected =
+            (1e8 * knightingRound.tokenOutPerTokenIn()) /
             knightingRound.tokenInNormalizationValue();
         wbtc.approve(address(knightingRound), wbtc.balanceOf(shrimp));
 
@@ -75,8 +75,8 @@ contract KnightingRoundTest is BaseFixture {
 
         // changing the token out price in mid sale
         vm.prank(governance);
-        knightingRound.setTokenOutPrice(25e18);
-        assertEq(knightingRound.tokenOutPrice(), 25e18);
+        knightingRound.setTokenOutPerTokenIn(25e18);
+        assertEq(knightingRound.tokenOutPerTokenIn(), 25e18);
 
         vm.prank(shrimp);
         uint256 newTokenAmountOut = knightingRound.buy(1e8, 0, emptyProof);
@@ -280,30 +280,27 @@ contract KnightingRoundTest is BaseFixture {
         knightingRound.setTokenInLimit(20e18);
     }
 
-    function testBasicSetFunctions() public {
-        // tests for setTokenOutPrice
+    function testBasicSetFunctions() public{
+        // tests for setTokenOutPerTokenIn
         vm.prank(address(1));
         vm.expectRevert("GAC: invalid-caller-role");
-        knightingRound.setTokenOutPrice(25e18);
+        knightingRound.setTokenOutPerTokenIn(25e18);
 
         // check if it is same as set in BaseFixture
-        assertEq(
-            knightingRound.tokenOutPrice(),
-            knightingRoundParams.citadelWbtcPrice
-        );
+        assertEq(knightingRound.tokenOutPerTokenIn(), knightingRoundParams.citadelWbtcPrice);
 
         // calling with correct role
         vm.startPrank(governance);
-        knightingRound.setTokenOutPrice(25e18);
+        knightingRound.setTokenOutPerTokenIn(25e18);
 
-        // check if tokenOutPrice is updated
-        assertEq(knightingRound.tokenOutPrice(), 25e18);
+        // check if tokenOutPerTokenIn is updated
+        assertEq(knightingRound.tokenOutPerTokenIn(), 25e18);
 
         vm.expectRevert("KnightingRound: the price must not be zero");
-        knightingRound.setTokenOutPrice(0);
+        knightingRound.setTokenOutPerTokenIn(0);
 
-        // check if tokenOutPrice is not updated
-        assertEq(knightingRound.tokenOutPrice(), 25e18);
+        // check if tokenOutPerTokenIn is not updated
+        assertEq(knightingRound.tokenOutPerTokenIn(), 25e18);
 
         // tests for setSaleRecipient
         knightingRound.setSaleRecipient(address(2));

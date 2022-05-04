@@ -125,11 +125,92 @@ contract StakingTest is BaseFixture {
         );
         vm.stopPrank();
     }
+function testMultipleUserFlow() public{
+        address user1 = address(1);
+        address user2 = address(2);
+        address user3 = address(3);
+
+        // giving user some citadel to stake
+        vm.startPrank(governance);
+        citadel.mint(user1, 100e18);
+        citadel.mint(user2, 100e18);
+        citadel.mint(user3, 100e18);
+        vm.stopPrank();
+
+        vm.startPrank(user1);
+        citadel.approve(address(xCitadel), 10e18); // approve staking amount
+        xCitadel.deposit(10e18); // deposit
+
+        vm.stopPrank();
+
+        vm.startPrank(user2);
+        citadel.approve(address(xCitadel), 15e18); // approve staking amount
+        xCitadel.deposit(15e18); // deposit
+        vm.stopPrank();
+
+        vm.startPrank(user3);
+        // approve staking amount
+        citadel.approve(address(xCitadel), 20e18);
+
+        // deposit
+        xCitadel.deposit(20e18);
+
+        vm.stopPrank();
+
+        mintAndDistribute();   // minting 1st
+
+        vm.warp(block.timestamp + 2000); 
+
+        vm.prank(policyOps);
+        citadelMinter.mintAndDistribute(); // minting again
+
+        uint expectedClaimableAmount1 = (xCitadel.balance()*xCitadel.balanceOf(user1))/xCitadel.totalSupply();
+        uint expectedClaimableAmount2 = (xCitadel.balance()*xCitadel.balanceOf(user2))/xCitadel.totalSupply();
+        uint expectedClaimableAmount3 = (xCitadel.balance()*xCitadel.balanceOf(user3)/2)/xCitadel.totalSupply();
+
+        vm.prank(user1);
+        xCitadel.withdrawAll();
+
+        vm.prank(user2);
+        xCitadel.withdraw(15e18);
+
+        vm.prank(user3);
+        xCitadel.withdraw(10e18); // withdraw some amount only
+
+        // move forward so that the vesting period ends
+        vm.warp(block.timestamp + xCitadelVester.INITIAL_VESTING_DURATION());
+
+        // as the vesting period is ended. user should be able claim full amount
+        assertEq(xCitadelVester.claimableBalance(user1), expectedClaimableAmount1);
+        assertEq(xCitadelVester.claimableBalance(user2), expectedClaimableAmount2);
+        assertEq(xCitadelVester.claimableBalance(user3), expectedClaimableAmount3);
+
+        uint user1BalanceBefore = citadel.balanceOf(user1);
+        vm.prank(user1);
+        xCitadelVester.claim(user1, expectedClaimableAmount1);
+        uint user1BalanceAfter = citadel.balanceOf(user1);
+
+        uint user2BalanceBefore = citadel.balanceOf(user2);
+        vm.prank(user2);
+        xCitadelVester.claim(user2, expectedClaimableAmount2);
+        uint user2BalanceAfter = citadel.balanceOf(user2);
+   
+        uint user3BalanceBefore = citadel.balanceOf(user3);
+        vm.prank(user3);
+        xCitadelVester.claim(user3, expectedClaimableAmount3);
+
+        uint user3BalanceAfter = citadel.balanceOf(user3);
+
+        assertEq(user1BalanceAfter - user1BalanceBefore, expectedClaimableAmount1);
+        assertEq(user2BalanceAfter - user2BalanceBefore, expectedClaimableAmount2);
+        assertEq(user3BalanceAfter - user3BalanceBefore, expectedClaimableAmount3);
+
+    }
 
     function mintAndDistribute() public {
         uint256 pricePerShareBefore = xCitadel.getPricePerFullShare();
         vm.startPrank(policyOps);
-        citadelMinter.setCitadelDistributionSplit(0, 6000, 4000);
+        citadelMinter.setCitadelDistributionSplit(0, 6000, 4000, 0);
 
         vm.stopPrank();
         vm.startPrank(governance);
