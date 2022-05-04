@@ -193,7 +193,7 @@ contract KnightingRoundRegistry is GlobalAccessControlManaged {
     function getAllRoundsData()
         public
         view
-        returns (RoundData[] memory roundsData)
+        returns (RoundData[] memory)
     {
         RoundData[] memory roundsData = new RoundData[](
             knightingRounds.length() + 1
@@ -204,5 +204,6 @@ contract KnightingRoundRegistry is GlobalAccessControlManaged {
         roundsData[knightingRounds.length()] = getRoundData(
             knightingRoundWithEthImplementation
         );
+        return roundsData;
     }
 }
