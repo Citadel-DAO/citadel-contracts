@@ -4,16 +4,14 @@ pragma solidity 0.8.12;
 import {Initializable} from "openzeppelin-contracts-upgradeable/proxy/utils/Initializable.sol";
 import "openzeppelin-contracts/utils/structs/EnumerableSet.sol";
 import {Clones} from "openzeppelin-contracts/proxy/Clones.sol";
-import "ds-test/test.sol";
 
-import "./lib/GlobalAccessControlManaged.sol";
 import "./KnightingRound.sol";
 import "./KnightingRoundWithEth.sol";
 
 /**
 A simple registry contract that help to register different knighting round
 */
-contract KnightingRoundRegistry is GlobalAccessControlManaged {
+contract KnightingRoundRegistry is Initializable {
     // ===== Libraries  ====
     using EnumerableSet for EnumerableSet.AddressSet;
 
@@ -67,23 +65,6 @@ contract KnightingRoundRegistry is GlobalAccessControlManaged {
         initParam calldata _wethParams,
         initParam[] calldata _roundParams
     ) public initializer {
-        require(
-            _roundStart >= block.timestamp,
-            "roundStart can not be in past"
-        );
-        require(
-            _saleRecipient != address(0),
-            "KnightingRound: sale recipient should not be zero"
-        );
-        require(
-            _tokenOut != address(0),
-            "Tokenout: token out should not be zero"
-        );
-        require(
-            _governance != address(0),
-            "Tokenout: token out should not be zero"
-        );
-        __GlobalAccessControlManaged_init(_governance);
         governance = _governance;
         roundStart = _roundStart;
         roundDuration = _roundDuration;
@@ -100,13 +81,18 @@ contract KnightingRoundRegistry is GlobalAccessControlManaged {
         initializeEthRounds(_wethParams);
         /// for other
         for (uint256 i = 0; i < _roundParams.length; i++) {
-            initializeRound(_roundParams[i]);
+            address currKnightingRound = Clones.clone(
+                knightingRoundImplementation
+            );
+            initializeRound(currKnightingRound, _roundParams[i]);
         }
     }
 
-    function initializeRound(initParam calldata _roundParams) private {
-        address currKnightingRound = Clones.clone(knightingRoundImplementation);
-        KnightingRound(currKnightingRound).initialize(
+    function initializeRound(
+        address _roundAddress,
+        initParam calldata _roundParams
+    ) private {
+        KnightingRound(_roundAddress).initialize(
             governance,
             tokenOut,
             _roundParams._tokenIn,
@@ -117,21 +103,11 @@ contract KnightingRoundRegistry is GlobalAccessControlManaged {
             guestlist,
             _roundParams._tokenInLimit
         );
-        knightingRounds.add(currKnightingRound);
+        knightingRounds.add(_roundAddress);
     }
 
     function initializeEthRounds(initParam calldata _roundParams) private {
-        KnightingRound(knightingRoundImplementation).initialize(
-            governance,
-            tokenOut,
-            _roundParams._tokenIn,
-            roundStart,
-            roundDuration,
-            _roundParams._tokenOutPerTokenIn,
-            saleRecipient,
-            guestlist,
-            _roundParams._tokenInLimit
-        );
+        initializeRound(knightingRoundImplementation, _roundParams);
         KnightingRoundWithEth(knightingRoundWithEthImplementation).initialize(
             governance,
             tokenOut,
@@ -190,11 +166,7 @@ contract KnightingRoundRegistry is GlobalAccessControlManaged {
     }
 
     /// @notice using to get all rounds
-    function getAllRoundsData()
-        public
-        view
-        returns (RoundData[] memory)
-    {
+    function getAllRoundsData() public view returns (RoundData[] memory) {
         RoundData[] memory roundsData = new RoundData[](
             knightingRounds.length() + 1
         );
