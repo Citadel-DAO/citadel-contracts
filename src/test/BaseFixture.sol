@@ -107,8 +107,14 @@ contract BaseFixture is DSTest, Utils, stdCheats {
     KnightingRoundWithEth knightingRoundWithEth = new KnightingRoundWithEth();
     KnightingRoundGuestlist guestList = new KnightingRoundGuestlist();
 
-    IMedianOracle medianOracleWbtc = IMedianOracle(deployCode(medianOracleArtifact, abi.encode(1 days, 0, 1)));
-    IMedianOracle medianOracleCvx = IMedianOracle(deployCode(medianOracleArtifact, abi.encode(1 days, 0, 1)));
+    IMedianOracle medianOracleWbtc =
+        IMedianOracle(
+            deployCode(medianOracleArtifact, abi.encode(1 days, 0, 1))
+        );
+    IMedianOracle medianOracleCvx =
+        IMedianOracle(
+            deployCode(medianOracleArtifact, abi.encode(1 days, 0, 1))
+        );
 
     Funding fundingWbtc = new Funding();
     Funding fundingCvx = new Funding();

@@ -79,9 +79,19 @@ contract FundingTest is BaseFixture {
         fundingCvx.setDiscountLimits(0, 20);
     }
 
-    function testDiscountRateBuysCvx(uint256 assetAmountIn, uint32 discount, uint256 citadelPrice) public {
-        _testDiscountRateBuys(fundingCvx, medianOracleCvx, cvx, assetAmountIn, discount, citadelPrice);
-
+    function testDiscountRateBuysCvx(
+        uint256 assetAmountIn,
+        uint32 discount,
+        uint256 citadelPrice
+    ) public {
+        _testDiscountRateBuys(
+            fundingCvx,
+            medianOracleCvx,
+            cvx,
+            assetAmountIn,
+            discount,
+            citadelPrice
+        );
     }
 
     function testDiscountRateBuysWbtc(
@@ -91,7 +101,14 @@ contract FundingTest is BaseFixture {
     ) public {
         // wBTC is an 8 decimal example
         // TODO: Fix comparator calls in inner function as per that functions comment
-        _testDiscountRateBuys(fundingWbtc, medianOracleWbtc, wbtc, assetAmountIn, discount, citadelPrice);
+        _testDiscountRateBuys(
+            fundingWbtc,
+            medianOracleWbtc,
+            wbtc,
+            assetAmountIn,
+            discount,
+            citadelPrice
+        );
     }
 
     function testSetAssetCap() public {
@@ -106,7 +123,14 @@ contract FundingTest is BaseFixture {
         assertEq(assetCap, 1000e18); // check if assetCap is set
 
         // checking assetCap can not be less than accumulated funds.
-         _testDiscountRateBuys(fundingCvx, medianOracleCvx, cvx, 100e18, 3000, 100e18);
+        _testDiscountRateBuys(
+            fundingCvx,
+            medianOracleCvx,
+            cvx,
+            100e18,
+            3000,
+            100e18
+        );
         vm.prank(policyOps);
         vm.expectRevert("cannot decrease cap below global sum of assets in");
         fundingCvx.setAssetCap(10e18);
@@ -257,7 +281,11 @@ contract FundingTest is BaseFixture {
         fundingCvx.updateCitadelPerAsset();
         vm.stopPrank();
 
-        vm.expectRevert(bytes("Funding: citadel price from oracle flagged and pending review"));
+        vm.expectRevert(
+            bytes(
+                "Funding: citadel price from oracle flagged and pending review"
+            )
+        );
         fundingCvx.deposit(10e18, 0);
     }
 
@@ -374,9 +402,18 @@ contract FundingTest is BaseFixture {
         assertEq(xCitadel.balanceOf(address(fundingContract)), 0);
     }
 
-    function _testBuy(Funding fundingContract, IMedianOracle medianOracleContract, uint assetIn, uint citadelPrice) internal {
+    function _testBuy(
+        Funding fundingContract,
+        IMedianOracle medianOracleContract,
+        uint256 assetIn,
+        uint256 citadelPrice
+    ) internal {
         // just make citadel appear rather than going through minting flow here
-        erc20utils.forceMintTo(address(fundingContract), address(citadel), 100000e18);
+        erc20utils.forceMintTo(
+            address(fundingContract),
+            address(citadel),
+            100000e18
+        );
 
         // CVX funding contract gives us an 18 decimal example
         vm.startPrank(keeper);

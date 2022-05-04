@@ -105,35 +105,33 @@ contract LockingTest is BaseFixture {
     //     mintAndDistribute();
 
     //     vm.warp(block.timestamp + 148 days); // lock period = 147 days + 1 day(rewards_duration cause 1st time lock)
-        
+
     //     address user2 = address(2);
     //     vm.startPrank(user2);
     //     // should revert cause unlocktime > currentTime - _checkdelay
     //     vm.expectRevert("no exp locks");
-    //     xCitadelLocker.kickExpiredLocks(user); // kick expired locks 
+    //     xCitadelLocker.kickExpiredLocks(user); // kick expired locks
 
-        
-    //     // move forward atleast 4 days cause kickRewardEpochDelay = 4 
+    //     // move forward atleast 4 days cause kickRewardEpochDelay = 4
     //     vm.warp(block.timestamp + 6 days);
     //     uint denominator = 10000;
-    //     uint kickRewardPerEpoch = 100 ;        
+    //     uint kickRewardPerEpoch = 100 ;
     //     uint epochsover = 2 ;
     //     uint rRate = kickRewardPerEpoch*(epochsover + 1);
-                    
+
     //     uint reward = uint256(10e18)*(rRate)/(
     //                 denominator
     //             );
-        
 
     //     uint xCitadelUser2BalanceBefore = xCitadel.balanceOf(user2);
     //     uint xCitadelUserBalanceBefore = xCitadel.balanceOf(user);
 
-    //     xCitadelLocker.kickExpiredLocks(user); // kick expired locks 
+    //     xCitadelLocker.kickExpiredLocks(user); // kick expired locks
     //     uint xCitadelUser2BalanceAfter = xCitadel.balanceOf(user2);
     //     uint xCitadelUserBalanceAfter = xCitadel.balanceOf(user);
-        
+
     //     uint user2ReceivedAward = xCitadelUser2BalanceAfter- xCitadelUser2BalanceBefore;
-    //     uint unlockedAmount = xCitadelUserBalanceAfter - xCitadelUserBalanceBefore ; 
+    //     uint unlockedAmount = xCitadelUserBalanceAfter - xCitadelUserBalanceBefore ;
 
     //     assertEq(user2ReceivedAward + unlockedAmount , xCitadelLocked);
     //     assertEq(user2ReceivedAward, reward);
@@ -142,19 +140,16 @@ contract LockingTest is BaseFixture {
 
     //     vm.stopPrank();
 
-
     // }
 
-
-    function testNotifyReward() public{
-
+    function testNotifyReward() public {
         treasuryReward();
 
-        uint balanceBefore = wbtc.balanceOf(address(2));
+        uint256 balanceBefore = wbtc.balanceOf(address(2));
         vm.prank(address(2));
         vm.expectRevert();
         xCitadelLocker.notifyRewardAmount(wbtc_address, 10e8); // share of treasury yield
-        uint balanceAfter = wbtc.balanceOf(address(2));
+        uint256 balanceAfter = wbtc.balanceOf(address(2));
 
         assertEq(balanceBefore, balanceAfter);
 
@@ -162,7 +157,7 @@ contract LockingTest is BaseFixture {
         xCitadelLocker.approveRewardDistributor(wbtc_address, address(2), true);
 
         vm.startPrank(governance);
-        xCitadelLocker.approveRewardDistributor(wbtc_address, address(2) , true);
+        xCitadelLocker.approveRewardDistributor(wbtc_address, address(2), true);
         erc20utils.forceMintTo(address(2), wbtc_address, 100e8); // so that treasury can reward lockers
         vm.stopPrank();
 
@@ -174,9 +169,8 @@ contract LockingTest is BaseFixture {
 
         balanceAfter = wbtc.balanceOf(address(2));
 
-        assertEq(balanceBefore- balanceAfter, 10e8);
+        assertEq(balanceBefore - balanceAfter, 10e8);
         vm.stopPrank();
-
     }
 
     function testRecoverERC20() public {

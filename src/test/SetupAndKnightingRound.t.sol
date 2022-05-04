@@ -32,8 +32,8 @@ contract KnightingRoundTest is BaseFixture {
 
         comparator.snapPrev();
 
-        uint256 tokenOutAmountExpected =
-            (1e8 * knightingRound.tokenOutPerTokenIn()) /
+        uint256 tokenOutAmountExpected = (1e8 *
+            knightingRound.tokenOutPerTokenIn()) /
             knightingRound.tokenInNormalizationValue();
         wbtc.approve(address(knightingRound), wbtc.balanceOf(shrimp));
 
@@ -280,14 +280,17 @@ contract KnightingRoundTest is BaseFixture {
         knightingRound.setTokenInLimit(20e18);
     }
 
-    function testBasicSetFunctions() public{
+    function testBasicSetFunctions() public {
         // tests for setTokenOutPerTokenIn
         vm.prank(address(1));
         vm.expectRevert("GAC: invalid-caller-role");
         knightingRound.setTokenOutPerTokenIn(25e18);
 
         // check if it is same as set in BaseFixture
-        assertEq(knightingRound.tokenOutPerTokenIn(), knightingRoundParams.citadelWbtcPrice);
+        assertEq(
+            knightingRound.tokenOutPerTokenIn(),
+            knightingRoundParams.citadelWbtcPrice
+        );
 
         // calling with correct role
         vm.startPrank(governance);

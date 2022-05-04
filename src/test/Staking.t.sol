@@ -125,7 +125,8 @@ contract StakingTest is BaseFixture {
         );
         vm.stopPrank();
     }
-function testMultipleUserFlow() public{
+
+    function testMultipleUserFlow() public {
         address user1 = address(1);
         address user2 = address(2);
         address user3 = address(3);
@@ -157,16 +158,19 @@ function testMultipleUserFlow() public{
 
         vm.stopPrank();
 
-        mintAndDistribute();   // minting 1st
+        mintAndDistribute(); // minting 1st
 
-        vm.warp(block.timestamp + 2000); 
+        vm.warp(block.timestamp + 2000);
 
         vm.prank(policyOps);
         citadelMinter.mintAndDistribute(); // minting again
 
-        uint expectedClaimableAmount1 = (xCitadel.balance()*xCitadel.balanceOf(user1))/xCitadel.totalSupply();
-        uint expectedClaimableAmount2 = (xCitadel.balance()*xCitadel.balanceOf(user2))/xCitadel.totalSupply();
-        uint expectedClaimableAmount3 = (xCitadel.balance()*xCitadel.balanceOf(user3)/2)/xCitadel.totalSupply();
+        uint256 expectedClaimableAmount1 = (xCitadel.balance() *
+            xCitadel.balanceOf(user1)) / xCitadel.totalSupply();
+        uint256 expectedClaimableAmount2 = (xCitadel.balance() *
+            xCitadel.balanceOf(user2)) / xCitadel.totalSupply();
+        uint256 expectedClaimableAmount3 = ((xCitadel.balance() *
+            xCitadel.balanceOf(user3)) / 2) / xCitadel.totalSupply();
 
         vm.prank(user1);
         xCitadel.withdrawAll();
@@ -181,30 +185,47 @@ function testMultipleUserFlow() public{
         vm.warp(block.timestamp + xCitadelVester.INITIAL_VESTING_DURATION());
 
         // as the vesting period is ended. user should be able claim full amount
-        assertEq(xCitadelVester.claimableBalance(user1), expectedClaimableAmount1);
-        assertEq(xCitadelVester.claimableBalance(user2), expectedClaimableAmount2);
-        assertEq(xCitadelVester.claimableBalance(user3), expectedClaimableAmount3);
+        assertEq(
+            xCitadelVester.claimableBalance(user1),
+            expectedClaimableAmount1
+        );
+        assertEq(
+            xCitadelVester.claimableBalance(user2),
+            expectedClaimableAmount2
+        );
+        assertEq(
+            xCitadelVester.claimableBalance(user3),
+            expectedClaimableAmount3
+        );
 
-        uint user1BalanceBefore = citadel.balanceOf(user1);
+        uint256 user1BalanceBefore = citadel.balanceOf(user1);
         vm.prank(user1);
         xCitadelVester.claim(user1, expectedClaimableAmount1);
-        uint user1BalanceAfter = citadel.balanceOf(user1);
+        uint256 user1BalanceAfter = citadel.balanceOf(user1);
 
-        uint user2BalanceBefore = citadel.balanceOf(user2);
+        uint256 user2BalanceBefore = citadel.balanceOf(user2);
         vm.prank(user2);
         xCitadelVester.claim(user2, expectedClaimableAmount2);
-        uint user2BalanceAfter = citadel.balanceOf(user2);
-   
-        uint user3BalanceBefore = citadel.balanceOf(user3);
+        uint256 user2BalanceAfter = citadel.balanceOf(user2);
+
+        uint256 user3BalanceBefore = citadel.balanceOf(user3);
         vm.prank(user3);
         xCitadelVester.claim(user3, expectedClaimableAmount3);
 
-        uint user3BalanceAfter = citadel.balanceOf(user3);
+        uint256 user3BalanceAfter = citadel.balanceOf(user3);
 
-        assertEq(user1BalanceAfter - user1BalanceBefore, expectedClaimableAmount1);
-        assertEq(user2BalanceAfter - user2BalanceBefore, expectedClaimableAmount2);
-        assertEq(user3BalanceAfter - user3BalanceBefore, expectedClaimableAmount3);
-
+        assertEq(
+            user1BalanceAfter - user1BalanceBefore,
+            expectedClaimableAmount1
+        );
+        assertEq(
+            user2BalanceAfter - user2BalanceBefore,
+            expectedClaimableAmount2
+        );
+        assertEq(
+            user3BalanceAfter - user3BalanceBefore,
+            expectedClaimableAmount3
+        );
     }
 
     function mintAndDistribute() public {
