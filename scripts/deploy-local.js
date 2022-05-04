@@ -1,6 +1,11 @@
 const hre = require("hardhat");
 const StakedCitadelLockerArtifact = require("../artifacts-external/StakedCitadelLocker.json");
 const ethers = hre.ethers;
+const moment = require("moment");
+const {
+  calcTokenoutPrice,
+  getTokensPrices,
+} = require("./utils/getTokensPrice");
 
 const { formatUnits, parseUnits } = ethers.utils;
 
@@ -50,7 +55,7 @@ async function main() {
   const SupplySchedule = await ethers.getContractFactory("SupplySchedule");
   const CitadelMinter = await ethers.getContractFactory("CitadelMinter");
 
-  const KnightingRound = await ethers.getContractFactory("KnightingRound");
+  const FundingFake = await ethers.getContractFactory("KnightingRound");
 
   const Funding = await ethers.getContractFactory("Funding");
 
@@ -78,14 +83,14 @@ async function main() {
   const citadelMinter = await CitadelMinter.deploy();
   console.log("citadelMinter address is: ", citadelMinter.address);
 
-  const knightingRound = await KnightingRound.deploy();
-  console.log("knightingRound address is: ", knightingRound.address);
+  const fundingFake = await FundingFake.deploy();
+  console.log("Funding address is: ", fundingFake.address);
 
   const fundingWbtc = await Funding.deploy();
-  console.log("fundingWbtc address is: ", knightingRound.address);
+  console.log("fundingWbtc address is: ", fundingFake.address);
 
   const fundingCvx = await Funding.deploy();
-  console.log("fundingCvx address is: ", knightingRound.address);
+  console.log("fundingCvx address is: ", fundingFake.address);
 
   /// === mint wbtc and cvx to signers[0]
   // impersonate the token owner
@@ -202,7 +207,7 @@ async function main() {
   /// =======  xCitadelLocker
   await xCitadelLocker
     .connect(governance)
-    .initialize(address(xCitadel), "Vote Locked xCitadel", "vlCTDL");
+    .initialize(address(xCitadel), address(gac), "Vote Locked xCitadel", "vlCTDL");
   // add reward token to be distributed to staker
   await xCitadelLocker
     .connect(governance)
@@ -224,7 +229,7 @@ async function main() {
 
   /// ========  Knighting Round
   const knightingRoundParams = {
-    start: new Date(new Date().getTime() + 10 * 1000),
+    start: Number(new Date(new Date().getTime() + 10 * 1000)),
     duration: 7 * 24 * 3600 * 1000,
     citadelWbtcPrice: ethers.utils.parseUnits("21", 18), // 21 CTDL per wBTC
     wbtcLimit: ethers.utils.parseUnits("100", 8), // 100 wBTC
@@ -458,6 +463,228 @@ async function main() {
   //     18
   //   )}`
   // );
+
+    // TODO: need to deploy a guest list contract, address 0 won't run
+  // await knightingRound.connect(governance).initialize(
+  //   address(gac),
+  //   address(citadel),
+  //   address(wbtc),
+  //   cannotUnlockTime + 1000,
+  //   knightingRoundParams.duration,
+  //   knightingRoundParams.citadelWbtcPrice,
+  //   address(governance),
+  //   address(0), // TODO: Add guest list and test with it
+  //   knightingRoundParams.wbtcLimit
+  // );
+
+//   const address = (entity) =>
+//   entity.address ? entity.address : ethers.constants.AddressZero;
+
+// const hashIt = (str) => ethers.utils.keccak256(ethers.utils.toUtf8Bytes(str));
+
+/// THIS SCRIPT MUST BE RUN WITH A FORKNET OR MAINNET
+/// IT DOES NOT WORK OTHERWISE
+
+
+  const initialParams = {
+    citadelTokenAddress: citadel.address, // Change this with your own deployed citadel token address
+    citadelMultising: signers[0].address, // ATTENTION!!!! CHANGE THIS!!!!!!!!
+  };
+
+  // Adding 180 second to not be in past
+  // if you got this "KnightingRound: start date may not be in the past"
+  // please increase this variable
+  const additionalSeconds = 180;
+  const phase1Start = parseInt(
+    moment().add(additionalSeconds, "seconds").unix()
+  );
+  console.log(moment().unix())
+  const phase2Start = parseInt(
+    moment().add(additionalSeconds, "seconds").add(3, "days").unix()
+  );
+
+  const phase1Duration = 3 * 24 * 3600;
+  const phase2Duration = 2 * 24 * 3600;
+
+  const phase1UsdLimit = ethers.constants.MaxUint256;
+  const phase2UsdLimit = ethers.BigNumber.from(1 * 10 ** 6);
+
+  // const governance = signers[12];
+  // const techOps = signers[13];
+
+  await gac
+  .connect(governance)
+  .grantRole(hashIt("TECH_OPERATIONS_ROLE"), address(techOps));
+
+
+  const KnightingRound = await ethers.getContractFactory("KnightingRound");
+  const KnightingRoundGuestlist = await ethers.getContractFactory(
+    "KnightingRoundGuestlist"
+  );
+
+  const tokenInsPhase1 = [
+    {
+      name: "wBTC",
+      address: "0x2260fac5e5542a773aa44fbcfedf7c193bc2c599",
+      decimals: 8,
+    },
+    {
+      name: "renBTC",
+      address: "0xeb4c2781e4eba804ce9a9803c67d0893436bb27d",
+      decimals: 8,
+    },
+    {
+      name: "ibBTC",
+      address: "0xc4e15973e6ff2a35cc804c2cf9d2a1b817a8b40f",
+      decimals: 18,
+    },
+    {
+      name: "WETH",
+      address: "0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2",
+      decimals: 18,
+    },
+    {
+      name: "FRAX",
+      address: "0x853d955acef822db058eb8505911ed77f175b99e",
+      decimals: 18,
+    },
+    {
+      name: "USDC",
+      address: "0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48",
+      decimals: 6,
+    },
+  ];
+
+  const knightingRoundGuestList = await KnightingRoundGuestlist.deploy();
+
+  await knightingRoundGuestList.initialize(address(gac));
+
+  const guestListRoot =
+    "0x8916c3fedd925241fcbba35af8d2380b5658ad8fa17e1b525bb1851107a36b35";
+
+  await knightingRoundGuestList.connect(techOps).setGuestRoot(guestListRoot);
+  // await knightingRoundGuestList.connect(techOp).setGuests([signers[0].address], [true]);
+
+  const tokensPrices = await getTokensPrices(
+    tokenInsPhase1.map((tk) => tk.address)
+  );
+
+  const desiredPriceInUsd = 21;
+
+  const readyTokensListPhase1 = tokenInsPhase1.map((tk) => ({
+    ...tk,
+    usdPrice: tokensPrices[tk.address].usd,
+    tokenOutPrice: calcTokenoutPrice(
+      desiredPriceInUsd,
+      tokensPrices[tk.address].usd,
+      tk.decimals
+    ),
+  }));
+
+
+  // Deploy knighting rounds for each token one at a time
+  console.log("Phase 1: ==================================");
+  const deployKnightingRoundPhase1 = async (i = 0) => {
+    const currentToken = readyTokensListPhase1[i];
+    if (!currentToken) return;
+    const knightingRound = await KnightingRound.deploy();
+
+    console.log(
+      `${currentToken.name} knighting round addres: `,
+      knightingRound.address
+    );
+
+    await knightingRound.initialize(
+      address(gac),
+      initialParams.citadelTokenAddress,
+      currentToken.address,
+      cannotUnlockTime + 10000,
+      phase1Duration,
+      currentToken.tokenOutPrice,
+      initialParams.citadelMultising,
+      address(knightingRoundGuestList),
+      phase1UsdLimit
+    );
+
+    return await deployKnightingRoundPhase1(i + 1);
+  };
+
+  await deployKnightingRoundPhase1();
+
+  console.log("Phase 2: ==================================");
+
+  const tokenInsPhase2 = [
+    {
+      name: "Badger",
+      address: "0x3472a5a71965499acd81997a54bba8d852c6e53d",
+      decimals: 18,
+    },
+    {
+      name: "CVX",
+      address: "0x4e3fbd56cd56c3e72c1403e103b45db9da5b9d2b",
+      decimals: 18,
+    },
+    {
+      name: "bveCVX",
+      address: "0xfd05D3C7fe2924020620A8bE4961bBaA747e6305",
+      decimals: 18,
+    },
+  ];
+
+  const tokens2Prices = await getTokensPrices(
+    tokenInsPhase2.map((tk) => tk.address)
+  );
+
+  const readyTokensListPhase2 = tokenInsPhase2.map((tk) => ({
+    ...tk,
+    usdPrice: tokens2Prices[tk.address]
+      ? tokens2Prices[tk.address].usd
+      : tokens2Prices["0x4e3fbd56cd56c3e72c1403e103b45db9da5b9d2b"].usd,
+    tokenOutPrice: calcTokenoutPrice(
+      desiredPriceInUsd,
+      tokens2Prices[tk.address]
+        ? tokens2Prices[tk.address].usd
+        : tokens2Prices["0x4e3fbd56cd56c3e72c1403e103b45db9da5b9d2b"].usd,
+      tk.decimals
+    ),
+  }));
+
+  const deployKnightingRoundPhase2 = async (i = 0) => {
+    const currentToken = readyTokensListPhase2[i];
+    if (!currentToken) return;
+    const knightingRound = await KnightingRound.deploy();
+
+    console.log(
+      `${currentToken.name} knighting round addres: `,
+      knightingRound.address
+    );
+
+    await knightingRound.initialize(
+      address(gac),
+      initialParams.citadelTokenAddress,
+      currentToken.address,
+      cannotUnlockTime + 10000,
+      phase2Duration,
+      currentToken.tokenOutPrice,
+      initialParams.citadelMultising,
+      address(knightingRoundGuestList),
+      phase2UsdLimit
+        .mul(
+          ethers.BigNumber.from(10).pow(
+            ethers.BigNumber.from(currentToken.decimals + 8)
+          )
+        )
+        .div(ethers.BigNumber.from(parseInt(currentToken.usdPrice * 10 ** 8)))
+    );
+
+    return await deployKnightingRoundPhase2(i + 1);
+  };
+
+  await deployKnightingRoundPhase2();
+  await hre.network.provider.send("evm_setNextBlockTimestamp", [
+    cannotUnlockTime + 11000,
+  ]);
+  await hre.network.provider.send("evm_mine");
 }
 
 main()

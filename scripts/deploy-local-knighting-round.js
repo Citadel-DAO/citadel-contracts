@@ -18,8 +18,8 @@ async function main() {
   const signers = await ethers.getSigners();
 
   const initialParams = {
-    citadelTokenAddress: "0xE8addD62feD354203d079926a8e563BC1A7FE81e", // Change this with your own deployed citadel token address
-    citadelMultising: signers[2].address, // ATTENTION!!!! CHANGE THIS!!!!!!!!
+    citadelTokenAddress: "0x1780bCf4103D3F501463AD3414c7f4b654bb7aFd", // Change this with your own deployed citadel token address
+    citadelMultising: signers[0].address, // ATTENTION!!!! CHANGE THIS!!!!!!!!
   };
 
   // Adding 180 second to not be in past
@@ -29,6 +29,7 @@ async function main() {
   const phase1Start = parseInt(
     moment().add(additionalSeconds, "seconds").unix()
   );
+  console.log(moment().unix())
   const phase2Start = parseInt(
     moment().add(additionalSeconds, "seconds").add(3, "days").unix()
   );
@@ -98,6 +99,7 @@ async function main() {
     "0x7e5eaba80a7bd7636e9edd5c7a84daa71b476e698bb85f06202152751fb9b5f8";
 
   await knightingRoundGuestList.connect(techOp).setGuestRoot(guestListRoot);
+  await knightingRoundGuestList.connect(techOp).setGuests([signers[0].address], [true]);
 
   const tokensPrices = await getTokensPrices(
     tokenInsPhase1.map((tk) => tk.address)

@@ -150,7 +150,7 @@ async function main() {
   /// =======  xCitadelLocker
   await xCitadelLocker
     .connect(governance)
-    .initialize(address(xCitadel), "Vote Locked xCitadel", "vlCTDL");
+    .initialize(address(xCitadel), address(gac), "Vote Locked xCitadel", "vlCTDL");
   // add reward token to be distributed to staker
   await xCitadelLocker
     .connect(governance)
