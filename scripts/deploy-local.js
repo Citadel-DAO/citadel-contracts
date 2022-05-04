@@ -87,10 +87,10 @@ async function main() {
   console.log("Funding address is: ", fundingFake.address);
 
   const fundingWbtc = await Funding.deploy();
-  console.log("fundingWbtc address is: ", fundingFake.address);
+  console.log("fundingWbtc address is: ", fundingWbtc.address);
 
   const fundingCvx = await Funding.deploy();
-  console.log("fundingCvx address is: ", fundingFake.address);
+  console.log("fundingCvx address is: ", fundingCvx.address);
 
   /// === mint wbtc and cvx to signers[0]
   // impersonate the token owner
