@@ -35,7 +35,7 @@ contract KnightingRoundRegistry is GlobalAccessControlManaged {
     struct initParam {
         address _tokenIn;
         uint256 _tokenInLimit;
-        uint256 _tokenOutPrice;
+        uint256 _tokenOutPerTokenIn;
     }
 
     struct RoundData {
@@ -46,7 +46,7 @@ contract KnightingRoundRegistry is GlobalAccessControlManaged {
         uint256 saleDuration;
         address saleRecipient;
         bool finalized;
-        uint256 tokenOutPrice;
+        uint256 tokenOutPerTokenIn;
         uint256 totalTokenIn;
         uint256 totalTokenOutBought;
         uint256 totalTokenOutClaimed;
@@ -112,7 +112,7 @@ contract KnightingRoundRegistry is GlobalAccessControlManaged {
             _roundParams._tokenIn,
             roundStart,
             roundDuration,
-            _roundParams._tokenOutPrice,
+            _roundParams._tokenOutPerTokenIn,
             saleRecipient,
             guestlist,
             _roundParams._tokenInLimit
@@ -127,7 +127,7 @@ contract KnightingRoundRegistry is GlobalAccessControlManaged {
             _roundParams._tokenIn,
             roundStart,
             roundDuration,
-            _roundParams._tokenOutPrice,
+            _roundParams._tokenOutPerTokenIn,
             saleRecipient,
             guestlist,
             _roundParams._tokenInLimit
@@ -138,7 +138,7 @@ contract KnightingRoundRegistry is GlobalAccessControlManaged {
             _roundParams._tokenIn,
             roundStart,
             roundDuration,
-            _roundParams._tokenOutPrice,
+            _roundParams._tokenOutPerTokenIn,
             saleRecipient,
             guestlist,
             _roundParams._tokenInLimit
@@ -160,7 +160,7 @@ contract KnightingRoundRegistry is GlobalAccessControlManaged {
         roundData.saleDuration = targetRound.saleDuration();
         roundData.saleRecipient = targetRound.saleRecipient();
         roundData.finalized = targetRound.finalized();
-        roundData.tokenOutPrice = targetRound.tokenOutPrice();
+        roundData.tokenOutPerTokenIn = targetRound.tokenOutPerTokenIn();
         roundData.totalTokenIn = targetRound.totalTokenIn();
         roundData.totalTokenOutBought = targetRound.totalTokenOutBought();
         roundData.totalTokenOutClaimed = targetRound.totalTokenOutClaimed();

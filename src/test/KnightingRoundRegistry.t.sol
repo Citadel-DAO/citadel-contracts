@@ -88,7 +88,7 @@ contract KnightingRoundRegistryTest is BaseFixture {
         assertEq(targetRound.saleStart, block.timestamp);
         assertEq(targetRound.saleDuration, 3 days);
         assertTrue(targetRound.finalized == false);
-        assertEq(targetRound.tokenOutPrice, 500 * 10e8);
+        assertEq(targetRound.tokenOutPerTokenIn, 500 * 10e8);
         assertEq(targetRound.totalTokenIn, 0);
         assertEq(targetRound.totalTokenOutBought, 0);
         assertEq(targetRound.totalTokenOutClaimed, 0);
@@ -114,7 +114,7 @@ contract KnightingRoundRegistryTest is BaseFixture {
         assertEq(wethRound.saleStart, block.timestamp);
         assertEq(wethRound.saleDuration, 3 days);
         assertTrue(wethRound.finalized == false);
-        assertEq(wethRound.tokenOutPrice, 500 * 10e8);
+        assertEq(wethRound.tokenOutPerTokenIn, 500 * 10e8);
         assertEq(wethRound.totalTokenIn, 0);
         assertEq(wethRound.totalTokenOutBought, 0);
         assertEq(wethRound.totalTokenOutClaimed, 0);
@@ -140,7 +140,7 @@ contract KnightingRoundRegistryTest is BaseFixture {
         assertEq(ethRound.saleStart, block.timestamp);
         assertEq(ethRound.saleDuration, 3 days);
         assertTrue(ethRound.finalized == false);
-        assertEq(ethRound.tokenOutPrice, 500 * 10e8);
+        assertEq(ethRound.tokenOutPerTokenIn, 500 * 10e8);
         assertEq(ethRound.totalTokenIn, 0);
         assertEq(ethRound.totalTokenOutBought, 0);
         assertEq(ethRound.totalTokenOutClaimed, 0);
