@@ -6,6 +6,7 @@ import {SupplySchedule} from "../SupplySchedule.sol";
 import {GlobalAccessControl} from "../GlobalAccessControl.sol";
 import {KnightingRound} from "../KnightingRound.sol";
 import "../interfaces/badger/IBadgerVipGuestlist.sol";
+import "../interfaces/erc20/IERC20.sol";
 
 contract KnightingRoundTest is BaseFixture {
     function setUp() public override {
@@ -108,7 +109,44 @@ contract KnightingRoundTest is BaseFixture {
         vm.stopPrank();
     }
 
-    function testFinalizeAndClaim() public {
+    function testMultipleKnightingRoundContract() public{
+        KnightingRound knightingRound1 = new KnightingRound();
+        KnightingRound knightingRound2 = new KnightingRound();
+        knightingRound1.initialize(
+            address(gac),
+            address(citadel),
+            address(wbtc),
+            knightingRoundParams.start,
+            knightingRoundParams.duration,
+            21e18,
+            address(governance),
+            address(guestList),
+            100e8
+        );
+
+        knightingRound2.initialize(
+            address(gac),
+            address(citadel),
+            address(cvx),
+            knightingRoundParams.start,
+            knightingRoundParams.duration,
+            21e18,
+            address(governance),
+            address(guestList),
+            100e18
+        );
+
+        wbtc.approve(address(knightingRound1), wbtc.balanceOf(shark));
+        // Move to knighting round start
+        vm.warp(block.timestamp + 100);
+
+        buy(knightingRound1, wbtc, shark, 0 , 1e8 ); // shark is voting dao 0 in 1st contract
+        buy(knightingRound2, cvx, shark, 1, 1e18); // shark is voting dao 1 in 2nd contract
+        buy(knightingRound1, wbtc, shark , 0, 2e8); // shark  is voting dao 0 in 1st contract again
+        buy(knightingRound2, cvx, whale, 0, 2e18);  // whale is voting dao 0 in 2nd contract
+
+    }
+    function testFinalizeAndClaim() public{
         bytes32[] memory emptyProof = new bytes32[](0);
 
         vm.warp(knightingRoundParams.start);
@@ -390,5 +428,18 @@ contract KnightingRoundTest is BaseFixture {
 
         // the difference should be 10e8
         assertEq(afterBalance - prevBalance, 10e8);
+    }
+
+    function buy(KnightingRound _knightingRound, IERC20 _tokenIn, address _buyer, uint8 _daoID, uint _amountIn) public{
+        bytes32[] memory emptyProof = new bytes32[](0);
+        uint totelTokenIn = _knightingRound.totalTokenIn();
+        uint daoCommitment = _knightingRound.daoCommitments(_daoID);
+        vm.startPrank(_buyer);
+        _tokenIn.approve(address(_knightingRound), _tokenIn.balanceOf(_buyer));
+        uint tokenOutAmount = _knightingRound.buy(_amountIn, _daoID, emptyProof); // whale is voting for different dao
+        assertEq(_knightingRound.totalTokenIn(), totelTokenIn + _amountIn); // totelTokenIn should increment
+        assertEq(_knightingRound.daoVotedFor(_buyer), _daoID); // daoVotedFor should be 1
+        assertEq(_knightingRound.daoCommitments(_daoID), daoCommitment+tokenOutAmount);
+        vm.stopPrank();
     }
 }
