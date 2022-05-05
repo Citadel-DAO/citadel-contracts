@@ -107,8 +107,14 @@ contract BaseFixture is DSTest, Utils, stdCheats {
     KnightingRoundWithEth knightingRoundWithEth = new KnightingRoundWithEth();
     KnightingRoundGuestlist guestList = new KnightingRoundGuestlist();
 
-    IMedianOracle medianOracleWbtc = IMedianOracle(deployCode(medianOracleArtifact, abi.encode(1 days, 0, 1)));
-    IMedianOracle medianOracleCvx = IMedianOracle(deployCode(medianOracleArtifact, abi.encode(1 days, 0, 1)));
+    IMedianOracle medianOracleWbtc =
+        IMedianOracle(
+            deployCode(medianOracleArtifact, abi.encode(1 days, 0, 1))
+        );
+    IMedianOracle medianOracleCvx =
+        IMedianOracle(
+            deployCode(medianOracleArtifact, abi.encode(1 days, 0, 1))
+        );
 
     Funding fundingWbtc = new Funding();
     Funding fundingCvx = new Funding();
@@ -224,7 +230,6 @@ contract BaseFixture is DSTest, Utils, stdCheats {
             citadelWbtcPrice: 21e18, // 21 CTDL per ETH
             tokenInLimit: 100e18 // 100 ETH
         });
-
 
         guestList.initialize(address(gac));
 
@@ -541,7 +546,7 @@ contract BaseFixture is DSTest, Utils, stdCheats {
         citadel.approve(address(xCitadel), 1e18);
         xCitadel.deposit(1e18);
 
-        uint256 toLiquidity = (remainingSupply * 4e17) / 1e18; // 15% of total, or 40% of remaining 40%
+        // uint256 toLiquidity = (remainingSupply * 4e17) / 1e18; // 15% of total, or 40% of remaining 40% (not used)
         uint256 toTreasury = (remainingSupply * 6e17) / 1e18; // 25% of total, or 60% of remaining 40%
 
         // TODO: Create curve pool and add liquidity
