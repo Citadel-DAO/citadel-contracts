@@ -31,7 +31,7 @@ contract StakedCitadelVester is
     address public vault;
     mapping(address => VestingParams) public vesting;
 
-    uint256 public constant INITIAL_VESTING_DURATION = 86400 * 21; // 21 days of vesting
+    uint256 public constant INITIAL_VESTING_DURATION = 86400 * 7; // 7 days of vesting
     uint256 public vestingDuration;
 
     /// ==================
