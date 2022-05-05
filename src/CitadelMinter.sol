@@ -33,6 +33,8 @@ contract CitadelMinter is
         keccak256("POLICY_OPERATIONS_ROLE");
     bytes32 public constant TREASURY_GOVERNANCE_ROLE =
         keccak256("TREASURY_GOVERNANCE_ROLE");
+    bytes32 public constant KEEPER_ROLE = 
+        keccak256("KEEPER_ROLE");
 
     bytes32 public constant XCITADEL_LOCKER_EMISSIONS = keccak256("xcitadel-locker-emissions");
 
@@ -169,13 +171,20 @@ contract CitadelMinter is
     /// ===== Policy Ops actions =====
     /// ==============================
 
+    function getMintAndDistributeRoles() internal pure returns (bytes32[] memory) {
+        bytes32[] memory roles = new bytes32[](2);
+        roles[0] = POLICY_OPERATIONS_ROLE;
+        roles[1] = KEEPER_ROLE;
+        return roles;
+    }
+
     /**
      * @notice Update the state of citadel emissions by minting and distributing citadel tokens according to the emission schedule and proportional splits between destinations (e.g. funding pools, stakers, lockers)
      * @dev In theory this call should be permissionless, and after sufficient security analysis this may be changed to be the case
      */
     function mintAndDistribute()
         external
-        onlyRole(POLICY_OPERATIONS_ROLE)
+        onlyRoles(getMintAndDistributeRoles())
         gacPausable
         nonReentrant
     {

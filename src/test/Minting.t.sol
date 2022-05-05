@@ -132,34 +132,51 @@ contract MintingTest is BaseFixture {
     ) public {
         uint HALF_MAX_BPS = 5000;
         vm.assume(bps_A <= HALF_MAX_BPS && bps_B <= HALF_MAX_BPS);
-        _testMintAndDistribute(bps_A, HALF_MAX_BPS - bps_A, bps_B, HALF_MAX_BPS - bps_B);
+        _testMintAndDistribute(bps_A, HALF_MAX_BPS - bps_A, bps_B, HALF_MAX_BPS - bps_B, governance);
     }
 
     function testMintAndDistribute_SpecialCases() public {
-        _testMintAndDistribute(10000, 0, 0, 0);
+        _testMintAndDistribute(10000, 0, 0, 0, governance);
         vm.warp(block.timestamp + 1000);
-        _testMintAndDistribute(0, 10000, 0, 0);
+        _testMintAndDistribute(0, 10000, 0, 0, governance);
         vm.warp(block.timestamp + 1000);
-        _testMintAndDistribute(0, 0, 10000, 0);
+        _testMintAndDistribute(0, 0, 10000, 0, governance);
         vm.warp(block.timestamp + 1000);
-        _testMintAndDistribute(0, 0, 0, 10000);
+        _testMintAndDistribute(0, 0, 0, 10000, governance);
         vm.warp(block.timestamp + 1000);
-        _testMintAndDistribute(2500, 2500, 2500, 2500);
+        _testMintAndDistribute(2500, 2500, 2500, 2500, governance);
         vm.warp(block.timestamp + 1000);
-        _testMintAndDistribute(5000, 0, 0, 5000);
+        _testMintAndDistribute(5000, 0, 0, 5000, governance);
         vm.warp(block.timestamp + 1000);
-        _testMintAndDistribute(1, 1, 1, 9997);
+        _testMintAndDistribute(1, 1, 1, 9997, governance);
+    }
+
+    function testMintAndDistributeKeeper() public {
+        _testMintAndDistribute(10000, 0, 0, 0, keeper);
+        vm.warp(block.timestamp + 1000);
+        _testMintAndDistribute(0, 10000, 0, 0, keeper);
+        vm.warp(block.timestamp + 1000);
+        _testMintAndDistribute(0, 0, 10000, 0, keeper);
+        vm.warp(block.timestamp + 1000);
+        _testMintAndDistribute(0, 0, 0, 10000, keeper);
+        vm.warp(block.timestamp + 1000);
+        _testMintAndDistribute(2500, 2500, 2500, 2500, keeper);
+        vm.warp(block.timestamp + 1000);
+        _testMintAndDistribute(5000, 0, 0, 5000, keeper);
+        vm.warp(block.timestamp + 1000);
+        _testMintAndDistribute(1, 1, 1, 9997, keeper);
     }
 
     function _testMintAndDistribute(
         uint256 _bps_A,
         uint256 _bps_B,
         uint256 _bps_C,
-        uint256 _bps_D
+        uint256 _bps_D,
+        address mintingAddress
     ) public {
         TestInfo memory info;
         // Initialize minting timestamp
-        vm.startPrank(governance);
+        vm.startPrank(mintingAddress);
         if (schedule.globalStartTimestamp() == 0) {
             schedule.setMintingStart(block.timestamp);
             citadelMinter.initializeLastMintTimestamp();
