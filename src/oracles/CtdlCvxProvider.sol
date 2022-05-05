@@ -53,9 +53,9 @@ contract CtdlCvxProvider {
     }
 
     function latestAnswer() public view returns (uint256 cvxPriceInCtdl_) {
-        (, int256 wbtcPriceInBtc, , , ) = wbtcBtcPriceFeed.latestRoundData();
-        (, int256 btcPriceInUsd, , , ) = btcUsdPriceFeed.latestRoundData();
-        (, int256 cvxPriceInUsd, , , ) = cvxUsdPriceFeed.latestRoundData();
+        uint256 wbtcPriceInBtc = safeLatestAnswer(wbtcBtcPriceFeed);
+        uint256 btcPriceInUsd = safeLatestAnswer(btcUsdPriceFeed);
+        uint256 cvxPriceInUsd = safeLatestAnswer(cvxUsdPriceFeed);
 
         // (10^8) * (10^8) * (10^18) * (10^18) = (10^52) + price value - Shouldn't overflow
         uint256 wbtcPriceInCvx = (uint256(wbtcPriceInBtc) *
@@ -77,5 +77,19 @@ contract CtdlCvxProvider {
 
     function pushReport() external {
         medianOracle.pushReport(latestAnswer());
+    }
+    
+    /// =========================
+    /// ===== Internal view =====
+    /// =========================
+
+    function safeLatestAnswer(IAggregatorV3Interface _priceFeed) internal view returns (uint256 answer_) {
+        (uint256 roundId, int256 price, , uint256 updateTime, uint256 answeredInRound) = _priceFeed.latestRoundData();
+
+        require(price > 0, "Chainlink price <= 0");
+        require(updateTime != 0, "Incomplete round");
+        require(answeredInRound >= roundId, "Stale price");
+
+        answer_ = uint256(price);
     }
 }
