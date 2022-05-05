@@ -13,6 +13,9 @@ contract KnightingRoundTest is BaseFixture {
         uint256 amountIn,
         uint256 amountOut
     );
+    event Claim(address indexed claimer, uint256 amount);
+    event TokenOutPerTokenInUpdated(uint256 tokenOutPerTokenIn);
+    event SaleRecipientUpdated(address indexed recipient);
 
     function setUp() public override {
         BaseFixture.setUp();
@@ -152,9 +155,13 @@ contract KnightingRoundTest is BaseFixture {
         knightingRound.finalize(); // round finalized
         vm.stopPrank();
 
-
         vm.startPrank(shrimp);
         comparator.snapPrev();
+        vm.expectEmit(true, true, true, true);
+        emit Claim(
+            shrimp,
+            tokenOutAmount
+        );
         knightingRound.claim();   // now shrimp can claim
         comparator.snapCurr();
 
@@ -175,7 +182,6 @@ contract KnightingRoundTest is BaseFixture {
     }
 
     function testSetSaleStart() public{
-
         // tests for setStartSale function
 
         uint256 startTime = block.timestamp + 200;
@@ -312,6 +318,10 @@ contract KnightingRoundTest is BaseFixture {
 
         // calling with correct role
         vm.startPrank(governance);
+        vm.expectEmit(true, true, true, true);
+        emit TokenOutPerTokenInUpdated(
+            25e18
+        );
         knightingRound.setTokenOutPerTokenIn(25e18);
 
         // check if tokenOutPerTokenIn is updated
@@ -324,6 +334,10 @@ contract KnightingRoundTest is BaseFixture {
         assertEq(knightingRound.tokenOutPerTokenIn(), 25e18);
 
         // tests for setSaleRecipient
+        vm.expectEmit(true, true, true, true);
+        emit SaleRecipientUpdated(
+            address(2)
+        );
         knightingRound.setSaleRecipient(address(2));
         assertEq(knightingRound.saleRecipient(), address(2)); // check if SaleRecipient is set
 
