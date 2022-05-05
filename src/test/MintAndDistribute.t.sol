@@ -39,7 +39,6 @@ contract MintAndDistributeTest is BaseFixture {
         uint256 stakingBps = 3000;
         uint256 lockingBps = 2000;
         uint256 daoBps = 1500;
-        uint256 MAX_BPS = 10000;
 
         uint256 wbtcFundingPoolWeight = 8000;
         uint256 cvxFundingPoolWeight = 2000;
