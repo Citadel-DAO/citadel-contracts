@@ -7,6 +7,13 @@ import {GlobalAccessControl} from "../GlobalAccessControl.sol";
 import "../interfaces/badger/IBadgerVipGuestlist.sol";
 
 contract KnightingRoundTest is BaseFixture {
+    event Sale(
+        address indexed buyer,
+        uint8 indexed daoId,
+        uint256 amountIn,
+        uint256 amountOut
+    );
+
     function setUp() public override {
         BaseFixture.setUp();
     }
@@ -37,6 +44,13 @@ contract KnightingRoundTest is BaseFixture {
             knightingRound.tokenInNormalizationValue();
         wbtc.approve(address(knightingRound), wbtc.balanceOf(shrimp));
 
+        vm.expectEmit(true, true, true, true);
+        emit Sale(
+            shrimp,
+            0,
+            1e8,
+            tokenOutAmountExpected
+        );
         uint256 tokenOutAmount = knightingRound.buy(1e8, 0, emptyProof);
         comparator.snapCurr();
 
@@ -54,7 +68,13 @@ contract KnightingRoundTest is BaseFixture {
         assertEq(knightingRound.totalTokenIn(),1e8); // totelTokenIn should be same
 
         // buying again
-
+        vm.expectEmit(true, true, true, true);
+        emit Sale(
+            shrimp,
+            0,
+            1e8,
+            tokenOutAmountExpected // Same amount out since price is unmodified
+        );
         uint256 tokenOutAmount2 = knightingRound.buy(1e8, 0, emptyProof);
         assertEq(knightingRound.totalTokenIn(), 2e8); // should increment
         assertEq(knightingRound.totalTokenOutBought(), tokenOutAmount + tokenOutAmount2);
@@ -72,11 +92,19 @@ contract KnightingRoundTest is BaseFixture {
         knightingRound.setTokenOutPerTokenIn(25e18);
         assertEq(knightingRound.tokenOutPerTokenIn(), 25e18);
 
-        vm.prank(shrimp);
-        uint256 newTokenAmountOut = knightingRound.buy(1e8, 0, emptyProof);
-
         // 21e18 is old price and 25e18 is new price
         uint256 newTokenAmountOutExpected = (tokenOutAmount * 25e18)/21e18;
+
+        vm.startPrank(shrimp);
+        vm.expectEmit(true, true, true, true);
+        emit Sale(
+            shrimp,
+            0,
+            1e8,
+            newTokenAmountOutExpected
+        );
+        uint256 newTokenAmountOut = knightingRound.buy(1e8, 0, emptyProof);
+        vm.stopPrank();
 
         assertEq(newTokenAmountOut, newTokenAmountOutExpected);
         // Knighting round concludes...

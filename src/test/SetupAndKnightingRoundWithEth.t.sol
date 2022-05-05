@@ -11,6 +11,13 @@ interface WETH {
 }
 
 contract KnightingRoundWithEthTest is BaseFixture {
+    event Sale(
+        address indexed buyer,
+        uint8 indexed daoId,
+        uint256 amountIn,
+        uint256 amountOut
+    );
+
     function setUp() public override {
         BaseFixture.setUp();
     }
@@ -40,6 +47,14 @@ contract KnightingRoundWithEthTest is BaseFixture {
             knightingRoundWithEth.tokenOutPerTokenIn()) /
             knightingRoundWithEth.tokenInNormalizationValue();
         weth.approve(address(knightingRoundWithEth), type(uint256).max);
+
+        vm.expectEmit(true, true, true, true);
+        emit Sale(
+            shrimp,
+            0,
+            1e18,
+            tokenOutAmountExpected
+        );
         uint256 tokenOutAmount = knightingRoundWithEth.buyEth{value: 1e18}(
             0,
             emptyProof
@@ -64,7 +79,13 @@ contract KnightingRoundWithEthTest is BaseFixture {
         assertEq(knightingRoundWithEth.totalTokenIn(), 1e18); // totelTokenIn should be same
 
         // buying again
-
+        vm.expectEmit(true, true, true, true);
+        emit Sale(
+            shrimp,
+            0,
+            1e18,
+            tokenOutAmountExpected // Same amount out since price is unmodified
+        );
         uint256 tokenOutAmount2 = knightingRoundWithEth.buyEth{value: 1e18}(
             0,
             emptyProof
@@ -88,14 +109,22 @@ contract KnightingRoundWithEthTest is BaseFixture {
         knightingRoundWithEth.setTokenOutPerTokenIn(25e18);
         assertEq(knightingRoundWithEth.tokenOutPerTokenIn(), 25e18);
 
-        vm.prank(shrimp);
+        // 21e18 is old price and 25e18 is new price
+        uint256 newTokenAmountOutExpected = (tokenOutAmount * 25e18) / 21e18;
+
+        vm.startPrank(shrimp);
+        vm.expectEmit(true, true, true, true);
+        emit Sale(
+            shrimp,
+            0,
+            1e18,
+            newTokenAmountOutExpected
+        );
         uint256 newTokenAmountOut = knightingRoundWithEth.buyEth{value: 1e18}(
             0,
             emptyProof
         );
-
-        // 21e18 is old price and 25e18 is new price
-        uint256 newTokenAmountOutExpected = (tokenOutAmount * 25e18) / 21e18;
+        vm.stopPrank();
 
         assertEq(newTokenAmountOut, newTokenAmountOutExpected);
         // Knighting round concludes...
