@@ -49,6 +49,9 @@ contract BaseFixture is DSTest, Utils, stdCheats {
     bytes32 public constant PAUSER_ROLE = keccak256("PAUSER_ROLE");
     bytes32 public constant UNPAUSER_ROLE = keccak256("UNPAUSER_ROLE");
 
+    bytes32 public constant KEEPER_ROLE = keccak256("KEEPER_ROLE");
+    bytes32 public constant HIGHSEC_KEEPER_ROLE = keccak256("HIGHSEC_KEEPER_ROLE");
+
     bytes32 public constant BLOCKLIST_MANAGER_ROLE =
         keccak256("BLOCKLIST_MANAGER_ROLE");
     bytes32 public constant BLOCKLISTED_ROLE = keccak256("BLOCKLISTED_ROLE");
@@ -67,6 +70,7 @@ contract BaseFixture is DSTest, Utils, stdCheats {
     address immutable policyOps = getAddress("policyOps");
     address immutable guardian = getAddress("guardian");
     address immutable keeper = getAddress("keeper");
+    address immutable highsecKeeper = getAddress("highsecKeeper");
     address immutable treasuryVault = getAddress("treasuryVault");
     address immutable treasuryOps = getAddress("treasuryOps");
 
@@ -130,6 +134,7 @@ contract BaseFixture is DSTest, Utils, stdCheats {
         vm.label(governance, "governance");
         vm.label(policyOps, "policyOps");
         vm.label(keeper, "keeper");
+        vm.label(highsecKeeper, "highsecKeeper");
         vm.label(guardian, "guardian");
         vm.label(treasuryVault, "treasuryVault");
 
@@ -286,6 +291,10 @@ contract BaseFixture is DSTest, Utils, stdCheats {
 
         gac.grantRole(PAUSER_ROLE, guardian);
         gac.grantRole(UNPAUSER_ROLE, techOps);
+
+        gac.grantRole(KEEPER_ROLE, keeper);
+        gac.grantRole(HIGHSEC_KEEPER_ROLE, highsecKeeper);
+
         vm.stopPrank();
 
         // Deposit initial assets to users

@@ -31,6 +31,8 @@ contract CitadelMinter is
         keccak256("CONTRACT_GOVERNANCE_ROLE");
     bytes32 public constant POLICY_OPERATIONS_ROLE =
         keccak256("POLICY_OPERATIONS_ROLE");
+    bytes32 public constant HIGHSEC_KEEPER_ROLE =
+        keccak256("HIGHSEC_KEEPER_ROLE");
 
     bytes32 public constant XCITADEL_LOCKER_EMISSIONS = keccak256("xcitadel-locker-emissions");
 
@@ -170,7 +172,7 @@ contract CitadelMinter is
      */
     function mintAndDistribute()
         external
-        onlyRole(POLICY_OPERATIONS_ROLE)
+        onlyRole(HIGHSEC_KEEPER_ROLE)
         gacPausable
         nonReentrant
     {
