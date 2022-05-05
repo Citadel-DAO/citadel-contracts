@@ -4,6 +4,7 @@ pragma solidity 0.8.12;
 import {BaseFixture} from "./BaseFixture.sol";
 import {SupplySchedule} from "../SupplySchedule.sol";
 import {GlobalAccessControl} from "../GlobalAccessControl.sol";
+import {KnightingRound} from "../KnightingRound.sol";
 import "../interfaces/badger/IBadgerVipGuestlist.sol";
 
 contract KnightingRoundTest is BaseFixture {
@@ -44,6 +45,7 @@ contract KnightingRoundTest is BaseFixture {
         assertEq(tokenOutAmount, tokenOutAmountExpected); // transferred amount should be equal to expected
         assertEq(knightingRound.totalTokenOutBought(), tokenOutAmount);
         assertEq(knightingRound.daoVotedFor(shrimp), 0); // daoVotedFor should be set
+        assertEq(knightingRound.daoCommitments(0), tokenOutAmount); // daoCommitments should be tokenOutAmount
 
         assertEq(comparator.negDiff("wbtc.balanceOf(shrimp)"), 1e8);
         assertEq(
@@ -54,23 +56,34 @@ contract KnightingRoundTest is BaseFixture {
         // tokenInLimit = 100e8 so transaction should revert
         vm.expectRevert("total amount exceeded");
         knightingRound.buy(100e8, 0, emptyProof);
-        assertEq(knightingRound.totalTokenIn(), 1e8); // totelTokenIn should be same
+        assertEq(knightingRound.totalTokenIn(),1e8); // totelTokenIn should be same
+        assertEq(knightingRound.daoCommitments(0), tokenOutAmount); // daoCommitments should be same
 
         // buying again
 
         uint256 tokenOutAmount2 = knightingRound.buy(1e8, 0, emptyProof);
         assertEq(knightingRound.totalTokenIn(), 2e8); // should increment
-        assertEq(
-            knightingRound.totalTokenOutBought(),
-            tokenOutAmount + tokenOutAmount2
-        );
+        assertEq(knightingRound.totalTokenOutBought(), tokenOutAmount + tokenOutAmount2);
+        assertEq(knightingRound.daoCommitments(0), tokenOutAmount + tokenOutAmount2); // should increment
 
         // giving a different doa ID
         vm.expectRevert("can't vote for multiple daos");
         knightingRound.buy(10e8, 1, emptyProof);
         assertEq(knightingRound.totalTokenIn(), 2e8); // totelTokenIn should be same
         assertEq(knightingRound.daoVotedFor(shrimp), 0); // daoVotedFor should be same
+        assertEq(knightingRound.daoCommitments(1), 0); // should be zero
+        assertEq(knightingRound.daoCommitments(0), tokenOutAmount + tokenOutAmount2); // should be same
 
+        vm.stopPrank();
+
+
+        vm.startPrank(whale);
+        wbtc.approve(address(knightingRound), wbtc.balanceOf(whale));
+        uint tokenOutAmountWhale = knightingRound.buy(1e8, 1, emptyProof); // whale is voting for different dao
+        assertEq(knightingRound.totalTokenIn(),3e8); // totelTokenIn should increment
+        assertEq(knightingRound.daoVotedFor(whale), 1); // daoVotedFor should be 1
+        assertEq(knightingRound.daoCommitments(1), tokenOutAmountWhale); // should be tokenOutAmountWhale
+        assertEq(knightingRound.daoCommitments(0), tokenOutAmount + tokenOutAmount2); // should be same
         vm.stopPrank();
 
         // changing the token out price in mid sale
