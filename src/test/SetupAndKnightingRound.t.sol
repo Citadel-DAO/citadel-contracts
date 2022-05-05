@@ -48,12 +48,7 @@ contract KnightingRoundTest is BaseFixture {
         wbtc.approve(address(knightingRound), wbtc.balanceOf(shrimp));
 
         vm.expectEmit(true, true, true, true);
-        emit Sale(
-            shrimp,
-            0,
-            1e8,
-            tokenOutAmountExpected
-        );
+        emit Sale(shrimp, 0, 1e8, tokenOutAmountExpected);
         uint256 tokenOutAmount = knightingRound.buy(1e8, 0, emptyProof);
         comparator.snapCurr();
 
@@ -106,12 +101,7 @@ contract KnightingRoundTest is BaseFixture {
 
         vm.startPrank(shrimp);
         vm.expectEmit(true, true, true, true);
-        emit Sale(
-            shrimp,
-            0,
-            1e8,
-            newTokenAmountOutExpected
-        );
+        emit Sale(shrimp, 0, 1e8, newTokenAmountOutExpected);
         uint256 newTokenAmountOut = knightingRound.buy(1e8, 0, emptyProof);
         vm.stopPrank();
 
@@ -164,10 +154,7 @@ contract KnightingRoundTest is BaseFixture {
         vm.startPrank(shrimp);
         comparator.snapPrev();
         vm.expectEmit(true, true, true, true);
-        emit Claim(
-            shrimp,
-            tokenOutAmount
-        );
+        emit Claim(shrimp, tokenOutAmount);
         knightingRound.claim(); // now shrimp can claim
         comparator.snapCurr();
 
@@ -331,9 +318,7 @@ contract KnightingRoundTest is BaseFixture {
         // calling with correct role
         vm.startPrank(governance);
         vm.expectEmit(true, true, true, true);
-        emit TokenOutPerTokenInUpdated(
-            25e18
-        );
+        emit TokenOutPerTokenInUpdated(25e18);
         knightingRound.setTokenOutPerTokenIn(25e18);
 
         // check if tokenOutPerTokenIn is updated
@@ -347,9 +332,7 @@ contract KnightingRoundTest is BaseFixture {
 
         // tests for setSaleRecipient
         vm.expectEmit(true, true, true, true);
-        emit SaleRecipientUpdated(
-            address(2)
-        );
+        emit SaleRecipientUpdated(address(2));
         knightingRound.setSaleRecipient(address(2));
         assertEq(knightingRound.saleRecipient(), address(2)); // check if SaleRecipient is set
 

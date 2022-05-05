@@ -53,12 +53,7 @@ contract MintingTest is BaseFixture {
         citadelMinter.setCitadelDistributionSplit(5000, 2000, 2000, 500);
 
         vm.expectEmit(true, false, false, true);
-        emit CitadelDistributionSplitSet(
-            5000,
-            2500,
-            1000,
-            1500
-        );
+        emit CitadelDistributionSplitSet(5000, 2500, 1000, 1500);
         citadelMinter.setCitadelDistributionSplit(5000, 2500, 1000, 1500);
         // check if distribution split is set.
         assertEq(citadelMinter.fundingBps(), 5000);
@@ -125,7 +120,12 @@ contract MintingTest is BaseFixture {
             address(fundingWbtc)
         );
 
-        uint256 mintedAmount = mintAndDistribute(_fundingWeight, 10000 - _fundingWeight, 0, 0);
+        uint256 mintedAmount = mintAndDistribute(
+            _fundingWeight,
+            10000 - _fundingWeight,
+            0,
+            0
+        );
 
         uint256 fundingCvxPoolBalanceAfter = citadel.balanceOf(
             address(fundingCvx)
@@ -171,7 +171,12 @@ contract MintingTest is BaseFixture {
 
         // Again minting
 
-        mintedAmount = mintAndDistribute(_fundingWeight, 10000 - _fundingWeight, 0, 0);
+        mintedAmount = mintAndDistribute(
+            _fundingWeight,
+            10000 - _fundingWeight,
+            0,
+            0
+        );
 
         fundingCvxPoolBalanceAfter = citadel.balanceOf(address(fundingCvx));
         fundingWbtcPoolBalanceAfter = citadel.balanceOf(address(fundingWbtc));
@@ -253,7 +258,12 @@ contract MintingTest is BaseFixture {
         info.stakingBalanceBefore = citadel.balanceOf(address(xCitadel));
         info.daoBalanceBefore = citadel.balanceOf(address(treasuryVault));
 
-        uint256 mintedAmount = mintAndDistribute(_bps_A, _bps_B, _bps_C, _bps_D);
+        uint256 mintedAmount = mintAndDistribute(
+            _bps_A,
+            _bps_B,
+            _bps_C,
+            _bps_D
+        );
 
         info.fundingCvxPoolBalanceAfter = citadel.balanceOf(
             address(fundingCvx)
@@ -292,14 +302,16 @@ contract MintingTest is BaseFixture {
         uint256 daoBps
     ) public returns (uint256) {
         vm.warp(block.timestamp + 1000);
-        uint256 expectedMint = schedule.getMintable(citadelMinter.lastMintTimestamp());
+        uint256 expectedMint = schedule.getMintable(
+            citadelMinter.lastMintTimestamp()
+        );
         vm.startPrank(policyOps);
         vm.expectEmit(true, true, true, true);
         emit CitadelDistribution(
-            (expectedMint * fundingBps)/(10000),
-            (expectedMint * stakingBps)/(10000),
-            (expectedMint * lockingBps)/(10000),
-            (expectedMint * daoBps)/(10000)
+            (expectedMint * fundingBps) / (10000),
+            (expectedMint * stakingBps) / (10000),
+            (expectedMint * lockingBps) / (10000),
+            (expectedMint * daoBps) / (10000)
         );
         citadelMinter.mintAndDistribute();
         vm.stopPrank();
@@ -318,33 +330,33 @@ contract MintingTest is BaseFixture {
         if (weight > 10000) {
             vm.expectRevert("exceed max funding pool weight");
             citadelMinter.setFundingPoolWeight(fundingPool, weight);
-        }
-        else {
+        } else {
             // If removing
-            if (citadelMinter.fundingPoolWeights(fundingPool) > 0 && weight == 0) {
+            if (
+                citadelMinter.fundingPoolWeights(fundingPool) > 0 && weight == 0
+            ) {
                 vm.expectEmit(true, true, true, true);
                 emit FundingPoolWeightSet(
                     fundingPool,
                     weight,
-                    citadelMinter.totalFundingPoolWeight() - citadelMinter.fundingPoolWeights(fundingPool)
+                    citadelMinter.totalFundingPoolWeight() -
+                        citadelMinter.fundingPoolWeights(fundingPool)
                 );
                 citadelMinter.setFundingPoolWeight(fundingPool, weight);
                 assertEq(citadelMinter.fundingPoolWeights(fundingPool), weight);
-            // if adding with a weight higher than 0
+                // if adding with a weight higher than 0
             } else if (weight > 0) {
                 vm.expectEmit(true, true, true, true);
                 emit FundingPoolWeightSet(
                     fundingPool,
                     weight,
-                    (
-                        citadelMinter.totalFundingPoolWeight() +
+                    (citadelMinter.totalFundingPoolWeight() +
                         weight -
-                        citadelMinter.fundingPoolWeights(fundingPool)
-                    )
+                        citadelMinter.fundingPoolWeights(fundingPool))
                 );
                 citadelMinter.setFundingPoolWeight(fundingPool, weight);
                 assertEq(citadelMinter.fundingPoolWeights(fundingPool), weight);
-            // If weight is zero, nothing changes
+                // If weight is zero, nothing changes
             } else {
                 citadelMinter.setFundingPoolWeight(fundingPool, weight);
                 assertEq(citadelMinter.fundingPoolWeights(fundingPool), 0);

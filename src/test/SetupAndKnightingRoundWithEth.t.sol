@@ -52,12 +52,7 @@ contract KnightingRoundWithEthTest is BaseFixture {
         weth.approve(address(knightingRoundWithEth), type(uint256).max);
 
         vm.expectEmit(true, true, true, true);
-        emit Sale(
-            shrimp,
-            0,
-            1e18,
-            tokenOutAmountExpected
-        );
+        emit Sale(shrimp, 0, 1e18, tokenOutAmountExpected);
         uint256 tokenOutAmount = knightingRoundWithEth.buyEth{value: 1e18}(
             0,
             emptyProof
@@ -117,12 +112,7 @@ contract KnightingRoundWithEthTest is BaseFixture {
 
         vm.startPrank(shrimp);
         vm.expectEmit(true, true, true, true);
-        emit Sale(
-            shrimp,
-            0,
-            1e18,
-            newTokenAmountOutExpected
-        );
+        emit Sale(shrimp, 0, 1e18, newTokenAmountOutExpected);
         uint256 newTokenAmountOut = knightingRoundWithEth.buyEth{value: 1e18}(
             0,
             emptyProof
@@ -188,10 +178,7 @@ contract KnightingRoundWithEthTest is BaseFixture {
         vm.startPrank(shrimp);
         comparator.snapPrev();
         vm.expectEmit(true, true, true, true);
-        emit Claim(
-            shrimp,
-            tokenOutAmount
-        );
+        emit Claim(shrimp, tokenOutAmount);
         knightingRoundWithEth.claim(); // now shrimp can claim
         comparator.snapCurr();
 
@@ -379,9 +366,7 @@ contract KnightingRoundWithEthTest is BaseFixture {
         // calling with correct role
         vm.startPrank(governance);
         vm.expectEmit(true, true, true, true);
-        emit TokenOutPerTokenInUpdated(
-            25e18
-        );
+        emit TokenOutPerTokenInUpdated(25e18);
         knightingRoundWithEth.setTokenOutPerTokenIn(25e18);
 
         // check if tokenOutPerTokenIn is updated
@@ -395,9 +380,7 @@ contract KnightingRoundWithEthTest is BaseFixture {
 
         // tests for setSaleRecipient
         vm.expectEmit(true, true, true, true);
-        emit SaleRecipientUpdated(
-            address(2)
-        );
+        emit SaleRecipientUpdated(address(2));
         knightingRoundWithEth.setSaleRecipient(address(2));
         assertEq(knightingRoundWithEth.saleRecipient(), address(2)); // check if SaleRecipient is set
 
