@@ -110,8 +110,8 @@ contract KnightingRoundTest is BaseFixture {
     }
 
     function testMultipleKnightingRoundContract() public{
-        KnightingRound knightingRound1 = new KnightingRound();
-        KnightingRound knightingRound2 = new KnightingRound();
+        KnightingRound knightingRound1 = new KnightingRound(); // wbtc
+        KnightingRound knightingRound2 = new KnightingRound(); // cvx
         knightingRound1.initialize(
             address(gac),
             address(citadel),
@@ -436,10 +436,10 @@ contract KnightingRoundTest is BaseFixture {
         uint daoCommitment = _knightingRound.daoCommitments(_daoID);
         vm.startPrank(_buyer);
         _tokenIn.approve(address(_knightingRound), _tokenIn.balanceOf(_buyer));
-        uint tokenOutAmount = _knightingRound.buy(_amountIn, _daoID, emptyProof); // whale is voting for different dao
+        uint tokenOutAmount = _knightingRound.buy(_amountIn, _daoID, emptyProof); 
         assertEq(_knightingRound.totalTokenIn(), totelTokenIn + _amountIn); // totelTokenIn should increment
-        assertEq(_knightingRound.daoVotedFor(_buyer), _daoID); // daoVotedFor should be 1
-        assertEq(_knightingRound.daoCommitments(_daoID), daoCommitment+tokenOutAmount);
+        assertEq(_knightingRound.daoVotedFor(_buyer), _daoID); // daoVotedFor should be _daoID
+        assertEq(_knightingRound.daoCommitments(_daoID), daoCommitment+tokenOutAmount); // daoCommitment should increment
         vm.stopPrank();
     }
 }
