@@ -9,10 +9,10 @@ contract LockingTest is BaseFixture {
         BaseFixture.setUp();
     }
 
-    function testUnlockAndReward() public{
+    function testUnlockAndReward() public {
         address user = address(1);
 
-        uint xCitadelLocked = lockAmount();
+        uint256 xCitadelLocked = lockAmount();
 
         mintAndDistribute();
 
@@ -24,31 +24,44 @@ contract LockingTest is BaseFixture {
         vm.expectRevert("no exp locks");
         xCitadelLocker.withdrawExpiredLocksTo(user); // withdraw
 
-        uint xCitadelUserBalanceBefore = xCitadel.balanceOf(user);
-        uint wbtcUserBalanceBefore = wbtc.balanceOf(user);
+        uint256 xCitadelUserBalanceBefore = xCitadel.balanceOf(user);
+        uint256 wbtcUserBalanceBefore = wbtc.balanceOf(user);
         vm.warp(block.timestamp + 148 days); // lock period = 147 days + 1 day(rewards_duration cause 1st time lock)
 
         xCitadelLocker.getReward(user); // user collects rewards
 
-        uint xCitadelUserBalanceAfter = xCitadel.balanceOf(user);
+        uint256 xCitadelUserBalanceAfter = xCitadel.balanceOf(user);
 
-        uint wbtcUserBalanceAfter = wbtc.balanceOf(user);
+        uint256 wbtcUserBalanceAfter = wbtc.balanceOf(user);
 
-        emit log_named_uint("reward per token xCitadel", xCitadelLocker.rewardPerToken(address(xCitadel)));
-        emit log_named_uint("reward per token wbtc", xCitadelLocker.rewardPerToken(wbtc_address));
+        emit log_named_uint(
+            "reward per token xCitadel",
+            xCitadelLocker.rewardPerToken(address(xCitadel))
+        );
+        emit log_named_uint(
+            "reward per token wbtc",
+            xCitadelLocker.rewardPerToken(wbtc_address)
+        );
 
         // the awards received from minting process
-        emit log_named_uint("Reward received xCitadel", xCitadelUserBalanceAfter - xCitadelUserBalanceBefore);
+        emit log_named_uint(
+            "Reward received xCitadel",
+            xCitadelUserBalanceAfter - xCitadelUserBalanceBefore
+        );
         // the awards received from treasury funds
-        emit log_named_uint("Reward received Wbtc", wbtcUserBalanceAfter - wbtcUserBalanceBefore);
+        emit log_named_uint(
+            "Reward received Wbtc",
+            wbtcUserBalanceAfter - wbtcUserBalanceBefore
+        );
 
         assertTrue(xCitadelUserBalanceAfter - xCitadelUserBalanceBefore > 0);
-        assertTrue(wbtcUserBalanceAfter-wbtcUserBalanceBefore > 0);
+        assertTrue(wbtcUserBalanceAfter - wbtcUserBalanceBefore > 0);
 
         xCitadelUserBalanceBefore = xCitadel.balanceOf(user);
         xCitadelLocker.withdrawExpiredLocksTo(user); // withdraw
         xCitadelUserBalanceAfter = xCitadel.balanceOf(user);
-        uint xCitadelUnlocked = xCitadelUserBalanceAfter - xCitadelUserBalanceBefore;
+        uint256 xCitadelUnlocked = xCitadelUserBalanceAfter -
+            xCitadelUserBalanceBefore;
 
         // user gets unlocked amount
         assertEq(xCitadelUnlocked, xCitadelLocked);
@@ -67,17 +80,18 @@ contract LockingTest is BaseFixture {
         vm.stopPrank();
     }
 
-    function testRelocking() public{
+    function testRelocking() public {
         address user = address(1);
 
-        uint xCitadelLocked = lockAmount();
+        uint256 xCitadelLocked = lockAmount();
         vm.warp(block.timestamp + 148 days); // lock period = 147 days + 1 day(rewards_duration cause 1st time lock)
 
         vm.startPrank(user);
-        uint xCitadelUserBalanceBefore = xCitadel.balanceOf(user);
+        uint256 xCitadelUserBalanceBefore = xCitadel.balanceOf(user);
         xCitadelLocker.processExpiredLocks(true); // relock
-        uint xCitadelUserBalanceAfter = xCitadel.balanceOf(user);
-        uint xCitadelUnlocked = xCitadelUserBalanceAfter - xCitadelUserBalanceBefore;
+        uint256 xCitadelUserBalanceAfter = xCitadel.balanceOf(user);
+        uint256 xCitadelUnlocked = xCitadelUserBalanceAfter -
+            xCitadelUserBalanceBefore;
 
         assertEq(xCitadelUnlocked, 0); // user relocked xCitadel
 
@@ -96,10 +110,10 @@ contract LockingTest is BaseFixture {
         vm.stopPrank();
     }
 
-    function testKickRewards() public{
+    function testKickRewards() public {
         address user = address(1);
 
-        uint xCitadelLocked = lockAmount();
+        uint256 xCitadelLocked = lockAmount();
 
         mintAndDistribute();
 
@@ -113,22 +127,24 @@ contract LockingTest is BaseFixture {
 
         // move forward atleast 4 days cause kickRewardEpochDelay = 4
         vm.warp(block.timestamp + 6 days);
-        uint denominator = 10000;
-        uint kickRewardPerEpoch = 100;
-        uint epochsover = 2;
-        uint rRate = kickRewardPerEpoch*(epochsover + 1);
+        uint256 denominator = 10000;
+        uint256 kickRewardPerEpoch = 100;
+        uint256 epochsover = 2;
+        uint256 rRate = kickRewardPerEpoch * (epochsover + 1);
 
-        uint reward = uint256(10e18)*(rRate)/(denominator);
+        uint256 reward = (uint256(10e18) * (rRate)) / (denominator);
 
-        uint xCitadelUser2BalanceBefore = xCitadel.balanceOf(user2);
-        uint xCitadelUserBalanceBefore = xCitadel.balanceOf(user);
+        uint256 xCitadelUser2BalanceBefore = xCitadel.balanceOf(user2);
+        uint256 xCitadelUserBalanceBefore = xCitadel.balanceOf(user);
 
         xCitadelLocker.kickExpiredLocks(user); // kick expired locks
-        uint xCitadelUser2BalanceAfter = xCitadel.balanceOf(user2);
-        uint xCitadelUserBalanceAfter = xCitadel.balanceOf(user);
+        uint256 xCitadelUser2BalanceAfter = xCitadel.balanceOf(user2);
+        uint256 xCitadelUserBalanceAfter = xCitadel.balanceOf(user);
 
-        uint user2ReceivedAward = xCitadelUser2BalanceAfter - xCitadelUser2BalanceBefore;
-        uint unlockedAmount = xCitadelUserBalanceAfter - xCitadelUserBalanceBefore;
+        uint256 user2ReceivedAward = xCitadelUser2BalanceAfter -
+            xCitadelUser2BalanceBefore;
+        uint256 unlockedAmount = xCitadelUserBalanceAfter -
+            xCitadelUserBalanceBefore;
 
         assertEq(user2ReceivedAward + unlockedAmount, xCitadelLocked);
         assertEq(user2ReceivedAward, reward);
