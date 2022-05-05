@@ -6,6 +6,8 @@ import {SupplySchedule} from "../SupplySchedule.sol";
 import {GlobalAccessControl} from "../GlobalAccessControl.sol";
 
 contract MintAndDistributeTest is BaseFixture {
+    uint256 constant MAX_BPS = 10000;
+
     function setUp() public override {
         BaseFixture.setUp();
     }
@@ -18,7 +20,7 @@ contract MintAndDistributeTest is BaseFixture {
                 - we could set a max frequency by governance when we move to permissionless here
             - minted amount should match from epoch data
             - should handle the case at the border of two epochs gracefully
-            - if there is an undefined epoch, it should fail until that epoch is defined. 
+            - if there is an undefined epoch, it should fail until that epoch is defined.
                 -  after this is corrected, it should mint as expected from last mint as if that data had been there.
             - the assets should end up in the proper places in the expected proprotions
                 - xCitadel balance and ppfs going up
@@ -29,20 +31,26 @@ contract MintAndDistributeTest is BaseFixture {
             There unfortunately is the daily manual step of the initial mint destination propotions, we can automate this via contract with some work and oracles.
         */
 
-        assertTrue(address(citadelMinter.supplySchedule()) == address(schedule));
+        assertTrue(
+            address(citadelMinter.supplySchedule()) == address(schedule)
+        );
 
-        uint fundingBps = 3500;
-        uint stakingBps = 3000;
-        uint lockingBps = 2000;
-        uint daoBps = 1500;
-        uint MAX_BPS = 10000;
+        uint256 fundingBps = 3500;
+        uint256 stakingBps = 3000;
+        uint256 lockingBps = 2000;
+        uint256 daoBps = 1500;
 
-        uint wbtcFundingPoolWeight = 8000;
-        uint cvxFundingPoolWeight = 2000;
-        uint expectedTotalPoolWeight = 10000;
+        uint256 wbtcFundingPoolWeight = 8000;
+        uint256 cvxFundingPoolWeight = 2000;
+        uint256 expectedTotalPoolWeight = 10000;
 
         vm.startPrank(policyOps);
-        citadelMinter.setCitadelDistributionSplit(fundingBps, stakingBps, lockingBps, daoBps);
+        citadelMinter.setCitadelDistributionSplit(
+            fundingBps,
+            stakingBps,
+            lockingBps,
+            daoBps
+        );
         // confirm only policy ops can call
         // bps between three positions must add up to 10000 (100%)
 
@@ -50,7 +58,7 @@ contract MintAndDistributeTest is BaseFixture {
         assertTrue(schedule.globalStartTimestamp() == 0);
         vm.expectRevert("SupplySchedule: minting not started");
         citadelMinter.mintAndDistribute();
-        
+
         // policy ops should not be able to start minting schedule
         vm.expectRevert("GAC: invalid-caller-role");
         schedule.setMintingStart(block.timestamp);
@@ -69,7 +77,9 @@ contract MintAndDistributeTest is BaseFixture {
         assertTrue(schedule.globalStartTimestamp() == block.timestamp);
 
         // Attempt to initializeLastMintTimestamp with after already initializing lastMintTimestamp
-        vm.expectRevert("CitadelMinter: last mint timestamp already initialized");
+        vm.expectRevert(
+            "CitadelMinter: last mint timestamp already initialized"
+        );
         citadelMinter.initializeLastMintTimestamp();
 
         vm.stopPrank();
@@ -84,43 +94,77 @@ contract MintAndDistributeTest is BaseFixture {
         vm.expectRevert("CitadelMinter: no funding pools");
         citadelMinter.mintAndDistribute();
 
-        citadelMinter.setFundingPoolWeight(address(fundingWbtc), wbtcFundingPoolWeight);
-        citadelMinter.setFundingPoolWeight(address(fundingCvx), cvxFundingPoolWeight);
+        citadelMinter.setFundingPoolWeight(
+            address(fundingWbtc),
+            wbtcFundingPoolWeight
+        );
+        citadelMinter.setFundingPoolWeight(
+            address(fundingCvx),
+            cvxFundingPoolWeight
+        );
 
-        uint xCitadelBalanceBefore = xCitadel.balance();
+        uint256 xCitadelBalanceBefore = xCitadel.balance();
         comparator.snapPrev();
-        uint expectedMint = schedule.getMintable(citadelMinter.lastMintTimestamp());
+        uint256 expectedMint = schedule.getMintable(
+            citadelMinter.lastMintTimestamp()
+        );
 
         citadelMinter.mintAndDistribute();
 
         comparator.snapCurr();
 
         // funding pools should recieve based on funding bps and pool weights
-        uint expectedToFunding = expectedMint * fundingBps / MAX_BPS;
+        uint256 expectedToFunding = (expectedMint * fundingBps) / MAX_BPS;
 
-        uint totalPoolWeight = citadelMinter.totalFundingPoolWeight();
+        uint256 totalPoolWeight = citadelMinter.totalFundingPoolWeight();
         assertTrue(totalPoolWeight == expectedTotalPoolWeight);
 
-        uint expectedToWbtcFunding = expectedToFunding * wbtcFundingPoolWeight / totalPoolWeight;
-        assertEq(comparator.diff("citadel.balanceOf(fundingWbtc)"), expectedToWbtcFunding);
+        uint256 expectedToWbtcFunding = (expectedToFunding *
+            wbtcFundingPoolWeight) / totalPoolWeight;
+        assertEq(
+            comparator.diff("citadel.balanceOf(fundingWbtc)"),
+            expectedToWbtcFunding
+        );
 
-        uint expectedToCvxFunding = expectedToFunding * cvxFundingPoolWeight / totalPoolWeight;
-        assertEq(comparator.diff("citadel.balanceOf(fundingCvx)"), expectedToCvxFunding);
+        uint256 expectedToCvxFunding = (expectedToFunding *
+            cvxFundingPoolWeight) / totalPoolWeight;
+        assertEq(
+            comparator.diff("citadel.balanceOf(fundingCvx)"),
+            expectedToCvxFunding
+        );
 
         // staking ppfs should increase based on staking bps
-        uint expectedToStakers = expectedMint * stakingBps / MAX_BPS;
+        uint256 expectedToStakers = (expectedMint * stakingBps) / MAX_BPS;
 
-        emit log_named_uint("xCitadel ppfs before", comparator.prev("xCitadel.getPricePerFullShare()"));
-        emit log_named_uint("xCitadel ppfs after", comparator.curr("xCitadel.getPricePerFullShare()"));
-        emit log_named_uint("change in xCitadel ppfs", comparator.diff("xCitadel.getPricePerFullShare()"));
+        emit log_named_uint(
+            "xCitadel ppfs before",
+            comparator.prev("xCitadel.getPricePerFullShare()")
+        );
+        emit log_named_uint(
+            "xCitadel ppfs after",
+            comparator.curr("xCitadel.getPricePerFullShare()")
+        );
+        emit log_named_uint(
+            "change in xCitadel ppfs",
+            comparator.diff("xCitadel.getPricePerFullShare()")
+        );
 
-        emit log_named_uint("xCitadel total supply before", comparator.prev("xCitadel.totalSupply()"));
-        emit log_named_uint("xCitadel total supply after", comparator.curr("xCitadel.totalSupply()"));
-        emit log_named_uint("xCitadel change in supply", comparator.diff("xCitadel.totalSupply()"));
+        emit log_named_uint(
+            "xCitadel total supply before",
+            comparator.prev("xCitadel.totalSupply()")
+        );
+        emit log_named_uint(
+            "xCitadel total supply after",
+            comparator.curr("xCitadel.totalSupply()")
+        );
+        emit log_named_uint(
+            "xCitadel change in supply",
+            comparator.diff("xCitadel.totalSupply()")
+        );
 
         // locking reward schedule should modulate based on locking bps
-        uint expectedToLockers = expectedMint * lockingBps / MAX_BPS;
-        uint xCitadelBalanceAfter = xCitadel.balance();
+        uint256 expectedToLockers = (expectedMint * lockingBps) / MAX_BPS;
+        uint256 xCitadelBalanceAfter = xCitadel.balance();
 
         // total supply should increase as the amount is deposited to locker
         assertEq(comparator.diff("xCitadel.totalSupply()"), expectedToLockers);
@@ -128,12 +172,22 @@ contract MintAndDistributeTest is BaseFixture {
         // the difference of total supply and balance should be expectedToStakers
         // expectedToStakers is directly transferred not deposited, which increases balance of citadel but does not affect totalSupply
         // which causes ppfs increase
-        assertEq(xCitadelBalanceAfter - comparator.curr("xCitadel.totalSupply()"), expectedToStakers);
-        assertEq(comparator.diff("xCitadel.getPricePerFullShare()"), (expectedToStakers * 1e18)/comparator.curr("xCitadel.totalSupply()"));
-        
-        // expectedToStakers and expectedToLockers both go to xCitadel so 
+        assertEq(
+            xCitadelBalanceAfter - comparator.curr("xCitadel.totalSupply()"),
+            expectedToStakers
+        );
+        assertEq(
+            comparator.diff("xCitadel.getPricePerFullShare()"),
+            (expectedToStakers * 1e18) /
+                comparator.curr("xCitadel.totalSupply()")
+        );
+
+        // expectedToStakers and expectedToLockers both go to xCitadel so
         // the difference in balance should be equal to sum of both amounts
-        assertEq(xCitadelBalanceAfter - xCitadelBalanceBefore,expectedToStakers + expectedToLockers);
+        assertEq(
+            xCitadelBalanceAfter - xCitadelBalanceBefore,
+            expectedToStakers + expectedToLockers
+        );
         vm.stopPrank();
     }
 }

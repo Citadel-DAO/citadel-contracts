@@ -17,22 +17,23 @@ contract SupplyScheduleTest is BaseFixture {
 
         vm.startPrank(governance);
 
-        vm.expectRevert("SupplySchedule: minting must start at or after current time");
-        schedule.setMintingStart(block.timestamp-10);
+        vm.expectRevert(
+            "SupplySchedule: minting must start at or after current time"
+        );
+        schedule.setMintingStart(block.timestamp - 10);
 
-        uint timestamp = block.timestamp + 1000 ; 
+        uint256 timestamp = block.timestamp + 1000;
         schedule.setMintingStart(timestamp);
-        assertEq(schedule.globalStartTimestamp() , timestamp); // check if globalStartTimeStamp is set.
+        assertEq(schedule.globalStartTimestamp(), timestamp); // check if globalStartTimeStamp is set.
 
         vm.expectRevert("SupplySchedule: minting already started");
         schedule.setMintingStart(block.timestamp + 1000);
         vm.stopPrank();
-
     }
 
-    function testSetEpochRate() public{
+    function testSetEpochRate() public {
         uint256 epochLength = schedule.epochLength();
-        uint256 epochRate = 514986000000000000000000 / epochLength ;
+        uint256 epochRate = 514986000000000000000000 / epochLength;
         vm.prank(address(1));
         vm.expectRevert("GAC: invalid-caller-role");
         schedule.setEpochRate(0, epochRate);
@@ -44,13 +45,12 @@ contract SupplyScheduleTest is BaseFixture {
         schedule.setEpochRate(0, epochRate);
 
         schedule.setEpochRate(7, epochRate);
-        assertEq(schedule.epochRate(7) , epochRate); // check if epochRate is set
+        assertEq(schedule.epochRate(7), epochRate); // check if epochRate is set
 
         vm.stopPrank();
-
     }
 
-    function testGetMintable() public{
+    function testGetMintable() public {
         uint256 epochLength = schedule.epochLength();
 
         vm.startPrank(governance);
@@ -58,29 +58,37 @@ contract SupplyScheduleTest is BaseFixture {
         citadelMinter.initializeLastMintTimestamp();
         vm.stopPrank();
 
-        vm.warp(block.timestamp + 1*epochLength); // 1 epoch passed
+        vm.warp(block.timestamp + 1 * epochLength); // 1 epoch passed
 
-        uint expectedMintable = schedule.epochRate(0)*epochLength ;
+        uint256 expectedMintable = schedule.epochRate(0) * epochLength;
 
-        uint mintable = schedule.getMintable(citadelMinter.lastMintTimestamp());
+        uint256 mintable = schedule.getMintable(
+            citadelMinter.lastMintTimestamp()
+        );
 
-        assertEq(expectedMintable , mintable);
+        assertEq(expectedMintable, mintable);
 
-        vm.warp(block.timestamp + 2*epochLength); // 2 more epoch passed 
+        vm.warp(block.timestamp + 2 * epochLength); // 2 more epoch passed
 
-        expectedMintable += schedule.epochRate(1)*epochLength +  schedule.epochRate(2)*epochLength ;
-        mintable = schedule.getMintable(citadelMinter.lastMintTimestamp());
-
-        assertEq(expectedMintable , mintable);
-
-        vm.warp(block.timestamp + epochLength + 1000) ;// 1 more epoch and some time passed
-        expectedMintable += schedule.epochRate(3)*epochLength +  schedule.epochRate(4)*1000 ;
-
+        expectedMintable +=
+            schedule.epochRate(1) *
+            epochLength +
+            schedule.epochRate(2) *
+            epochLength;
         mintable = schedule.getMintable(citadelMinter.lastMintTimestamp());
 
         assertEq(expectedMintable, mintable);
 
+        vm.warp(block.timestamp + epochLength + 1000); // 1 more epoch and some time passed
+        expectedMintable +=
+            schedule.epochRate(3) *
+            epochLength +
+            schedule.epochRate(4) *
+            1000;
 
+        mintable = schedule.getMintable(citadelMinter.lastMintTimestamp());
+
+        assertEq(expectedMintable, mintable);
     }
 
     function testExampleEpochRates() public {
