@@ -145,10 +145,10 @@ contract FundingOraclesTest is BaseFixture {
 
         vm.startPrank(keeper);
         medianOracleWbtc.pushReport(1000);
-        // TODO: For some reason, the revert string is not being thrown and the trace is wrong. 
+        // TODO: For some reason, the revert string is not being thrown and the trace is wrong.
         //       Maybe a bug in forge?
-        vm.expectRevert();
         skip(1 days + 1);
+        vm.expectRevert();
         fundingWbtc.updateCitadelPerAsset();
         vm.stopPrank();
     }
