@@ -35,6 +35,7 @@ contract GlobalAccessControl is
         keccak256("TREASURY_OPERATIONS_ROLE");
 
     bytes32 public constant KEEPER_ROLE = keccak256("KEEPER_ROLE");
+    bytes32 public constant HIGHSEC_KEEPER_ROLE = keccak256("HIGHSEC_KEEPER_ROLE");
 
     bytes32 public constant PAUSER_ROLE = keccak256("PAUSER_ROLE");
     bytes32 public constant UNPAUSER_ROLE = keccak256("UNPAUSER_ROLE");
@@ -73,6 +74,7 @@ contract GlobalAccessControl is
         _setRoleAdmin(POLICY_OPERATIONS_ROLE, CONTRACT_GOVERNANCE_ROLE);
         _setRoleAdmin(TREASURY_OPERATIONS_ROLE, CONTRACT_GOVERNANCE_ROLE);
         _setRoleAdmin(KEEPER_ROLE, CONTRACT_GOVERNANCE_ROLE);
+        _setRoleAdmin(HIGHSEC_KEEPER_ROLE, CONTRACT_GOVERNANCE_ROLE);
         _setRoleAdmin(PAUSER_ROLE, CONTRACT_GOVERNANCE_ROLE);
         _setRoleAdmin(UNPAUSER_ROLE, CONTRACT_GOVERNANCE_ROLE);
         _setRoleAdmin(BLOCKLIST_MANAGER_ROLE, CONTRACT_GOVERNANCE_ROLE);

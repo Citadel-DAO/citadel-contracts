@@ -115,10 +115,12 @@ contract GlobalAccessControlTest is BaseFixture {
         vm.prank(guardian);
         citadelMinter.pause();
 
-        vm.startPrank(policyOps);
+        vm.startPrank(highsecKeeper);
         vm.expectRevert("local-paused");
         citadelMinter.mintAndDistribute();
+        vm.stopPrank();
 
+        vm.startPrank(policyOps);
         vm.expectRevert("local-paused");
         citadelMinter.setFundingPoolWeight(address(fundingCvx), 6000);
 
@@ -135,10 +137,12 @@ contract GlobalAccessControlTest is BaseFixture {
         vm.prank(guardian);
         gac.pause();
 
-        vm.startPrank(policyOps);
+        vm.startPrank(highsecKeeper);
         vm.expectRevert("global-paused");
         citadelMinter.mintAndDistribute();
+        vm.stopPrank();
 
+        vm.startPrank(policyOps);
         vm.expectRevert("global-paused");
         citadelMinter.setFundingPoolWeight(address(fundingCvx), 6000);
 

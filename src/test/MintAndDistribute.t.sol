@@ -53,10 +53,11 @@ contract MintAndDistributeTest is BaseFixture {
         );
         // confirm only policy ops can call
         // bps between three positions must add up to 10000 (100%)
-
+        vm.stopPrank();
         // can't mint before start
         assertTrue(schedule.globalStartTimestamp() == 0);
         vm.expectRevert("SupplySchedule: minting not started");
+        vm.startPrank(highsecKeeper);
         citadelMinter.mintAndDistribute();
 
         // policy ops should not be able to start minting schedule
@@ -83,7 +84,7 @@ contract MintAndDistributeTest is BaseFixture {
         citadelMinter.initializeLastMintTimestamp();
 
         vm.stopPrank();
-        vm.startPrank(policyOps);
+        vm.startPrank(highsecKeeper);
 
         vm.expectRevert("SupplySchedule: already minted up to current block");
         citadelMinter.mintAndDistribute();
@@ -93,6 +94,9 @@ contract MintAndDistributeTest is BaseFixture {
         // can't mint without funding pools setup
         vm.expectRevert("CitadelMinter: no funding pools");
         citadelMinter.mintAndDistribute();
+        vm.stopPrank();
+
+        vm.startPrank(policyOps);
 
         citadelMinter.setFundingPoolWeight(
             address(fundingWbtc),
@@ -109,6 +113,8 @@ contract MintAndDistributeTest is BaseFixture {
             citadelMinter.lastMintTimestamp()
         );
 
+        vm.stopPrank();
+        vm.startPrank(highsecKeeper);
         citadelMinter.mintAndDistribute();
 
         comparator.snapCurr();

@@ -162,7 +162,7 @@ contract StakingTest is BaseFixture {
 
         vm.warp(block.timestamp + 2000);
 
-        vm.prank(policyOps);
+        vm.prank(highsecKeeper);
         citadelMinter.mintAndDistribute(); // minting again
 
         uint256 expectedClaimableAmount1 = (xCitadel.balance() *
@@ -248,7 +248,7 @@ contract StakingTest is BaseFixture {
         uint256 xCitadelTotalSupplyBefore = xCitadel.totalSupply();
         uint256 citadelBeforeInXcitadel = xCitadel.balance();
 
-        vm.prank(policyOps);
+        vm.prank(highsecKeeper);
         citadelMinter.mintAndDistribute();
 
         uint256 expectedToStakers = (expectedMint * 6000) / 10000;

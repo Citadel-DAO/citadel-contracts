@@ -263,7 +263,7 @@ contract MintingTest is BaseFixture {
         uint256 expectedMint = schedule.getMintable(
             citadelMinter.lastMintTimestamp()
         );
-        vm.prank(policyOps);
+        vm.prank(highsecKeeper);
         citadelMinter.mintAndDistribute();
 
         return expectedMint;
