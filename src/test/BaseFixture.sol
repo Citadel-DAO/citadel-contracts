@@ -51,7 +51,8 @@ contract BaseFixture is DSTest, Utils, stdCheats {
     bytes32 public constant PAUSER_ROLE = keccak256("PAUSER_ROLE");
     bytes32 public constant UNPAUSER_ROLE = keccak256("UNPAUSER_ROLE");
     bytes32 public constant KEEPER_ROLE = keccak256("KEEPER_ROLE");
-    bytes32 public constant HIGHSEC_KEEPER_ROLE = keccak256("HIGHSEC_KEEPER_ROLE");
+    bytes32 public constant HIGHSEC_KEEPER_ROLE = 
+        keccak256("HIGHSEC_KEEPER_ROLE");
 
     bytes32 public constant BLOCKLIST_MANAGER_ROLE =
         keccak256("BLOCKLIST_MANAGER_ROLE");
