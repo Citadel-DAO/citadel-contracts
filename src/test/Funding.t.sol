@@ -13,6 +13,12 @@ import {IMedianOracle} from "../interfaces/citadel/IMedianOracle.sol";
 contract FundingTest is BaseFixture {
     using FixedPointMathLib for uint256;
 
+    event Deposit(
+        address indexed buyer,
+        uint256 assetIn,
+        uint256 citadelOutValue
+    );
+
     function setUp() public override {
         BaseFixture.setUp();
     }
@@ -346,8 +352,14 @@ contract FundingTest is BaseFixture {
         // attempts to deposit the extremely small amounts that would trigger this behavior.
         if (citadelAmountOutExpected == 0) {
             vm.expectRevert("Amount 0");
+        } else {
+            vm.expectEmit(true, true, true, true);
+            emit Deposit(
+                shrimp,
+                _assetAmountIn,
+                citadelAmountOutExpected
+            );
         }
-
         uint256 citadelAmountOut = fundingContract.deposit(_assetAmountIn, 0);
 
         // If revert with "Amount 0", end the test
@@ -442,7 +454,12 @@ contract FundingTest is BaseFixture {
 
         comparator.snapPrev();
         cvx.approve(address(fundingContract), cvx.balanceOf(whale));
-
+        vm.expectEmit(true, true, true, true);
+        emit Deposit(
+            whale,
+            assetIn,
+            citadelAmountOutExpected
+        );
         uint256 citadelAmountOut = fundingContract.deposit(assetIn, 0);
         comparator.snapCurr();
 
