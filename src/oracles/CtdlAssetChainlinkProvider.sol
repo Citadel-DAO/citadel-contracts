@@ -5,7 +5,7 @@ import {ICurveCryptoSwap} from "../interfaces/curve/ICurveCryptoSwap.sol";
 import {IMedianOracle} from "../interfaces/citadel/IMedianOracle.sol";
 import {IAggregatorV3Interface} from "../interfaces/chainlink/IAggregatorV3Interface.sol";
 
-contract CtdlCvxProvider {
+contract CtdlAssetChainlinkProvider {
     /// =================
     /// ===== State =====
     /// =================
@@ -15,8 +15,8 @@ contract CtdlCvxProvider {
 
     // Price feeds
     IAggregatorV3Interface public immutable wbtcBtcPriceFeed;
-    IAggregatorV3Interface public immutable btcUsdPriceFeed;
-    IAggregatorV3Interface public immutable cvxUsdPriceFeed;
+    IAggregatorV3Interface public immutable btcBasePriceFeed;
+    IAggregatorV3Interface public immutable assetBasePriceFeed;
 
     /// =====================
     /// ===== Constants =====
@@ -32,16 +32,16 @@ contract CtdlCvxProvider {
         address _medianOracle,
         address _ctdlWbtcCurvePool,
         address _wbtcBtcPriceFeed,
-        address _btcUsdPriceFeed,
-        address _cvxUsdPriceFeed
+        address _btcBasePriceFeed,
+        address _assetBasePriceFeed
     ) {
         medianOracle = IMedianOracle(_medianOracle);
 
         ctdlWbtcCurvePool = ICurveCryptoSwap(_ctdlWbtcCurvePool);
 
         wbtcBtcPriceFeed = IAggregatorV3Interface(_wbtcBtcPriceFeed);
-        btcUsdPriceFeed = IAggregatorV3Interface(_btcUsdPriceFeed);
-        cvxUsdPriceFeed = IAggregatorV3Interface(_cvxUsdPriceFeed);
+        btcBasePriceFeed = IAggregatorV3Interface(_btcBasePriceFeed);
+        assetBasePriceFeed = IAggregatorV3Interface(_assetBasePriceFeed);
     }
 
     /// =======================
@@ -52,23 +52,23 @@ contract CtdlCvxProvider {
         return 18;
     }
 
-    function latestAnswer() public view returns (uint256 cvxPriceInCtdl_) {
+    function latestAnswer() public view returns (uint256 assetPriceInCtdl_) {
         uint256 wbtcPriceInBtc = safeLatestAnswer(wbtcBtcPriceFeed);
-        uint256 btcPriceInUsd = safeLatestAnswer(btcUsdPriceFeed);
-        uint256 cvxPriceInUsd = safeLatestAnswer(cvxUsdPriceFeed);
+        uint256 btcPriceInBase = safeLatestAnswer(btcBasePriceFeed);
+        uint256 assetPriceInBase = safeLatestAnswer(assetBasePriceFeed);
 
         // (10^8) * (10^8) * (10^18) * (10^18) = (10^52) + price value - Shouldn't overflow
-        uint256 wbtcPriceInCvx = (uint256(wbtcPriceInBtc) *
-            uint256(btcPriceInUsd) *
-            (10**cvxUsdPriceFeed.decimals()) *
+        uint256 wbtcPriceInAsset = (uint256(wbtcPriceInBtc) *
+            uint256(btcPriceInBase) *
+            (10**assetBasePriceFeed.decimals()) *
             PRECISION) /
-            uint256(cvxPriceInUsd) /
+            uint256(assetPriceInBase) /
             (10**wbtcBtcPriceFeed.decimals()) /
-            (10**btcUsdPriceFeed.decimals());
+            (10**btcBasePriceFeed.decimals());
         // 18 decimals
         uint256 wbtcPriceInCtdl = ctdlWbtcCurvePool.price_oracle();
 
-        cvxPriceInCtdl_ = (wbtcPriceInCtdl * PRECISION) / wbtcPriceInCvx;
+        assetPriceInCtdl_ = (wbtcPriceInCtdl * PRECISION) / wbtcPriceInAsset;
     }
 
     /// ==========================
@@ -78,13 +78,23 @@ contract CtdlCvxProvider {
     function pushReport() external {
         medianOracle.pushReport(latestAnswer());
     }
-    
+
     /// =========================
     /// ===== Internal view =====
     /// =========================
 
-    function safeLatestAnswer(IAggregatorV3Interface _priceFeed) internal view returns (uint256 answer_) {
-        (uint256 roundId, int256 price, , uint256 updateTime, uint256 answeredInRound) = _priceFeed.latestRoundData();
+    function safeLatestAnswer(IAggregatorV3Interface _priceFeed)
+        internal
+        view
+        returns (uint256 answer_)
+    {
+        (
+            uint256 roundId,
+            int256 price,
+            ,
+            uint256 updateTime,
+            uint256 answeredInRound
+        ) = _priceFeed.latestRoundData();
 
         require(price > 0, "Chainlink price <= 0");
         require(updateTime != 0, "Incomplete round");
