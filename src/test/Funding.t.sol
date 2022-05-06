@@ -354,11 +354,7 @@ contract FundingTest is BaseFixture {
             vm.expectRevert("Amount 0");
         } else {
             vm.expectEmit(true, true, true, true);
-            emit Deposit(
-                shrimp,
-                _assetAmountIn,
-                citadelAmountOutExpected
-            );
+            emit Deposit(shrimp, _assetAmountIn, citadelAmountOutExpected);
         }
         uint256 citadelAmountOut = fundingContract.deposit(_assetAmountIn, 0);
 
@@ -455,11 +451,7 @@ contract FundingTest is BaseFixture {
         comparator.snapPrev();
         cvx.approve(address(fundingContract), cvx.balanceOf(whale));
         vm.expectEmit(true, true, true, true);
-        emit Deposit(
-            whale,
-            assetIn,
-            citadelAmountOutExpected
-        );
+        emit Deposit(whale, assetIn, citadelAmountOutExpected);
         uint256 citadelAmountOut = fundingContract.deposit(assetIn, 0);
         comparator.snapCurr();
 
