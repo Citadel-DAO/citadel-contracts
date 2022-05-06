@@ -82,7 +82,11 @@ contract StakedCitadelVester is
      * @param recipient The account to transfer unlocked tokens to.
      * @param amount The amount to transfer. If greater than the claimable amount, the maximum is transferred.
      */
-    function claim(address recipient, uint256 amount) external gacPausable nonReentrant {
+    function claim(address recipient, uint256 amount)
+        external
+        gacPausable
+        nonReentrant
+    {
         require(amount > 0, "StakedCitadelVester: cannot claim 0");
 
         uint256 claimable = claimableBalance(msg.sender);

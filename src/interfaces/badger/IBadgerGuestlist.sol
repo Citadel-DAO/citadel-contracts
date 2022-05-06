@@ -1,10 +1,10 @@
 // SPDX-License-Identifier: MIT
-pragma solidity >= 0.5.0 <= 0.9.0;
+pragma solidity >=0.5.0 <=0.9.0;
 
 interface IBadgerGuestlist {
     function authorized(
         address guest,
-        uint amount,
+        uint256 amount,
         bytes32[] calldata merkleProof
     ) external view returns (bool);
 

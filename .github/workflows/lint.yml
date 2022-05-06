@@ -1,6 +1,10 @@
 name: Linter
 
-on: [push, pull_request]
+on:
+  pull_request:
+  workflow_dispatch:
+  push:
+    branches: [main]
 
 jobs:
   check:
@@ -19,7 +23,8 @@ jobs:
       - name: Install Dependencies
         run: npm install
 
-      - name: Run linter/formatter check
+      - name: Run prettier check
+        run: npm run prettier:solidity:check
+
+      - name: Run linter check
         run: npm run solhint
-
-
