@@ -57,15 +57,21 @@ contract KnightingRoundTest is BaseFixture {
         // tokenInLimit = 100e8 so transaction should revert
         vm.expectRevert("total amount exceeded");
         knightingRound.buy(100e8, 0, emptyProof);
-        assertEq(knightingRound.totalTokenIn(),1e8); // totelTokenIn should be same
+        assertEq(knightingRound.totalTokenIn(), 1e8); // totelTokenIn should be same
         assertEq(knightingRound.daoCommitments(0), tokenOutAmount); // daoCommitments should be same
 
         // buying again
 
         uint256 tokenOutAmount2 = knightingRound.buy(1e8, 0, emptyProof);
         assertEq(knightingRound.totalTokenIn(), 2e8); // should increment
-        assertEq(knightingRound.totalTokenOutBought(), tokenOutAmount + tokenOutAmount2);
-        assertEq(knightingRound.daoCommitments(0), tokenOutAmount + tokenOutAmount2); // should increment
+        assertEq(
+            knightingRound.totalTokenOutBought(),
+            tokenOutAmount + tokenOutAmount2
+        );
+        assertEq(
+            knightingRound.daoCommitments(0),
+            tokenOutAmount + tokenOutAmount2
+        ); // should increment
 
         // giving a different doa ID
         vm.expectRevert("can't vote for multiple daos");
@@ -73,18 +79,23 @@ contract KnightingRoundTest is BaseFixture {
         assertEq(knightingRound.totalTokenIn(), 2e8); // totelTokenIn should be same
         assertEq(knightingRound.daoVotedFor(shrimp), 0); // daoVotedFor should be same
         assertEq(knightingRound.daoCommitments(1), 0); // should be zero
-        assertEq(knightingRound.daoCommitments(0), tokenOutAmount + tokenOutAmount2); // should be same
+        assertEq(
+            knightingRound.daoCommitments(0),
+            tokenOutAmount + tokenOutAmount2
+        ); // should be same
 
         vm.stopPrank();
 
-
         vm.startPrank(whale);
         wbtc.approve(address(knightingRound), wbtc.balanceOf(whale));
-        uint tokenOutAmountWhale = knightingRound.buy(1e8, 1, emptyProof); // whale is voting for different dao
-        assertEq(knightingRound.totalTokenIn(),3e8); // totelTokenIn should increment
+        uint256 tokenOutAmountWhale = knightingRound.buy(1e8, 1, emptyProof); // whale is voting for different dao
+        assertEq(knightingRound.totalTokenIn(), 3e8); // totelTokenIn should increment
         assertEq(knightingRound.daoVotedFor(whale), 1); // daoVotedFor should be 1
         assertEq(knightingRound.daoCommitments(1), tokenOutAmountWhale); // should be tokenOutAmountWhale
-        assertEq(knightingRound.daoCommitments(0), tokenOutAmount + tokenOutAmount2); // should be same
+        assertEq(
+            knightingRound.daoCommitments(0),
+            tokenOutAmount + tokenOutAmount2
+        ); // should be same
         vm.stopPrank();
 
         // changing the token out price in mid sale
@@ -109,7 +120,7 @@ contract KnightingRoundTest is BaseFixture {
         vm.stopPrank();
     }
 
-    function testMultipleKnightingRoundContract() public{
+    function testMultipleKnightingRoundContract() public {
         KnightingRound knightingRound1 = new KnightingRound(); // wbtc
         KnightingRound knightingRound2 = new KnightingRound(); // cvx
         knightingRound1.initialize(
@@ -140,13 +151,13 @@ contract KnightingRoundTest is BaseFixture {
         // Move to knighting round start
         vm.warp(block.timestamp + 100);
 
-        buy(knightingRound1, wbtc, shark, 0 , 1e8 ); // shark is voting dao 0 in 1st contract
+        buy(knightingRound1, wbtc, shark, 0, 1e8); // shark is voting dao 0 in 1st contract
         buy(knightingRound2, cvx, shark, 1, 1e18); // shark is voting dao 1 in 2nd contract
-        buy(knightingRound1, wbtc, shark , 0, 2e8); // shark  is voting dao 0 in 1st contract again
-        buy(knightingRound2, cvx, whale, 0, 2e18);  // whale is voting dao 0 in 2nd contract
-
+        buy(knightingRound1, wbtc, shark, 0, 2e8); // shark  is voting dao 0 in 1st contract again
+        buy(knightingRound2, cvx, whale, 0, 2e18); // whale is voting dao 0 in 2nd contract
     }
-    function testFinalizeAndClaim() public{
+
+    function testFinalizeAndClaim() public {
         bytes32[] memory emptyProof = new bytes32[](0);
 
         vm.warp(knightingRoundParams.start);
@@ -430,16 +441,29 @@ contract KnightingRoundTest is BaseFixture {
         assertEq(afterBalance - prevBalance, 10e8);
     }
 
-    function buy(KnightingRound _knightingRound, IERC20 _tokenIn, address _buyer, uint8 _daoID, uint _amountIn) public{
+    function buy(
+        KnightingRound _knightingRound,
+        IERC20 _tokenIn,
+        address _buyer,
+        uint8 _daoID,
+        uint256 _amountIn
+    ) public {
         bytes32[] memory emptyProof = new bytes32[](0);
-        uint totelTokenIn = _knightingRound.totalTokenIn();
-        uint daoCommitment = _knightingRound.daoCommitments(_daoID);
+        uint256 totelTokenIn = _knightingRound.totalTokenIn();
+        uint256 daoCommitment = _knightingRound.daoCommitments(_daoID);
         vm.startPrank(_buyer);
         _tokenIn.approve(address(_knightingRound), _tokenIn.balanceOf(_buyer));
-        uint tokenOutAmount = _knightingRound.buy(_amountIn, _daoID, emptyProof); 
+        uint256 tokenOutAmount = _knightingRound.buy(
+            _amountIn,
+            _daoID,
+            emptyProof
+        );
         assertEq(_knightingRound.totalTokenIn(), totelTokenIn + _amountIn); // totelTokenIn should increment
         assertEq(_knightingRound.daoVotedFor(_buyer), _daoID); // daoVotedFor should be _daoID
-        assertEq(_knightingRound.daoCommitments(_daoID), daoCommitment+tokenOutAmount); // daoCommitment should increment
+        assertEq(
+            _knightingRound.daoCommitments(_daoID),
+            daoCommitment + tokenOutAmount
+        ); // daoCommitment should increment
         vm.stopPrank();
     }
 }
