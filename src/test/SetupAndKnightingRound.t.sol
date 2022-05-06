@@ -449,7 +449,7 @@ contract KnightingRoundTest is BaseFixture {
         uint256 _amountIn
     ) public {
         bytes32[] memory emptyProof = new bytes32[](0);
-        uint256 totelTokenIn = _knightingRound.totalTokenIn();
+        uint256 totalTokenIn = _knightingRound.totalTokenIn();
         uint256 daoCommitment = _knightingRound.daoCommitments(_daoID);
         vm.startPrank(_buyer);
         _tokenIn.approve(address(_knightingRound), _tokenIn.balanceOf(_buyer));
@@ -458,7 +458,7 @@ contract KnightingRoundTest is BaseFixture {
             _daoID,
             emptyProof
         );
-        assertEq(_knightingRound.totalTokenIn(), totelTokenIn + _amountIn); // totelTokenIn should increment
+        assertEq(_knightingRound.totalTokenIn(), totalTokenIn + _amountIn); // totelTokenIn should increment
         assertEq(_knightingRound.daoVotedFor(_buyer), _daoID); // daoVotedFor should be _daoID
         assertEq(
             _knightingRound.daoCommitments(_daoID),
