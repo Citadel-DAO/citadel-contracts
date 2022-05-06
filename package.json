@@ -24,7 +24,6 @@
   "scripts": {
     "solhint": "solhint -f table 'src/**/*.sol'",
     "prettier:solidity": "prettier --write 'src/**/*.sol'",
-    "prettier:solidity:check": "prettier --check 'src/**/*.sol'",
     "prepare": "husky install",
     "gen-types": "./gen-types.sh"
   }

@@ -16,15 +16,12 @@ jobs:
           submodules: recursive
 
       - name: Use Node.js
-        uses: actions/setup-node@v2
+        uses: actions/setup-node@v3
         with:
             node-version: '16.x'
 
       - name: Install Dependencies
         run: npm install
 
-      - name: Run prettier check
-        run: npm run prettier:solidity:check
-
-      - name: Run linter check
+      - name: Run linter/formatting checks
         run: npm run solhint
