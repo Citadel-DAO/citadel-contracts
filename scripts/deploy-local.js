@@ -574,11 +574,7 @@ async function main() {
   const readyTokensListPhase1 = tokenInsPhase1.map((tk) => ({
     ...tk,
     usdPrice: tokensPrices[tk.address].usd,
-    tokenOutPrice: calcTokenoutPrice(
-      desiredPriceInUsd,
-      tokensPrices[tk.address].usd,
-      tk.decimals
-    ),
+    tokenOutPrice: ethers.BigNumber.from(20)
   }));
 
 
