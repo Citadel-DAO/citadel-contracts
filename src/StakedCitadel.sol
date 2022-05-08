@@ -291,7 +291,7 @@ contract StakedCitadel is
     /// @notice Gives the total balance of the underlying token within the sett and strategy system.
     /// @return Balance of token handled by the sett.
     function balance() public view returns (uint256) {
-        return token.balanceOf(address(this)) + IStrategy(strategy).balanceOf();
+        return token.balanceOf(address(this)); //+ IStrategy(strategy).balanceOf();
     }
 
     /// @notice Defines how much of the Setts' underlying is available for strategy to borrow.
