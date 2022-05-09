@@ -99,12 +99,12 @@ contract KnightingRoundRegistryTest is BaseFixture {
 
         KnightingRoundRegistry.RoundData
             memory wethRound = knightinRoundRegistry.getRoundData(
-                knightinRoundRegistry.knightingRoundImplementation()
+                knightinRoundRegistry.getAllRounds()[0]
             );
 
         assertEq(
             wethRound.roundAddress,
-            knightinRoundRegistry.knightingRoundImplementation()
+            knightinRoundRegistry.getAllRounds()[0]
         );
         assertEq(wethRound.tokenOut, address(citadel));
         assertEq(
@@ -125,12 +125,12 @@ contract KnightingRoundRegistryTest is BaseFixture {
 
         KnightingRoundRegistry.RoundData memory ethRound = knightinRoundRegistry
             .getRoundData(
-                knightinRoundRegistry.knightingRoundWithEthImplementation()
+                knightinRoundRegistry.getAllRounds()[3]
             );
 
         assertEq(
             ethRound.roundAddress,
-            knightinRoundRegistry.knightingRoundWithEthImplementation()
+            knightinRoundRegistry.getAllRounds()[3]
         );
         assertEq(ethRound.tokenOut, address(citadel));
         assertEq(
