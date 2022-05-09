@@ -1,6 +1,7 @@
 const hre = require("hardhat");
 const ethers = hre.ethers;
 const getContractFactories = require("./utils/getContractFactories");
+const deployContracts = require("./utils/deployContracts");
 
 const wbtc_address = "0x2260fac5e5542a773aa44fbcfedf7c193bc2c599";
 const cvx_address = "0x4e3fbd56cd56c3e72c1403e103b45db9da5b9d2b";
@@ -30,41 +31,32 @@ async function main() {
   } = await getContractFactories();
 
   /// === Deploying Contracts & loggin addresses
-  const gac = await GlobalAccessControl.deploy();
-  console.log("global access control address is: ", gac.address);
 
-  const citadel = await CitadelToken.deploy();
-  console.log("citadel address is: ", citadel.address);
-
-  const xCitadel = await StakedCitadel.deploy();
-  console.log("xCitadel address is: ", xCitadel.address);
-
-  const xCitadelVester = await StakedCitadelVester.deploy();
-  console.log("xCitadelVester address is: ", xCitadelVester.address);
-
-  const xCitadelLocker = await StakedCitadelLocker.deploy();
-  console.log("xCitadelLocker address is: ", xCitadelLocker.address);
-
-  const schedule = await SupplySchedule.deploy();
-  console.log("schedule address is: ", schedule.address);
-
-  const citadelMinter = await CitadelMinter.deploy();
-  console.log("citadelMinter address is: ", citadelMinter.address);
-
-  const knightingRound = await KnightingRound.deploy();
-  console.log("knightingRound address is: ", knightingRound.address);
-
-  const knightingRoundGuestlist = await KnightingRoundGuestlist.deploy();
-  console.log(
-    "knightingRoundGuestlist address is: ",
-    knightingRoundGuestlist.address
-  );
-
-  const fundingWbtc = await Funding.deploy();
-  console.log("fundingWbtc address is: ", knightingRound.address);
-
-  const fundingCvx = await Funding.deploy();
-  console.log("fundingCvx address is: ", knightingRound.address);
+  const {
+    gac,
+    citadel,
+    xCitadel,
+    xCitadelVester,
+    xCitadelLocker,
+    schedule,
+    citadelMinter,
+    knightingRound,
+    knightingRoundGuestlist,
+    fundingWbtc,
+    fundingCvx,
+  } = await deployContracts([
+    { factory: GlobalAccessControl, instance: "gac" },
+    { factory: CitadelToken, instance: "citadel" },
+    { factory: StakedCitadel, instance: "xCitadel" },
+    { factory: StakedCitadelVester, instance: "xCitadelVester" },
+    { factory: StakedCitadelLocker, instance: "xCitadelLocker" },
+    { factory: SupplySchedule, instance: "schedule" },
+    { factory: CitadelMinter, instance: "citadelMinter" },
+    { factory: KnightingRound, instance: "knightingRound" },
+    { factory: KnightingRoundGuestlist, instance: "knightingRoundGuestlist" },
+    { factory: Funding, instance: "fundingWbtc" },
+    { factory: Funding, instance: "fundingCvx" },
+  ]);
 
   const wbtc = ERC20Upgradeable.attach(wbtc_address); //
   const cvx = ERC20Upgradeable.attach(cvx_address); //

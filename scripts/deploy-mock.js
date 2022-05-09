@@ -1,6 +1,7 @@
 const fs = require("fs");
 const path = require("path");
 const getContractFactories = require("./utils/getContractFactories");
+const deployContracts = require("./utils/deployContracts");
 
 const hre = require("hardhat");
 
@@ -27,8 +28,6 @@ async function main() {
     CitadelMinter,
     KnightingRound,
     Funding,
-    ERC20Upgradeable,
-    KnightingRoundGuestlist,
     wBTC,
     CVX,
     USDC,
@@ -36,45 +35,40 @@ async function main() {
 
   const mintTo = signers[0].address;
 
-  const wbtc = await wBTC.deploy(); //
-  await wbtc.mint(mintTo, ethers.BigNumber.from("100000000"));
-
-  const cvx = await CVX.deploy(); //
-  await cvx.mint(mintTo, ethers.constants.WeiPerEther);
-
-  const usdc = await USDC.deploy(); //
-  await usdc.mint(mintTo, ethers.BigNumber.from("100000000000"));
-
   /// === Deploying Contracts & loggin addresses
-  const gac = await GlobalAccessControl.deploy();
-  console.log("global access control address is: ", gac.address);
+  const {
+    gac,
+    citadel,
+    xCitadel,
+    xCitadelVester,
+    xCitadelLocker,
+    schedule,
+    citadelMinter,
+    knightingRound,
+    fundingWbtc,
+    fundingCvx,
+    wbtc,
+    cvx,
+    usdc,
+  } = await deployContracts([
+    { factory: GlobalAccessControl, instance: "gac" },
+    { factory: CitadelToken, instance: "citadel" },
+    { factory: StakedCitadel, instance: "xCitadel" },
+    { factory: StakedCitadelVester, instance: "xCitadelVester" },
+    { factory: StakedCitadelLocker, instance: "xCitadelLocker" },
+    { factory: SupplySchedule, instance: "schedule" },
+    { factory: CitadelMinter, instance: "citadelMinter" },
+    { factory: KnightingRound, instance: "knightingRound" },
+    { factory: Funding, instance: "fundingWbtc" },
+    { factory: Funding, instance: "fundingCvx" },
+    { factory: wBTC, instance: "wbtc" },
+    { factory: CVX, instance: "cvx" },
+    { factory: USDC, instance: "usdc" },
+  ]);
 
-  const citadel = await CitadelToken.deploy();
-  console.log("citadel address is: ", citadel.address);
-
-  const xCitadel = await StakedCitadel.deploy();
-  console.log("xCitadel address is: ", xCitadel.address);
-
-  const xCitadelVester = await StakedCitadelVester.deploy();
-  console.log("xCitadelVester address is: ", xCitadelVester.address);
-
-  const xCitadelLocker = await StakedCitadelLocker.deploy();
-  console.log("xCitadelLocker address is: ", xCitadelLocker.address);
-
-  const schedule = await SupplySchedule.deploy();
-  console.log("schedule address is: ", schedule.address);
-
-  const citadelMinter = await CitadelMinter.deploy();
-  console.log("citadelMinter address is: ", citadelMinter.address);
-
-  const knightingRound = await KnightingRound.deploy();
-  console.log("knightingRound address is: ", knightingRound.address);
-
-  const fundingWbtc = await Funding.deploy();
-  console.log("fundingWbtc address is: ", wbtc.address);
-
-  const fundingCvx = await Funding.deploy();
-  console.log("fundingCvx address is: ", cvx.address);
+  await wbtc.mint(mintTo, ethers.BigNumber.from("100000000"));
+  await cvx.mint(mintTo, ethers.constants.WeiPerEther);
+  await usdc.mint(mintTo, ethers.BigNumber.from("100000000000"));
 
   /// === Variable Setup
   const governance = signers[12];
