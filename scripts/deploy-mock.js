@@ -8,6 +8,7 @@ const getRoleSigners = require("./utils/getRoleSingers");
 const { address, hashIt } = require("./utils/helpers");
 const grantRoles = require("./utils/grantRoles");
 const initializer = require("./actions/initializer");
+const storeConfigs = require("./utils/storeConfigs");
 
 async function main() {
   const signers = await ethers.getSigners();
@@ -28,8 +29,6 @@ async function main() {
     CVX,
     USDC,
   } = await getContractFactories();
-
-  const mintTo = signers[0].address;
 
   /// === Deploying Contracts & loggin addresses
   const {
@@ -62,6 +61,8 @@ async function main() {
     { factory: USDC, instance: "usdc" },
   ]);
 
+  const mintTo = signers[0].address;
+
   await wbtc.mint(mintTo, ethers.BigNumber.from("100000000"));
   await cvx.mint(mintTo, ethers.constants.WeiPerEther);
   await usdc.mint(mintTo, ethers.BigNumber.from("100000000000"));
@@ -93,7 +94,7 @@ async function main() {
     citadelMinter,
     schedule,
     fundingWbtc,
-    fundingCvx
+    fundingCvx,
   })({
     governance,
     xCitadelFees,
@@ -104,32 +105,8 @@ async function main() {
     citadelTree,
     wbtc,
     cvx,
-    eoaOracle
+    eoaOracle,
   });
-
-  /// ========  Knighting Round
-  //const knightingRoundParams = {
-  //  start: new Date(new Date().getTime() + 10 * 1000),
-  //  duration: 7 * 24 * 3600 * 1000,
-  //  citadelWbtcPrice: ethers.utils.parseUnits("21", 18), // 21 CTDL per wBTC
-  //  wbtcLimit: ethers.utils.parseUnits("100", 8), // 100 wBTC
-  //};
-
-  // TODO: need to deploy a guest list contract, address 0 won't run
-  // await knightingRound.connect(governance).initialize(
-  //   address(gac),
-  //   address(citadel),
-  //   address(wbtc),
-  //   knightingRoundParams.start,
-  //   knightingRoundParams.duration,
-  //   knightingRoundParams.citadelWbtcPrice,
-  //   address(governance),
-  //   address(0), // TODO: Add guest list and test with it
-  //   knightingRoundParams.wbtcLimit
-  // );
-
-  /// ========  Funding
- 
 
   /// ======== Grant roles
 
@@ -138,14 +115,10 @@ async function main() {
   /// =================================== ///
   // Storing the contract addresses for accessing in helper scripts
 
-  const scriptsDirectory = path.join(__dirname, "..", "scripts-data");
-  if (!fs.existsSync(scriptsDirectory)) {
-    fs.mkdirSync(scriptsDirectory);
-  }
-  fs.unlinkSync(path.join(scriptsDirectory, "testnet-addresses.json"));
-  fs.writeFileSync(
-    path.join(scriptsDirectory, "testnet-addresses.json"),
-    JSON.stringify({
+  storeConfigs(
+    path.join(__dirname, "..", "scripts-data"),
+    "testnet-addresses",
+    {
       gac: address(gac),
       citadel: address(citadel),
       xCitadel: address(xCitadel),
@@ -156,12 +129,6 @@ async function main() {
       knightingRound: address(knightingRound),
       wbtc: address(wbtc),
       cvx: address(cvx),
-    }),
-    (err) => {
-      if (err) {
-        console.error(err);
-        return;
-      }
     }
   );
 }
