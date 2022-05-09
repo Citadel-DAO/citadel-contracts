@@ -34,21 +34,21 @@ contract KnightingRoundRegistryTest is BaseFixture {
             knightinRoundRegistry.knightingRoundWithEthImplementation()
         );
 
-        KnightingRoundRegistry.initParam
-            memory wethParams = KnightingRoundRegistry.initParam(
+        KnightingRoundRegistry.InitParam
+            memory wethParams = KnightingRoundRegistry.InitParam(
                 address(0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2),
                 10e12,
                 500 * 10e8
             );
 
-        KnightingRoundRegistry.initParam[]
-            memory roundParams = new KnightingRoundRegistry.initParam[](2);
-        roundParams[0] = KnightingRoundRegistry.initParam(
+        KnightingRoundRegistry.InitParam[]
+            memory roundParams = new KnightingRoundRegistry.InitParam[](2);
+        roundParams[0] = KnightingRoundRegistry.InitParam(
             address(0x2260FAC5E5542a773Aa44fBCfeDf7C193bc2C599),
             10e12,
             500 * 10e8
         );
-        roundParams[1] = KnightingRoundRegistry.initParam(
+        roundParams[1] = KnightingRoundRegistry.InitParam(
             address(0xEB4C2781e4ebA804CE9a9803C67d0893436bB27D),
             10e12,
             500 * 10e6
