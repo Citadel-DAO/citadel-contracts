@@ -7,6 +7,16 @@ import {GlobalAccessControl} from "../GlobalAccessControl.sol";
 import "../interfaces/badger/IBadgerVipGuestlist.sol";
 
 contract KnightingRoundTest is BaseFixture {
+    event Sale(
+        address indexed buyer,
+        uint8 indexed daoId,
+        uint256 amountIn,
+        uint256 amountOut
+    );
+    event Claim(address indexed claimer, uint256 amount);
+    event TokenOutPerTokenInUpdated(uint256 tokenOutPerTokenIn);
+    event SaleRecipientUpdated(address indexed recipient);
+
     function setUp() public override {
         BaseFixture.setUp();
     }
@@ -32,37 +42,51 @@ contract KnightingRoundTest is BaseFixture {
 
         comparator.snapPrev();
 
-        uint256 tokenOutAmountExpected =
-            (1e8 * knightingRound.tokenOutPerTokenIn()) /
+        uint256 tokenOutAmountExpected = (1e8 *
+            knightingRound.tokenOutPerTokenIn()) /
             knightingRound.tokenInNormalizationValue();
         wbtc.approve(address(knightingRound), wbtc.balanceOf(shrimp));
 
+        vm.expectEmit(true, true, true, true);
+        emit Sale(shrimp, 0, 1e8, tokenOutAmountExpected);
         uint256 tokenOutAmount = knightingRound.buy(1e8, 0, emptyProof);
         comparator.snapCurr();
 
-        assertEq(knightingRound.totalTokenIn(),1e8); // totalTokenIn should be equal to deposit
+        assertEq(knightingRound.totalTokenIn(), 1e8); // totalTokenIn should be equal to deposit
         assertEq(tokenOutAmount, tokenOutAmountExpected); // transferred amount should be equal to expected
         assertEq(knightingRound.totalTokenOutBought(), tokenOutAmount);
         assertEq(knightingRound.daoVotedFor(shrimp), 0); // daoVotedFor should be set
 
         assertEq(comparator.negDiff("wbtc.balanceOf(shrimp)"), 1e8);
-        assertEq(comparator.diff("knightingRound.boughtAmounts(shrimp)"), 21e18);
+        assertEq(
+            comparator.diff("knightingRound.boughtAmounts(shrimp)"),
+            21e18
+        );
 
         // tokenInLimit = 100e8 so transaction should revert
         vm.expectRevert("total amount exceeded");
         knightingRound.buy(100e8, 0, emptyProof);
-        assertEq(knightingRound.totalTokenIn(),1e8); // totelTokenIn should be same
+        assertEq(knightingRound.totalTokenIn(), 1e8); // totelTokenIn should be same
 
         // buying again
-
+        vm.expectEmit(true, true, true, true);
+        emit Sale(
+            shrimp,
+            0,
+            1e8,
+            tokenOutAmountExpected // Same amount out since price is unmodified
+        );
         uint256 tokenOutAmount2 = knightingRound.buy(1e8, 0, emptyProof);
         assertEq(knightingRound.totalTokenIn(), 2e8); // should increment
-        assertEq(knightingRound.totalTokenOutBought(), tokenOutAmount + tokenOutAmount2);
+        assertEq(
+            knightingRound.totalTokenOutBought(),
+            tokenOutAmount + tokenOutAmount2
+        );
 
         // giving a different doa ID
         vm.expectRevert("can't vote for multiple daos");
         knightingRound.buy(10e8, 1, emptyProof);
-        assertEq(knightingRound.totalTokenIn(),2e8); // totelTokenIn should be same
+        assertEq(knightingRound.totalTokenIn(), 2e8); // totelTokenIn should be same
         assertEq(knightingRound.daoVotedFor(shrimp), 0); // daoVotedFor should be same
 
         vm.stopPrank();
@@ -72,11 +96,14 @@ contract KnightingRoundTest is BaseFixture {
         knightingRound.setTokenOutPerTokenIn(25e18);
         assertEq(knightingRound.tokenOutPerTokenIn(), 25e18);
 
-        vm.prank(shrimp);
-        uint256 newTokenAmountOut = knightingRound.buy(1e8, 0, emptyProof);
-
         // 21e18 is old price and 25e18 is new price
-        uint256 newTokenAmountOutExpected = (tokenOutAmount * 25e18)/21e18;
+        uint256 newTokenAmountOutExpected = (tokenOutAmount * 25e18) / 21e18;
+
+        vm.startPrank(shrimp);
+        vm.expectEmit(true, true, true, true);
+        emit Sale(shrimp, 0, 1e8, newTokenAmountOutExpected);
+        uint256 newTokenAmountOut = knightingRound.buy(1e8, 0, emptyProof);
+        vm.stopPrank();
 
         assertEq(newTokenAmountOut, newTokenAmountOutExpected);
         // Knighting round concludes...
@@ -89,7 +116,7 @@ contract KnightingRoundTest is BaseFixture {
         vm.stopPrank();
     }
 
-    function testFinalizeAndClaim() public{
+    function testFinalizeAndClaim() public {
         bytes32[] memory emptyProof = new bytes32[](0);
 
         vm.warp(knightingRoundParams.start);
@@ -124,10 +151,11 @@ contract KnightingRoundTest is BaseFixture {
         knightingRound.finalize(); // round finalized
         vm.stopPrank();
 
-
         vm.startPrank(shrimp);
         comparator.snapPrev();
-        knightingRound.claim();   // now shrimp can claim
+        vm.expectEmit(true, true, true, true);
+        emit Claim(shrimp, tokenOutAmount);
+        knightingRound.claim(); // now shrimp can claim
         comparator.snapCurr();
 
         assertEq(comparator.diff("citadel.balanceOf(shrimp)"), tokenOutAmount);
@@ -146,8 +174,7 @@ contract KnightingRoundTest is BaseFixture {
         knightingRound.claim();
     }
 
-    function testSetSaleStart() public{
-
+    function testSetSaleStart() public {
         // tests for setStartSale function
 
         uint256 startTime = block.timestamp + 200;
@@ -174,7 +201,7 @@ contract KnightingRoundTest is BaseFixture {
         assertEq(knightingRound.saleStart(), startTime);
 
         // move forward to end the sale
-        vm.warp(knightingRound.saleStart()+knightingRoundParams.duration);
+        vm.warp(knightingRound.saleStart() + knightingRoundParams.duration);
 
         knightingRound.finalize();
 
@@ -185,7 +212,7 @@ contract KnightingRoundTest is BaseFixture {
         vm.stopPrank();
     }
 
-    function testSetSaleDuration() public{
+    function testSetSaleDuration() public {
         // tests for setSaleDuration function
         vm.prank(address(1));
         vm.expectRevert("GAC: invalid-caller-role");
@@ -231,13 +258,16 @@ contract KnightingRoundTest is BaseFixture {
         vm.stopPrank();
     }
 
-    function testSetTokenInLimit() public{
+    function testSetTokenInLimit() public {
         vm.prank(address(1));
         vm.expectRevert("GAC: invalid-caller-role");
         knightingRound.setTokenInLimit(25e8);
 
         // check if it is same as set in BaseFixture
-        assertEq(knightingRound.tokenInLimit(), knightingRoundParams.tokenInLimit);
+        assertEq(
+            knightingRound.tokenInLimit(),
+            knightingRoundParams.tokenInLimit
+        );
 
         // calling with correct role
         vm.startPrank(techOps);
@@ -273,17 +303,22 @@ contract KnightingRoundTest is BaseFixture {
         knightingRound.setTokenInLimit(20e18);
     }
 
-    function testBasicSetFunctions() public{
+    function testBasicSetFunctions() public {
         // tests for setTokenOutPerTokenIn
         vm.prank(address(1));
         vm.expectRevert("GAC: invalid-caller-role");
         knightingRound.setTokenOutPerTokenIn(25e18);
 
         // check if it is same as set in BaseFixture
-        assertEq(knightingRound.tokenOutPerTokenIn(), knightingRoundParams.citadelWbtcPrice);
+        assertEq(
+            knightingRound.tokenOutPerTokenIn(),
+            knightingRoundParams.citadelWbtcPrice
+        );
 
         // calling with correct role
         vm.startPrank(governance);
+        vm.expectEmit(true, true, true, true);
+        emit TokenOutPerTokenInUpdated(25e18);
         knightingRound.setTokenOutPerTokenIn(25e18);
 
         // check if tokenOutPerTokenIn is updated
@@ -296,6 +331,8 @@ contract KnightingRoundTest is BaseFixture {
         assertEq(knightingRound.tokenOutPerTokenIn(), 25e18);
 
         // tests for setSaleRecipient
+        vm.expectEmit(true, true, true, true);
+        emit SaleRecipientUpdated(address(2));
         knightingRound.setSaleRecipient(address(2));
         assertEq(knightingRound.saleRecipient(), address(2)); // check if SaleRecipient is set
 
@@ -318,10 +355,9 @@ contract KnightingRoundTest is BaseFixture {
         knightingRound.setGuestlist(address(3));
 
         assertEq(address(knightingRound.guestlist()), address(3));
-
     }
 
-    function testSweep() public{
+    function testSweep() public {
         vm.expectRevert("GAC: invalid-caller-role");
         knightingRound.sweep(address(citadel));
 

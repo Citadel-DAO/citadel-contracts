@@ -23,11 +23,15 @@ contract FundingOraclesTest is BaseFixture {
     /// =====================
 
     // TODO: Currenlty set to BADGER/WBTC Curve v2 pool. Replace with CTDL/WBTC pool.
-    address constant CTDL_WBTC_CURVE_POOL = 0x50f3752289e1456BfA505afd37B241bca23e685d;
+    address constant CTDL_WBTC_CURVE_POOL =
+        0x50f3752289e1456BfA505afd37B241bca23e685d;
 
-    address constant WBTC_BTC_PRICE_FEED = 0xfdFD9C85aD200c506Cf9e21F1FD8dd01932FBB23;
-    address constant BTC_USD_PRICE_FEED = 0xF4030086522a5bEEa4988F8cA5B36dbC97BeE88c;
-    address constant CVX_USD_PRICE_FEED = 0xd962fC30A72A84cE50161031391756Bf2876Af5D;
+    address constant WBTC_BTC_PRICE_FEED =
+        0xfdFD9C85aD200c506Cf9e21F1FD8dd01932FBB23;
+    address constant BTC_USD_PRICE_FEED =
+        0xF4030086522a5bEEa4988F8cA5B36dbC97BeE88c;
+    address constant CVX_USD_PRICE_FEED =
+        0xd962fC30A72A84cE50161031391756Bf2876Af5D;
 
     /// =================
     /// ===== Tests =====
