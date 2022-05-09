@@ -4,6 +4,7 @@ const ethers = hre.ethers;
 const getContractFactories = require("./utils/getContractFactories");
 const deployContracts = require("./utils/deployContracts");
 const getRoleSigners = require("./utils/getRoleSingers");
+const grantRoles = require("./utils/grantRoles");
 const { address, hashIt } = require("./utils/helpers");
 
 const { formatUnits, parseUnits } = ethers.utils;
@@ -234,36 +235,7 @@ async function main() {
 
   /// ======== Grant roles
 
-  await gac
-    .connect(governance)
-    .grantRole(hashIt("CONTRACT_GOVERNANCE_ROLE"), address(governance));
-  await gac
-    .connect(governance)
-    .grantRole(hashIt("TREASURY_GOVERNANCE_ROLE"), address(treasuryVault));
-
-  await gac
-    .connect(governance)
-    .grantRole(hashIt("TECH_OPERATIONS_ROLE"), address(techOps));
-  await gac
-    .connect(governance)
-    .grantRole(hashIt("TREASURY_OPERATIONS_ROLE"), address(treasuryOps));
-  await gac
-    .connect(governance)
-    .grantRole(hashIt("POLICY_OPERATIONS_ROLE"), address(policyOps));
-
-  await gac
-    .connect(governance)
-    .grantRole(hashIt("CITADEL_MINTER_ROLE"), address(citadelMinter));
-  await gac
-    .connect(governance)
-    .grantRole(hashIt("CITADEL_MINTER_ROLE"), address(governance));
-
-  await gac
-    .connect(governance)
-    .grantRole(hashIt("PAUSER_ROLE"), address(governance));
-  await gac
-    .connect(governance)
-    .grantRole(hashIt("UNPAUSER_ROLE"), address(techOps));
+  await grantRoles(gac, governance, getRoleSigners);
 
   console.log(`finished initialization, now making positions...`);
 

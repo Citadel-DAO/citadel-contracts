@@ -4,10 +4,10 @@ const ethers = hre.ethers;
 const getContractFactories = require("./utils/getContractFactories");
 const getRoleSigners = require("./utils/getRoleSingers");
 const { address, hashIt } = require("./utils/helpers");
+const grantRoles = require("./utils/grantRoles");
 
 const wbtc_address = "0x2260fac5e5542a773aa44fbcfedf7c193bc2c599";
 const cvx_address = "0x4e3fbd56cd56c3e72c1403e103b45db9da5b9d2b";
-
 
 async function main() {
   const signers = await ethers.getSigners();
@@ -116,7 +116,6 @@ async function main() {
   const cvx = ERC20Upgradeable.attach(cvx_address); //
 
   /// === Variable Setup
-
 
   /// === Initialization and Setup
 
@@ -245,36 +244,7 @@ async function main() {
 
   /// ======== Grant roles
   console.log("Grant roles...");
-  await gac
-    .connect(governance)
-    .grantRole(hashIt("CONTRACT_GOVERNANCE_ROLE"), address(governance));
-  await gac
-    .connect(governance)
-    .grantRole(hashIt("TREASURY_GOVERNANCE_ROLE"), address(treasuryVault));
-
-  await gac
-    .connect(governance)
-    .grantRole(hashIt("TECH_OPERATIONS_ROLE"), address(techOps));
-  await gac
-    .connect(governance)
-    .grantRole(hashIt("TREASURY_OPERATIONS_ROLE"), address(treasuryOps));
-  await gac
-    .connect(governance)
-    .grantRole(hashIt("POLICY_OPERATIONS_ROLE"), address(policyOps));
-
-  await gac
-    .connect(governance)
-    .grantRole(hashIt("CITADEL_MINTER_ROLE"), address(citadelMinter));
-  await gac
-    .connect(governance)
-    .grantRole(hashIt("CITADEL_MINTER_ROLE"), address(governance));
-
-  await gac
-    .connect(governance)
-    .grantRole(hashIt("PAUSER_ROLE"), address(governance));
-  await gac
-    .connect(governance)
-    .grantRole(hashIt("UNPAUSER_ROLE"), address(techOps));
+  await grantRoles(gac, governance, getRoleSigners);
 }
 
 main()
