@@ -9,14 +9,14 @@ import {IMedianOracle} from "../interfaces/citadel/IMedianOracle.sol";
 import {IAggregatorV3Interface} from "../interfaces/chainlink/IAggregatorV3Interface.sol";
 import {IVault} from "../interfaces/badger/IVault.sol";
 
-contract CtdlWibbtcLpProvider is ChainlinkUtils, MedianOracleProvider {
+contract CtdlWibbtcLpVaultProvider is ChainlinkUtils, MedianOracleProvider {
     /// =================
     /// ===== State =====
     /// =================
 
     ICurveCryptoSwap public immutable ctdlWbtcCurvePool;
 
-    IVault public immutable wibbtcLpSett;
+    IVault public immutable wibbtcLpVault;
     ICurvePool public immutable wibbtcCrvPool;
 
     // Price feeds
@@ -36,13 +36,13 @@ contract CtdlWibbtcLpProvider is ChainlinkUtils, MedianOracleProvider {
         address _medianOracle,
         address _ctdlWbtcCurvePool,
         address _wbtcBtcPriceFeed,
-        address _wibbtcLpSett
+        address _wibbtcLpVault
     ) MedianOracleProvider(_medianOracle) {
         ctdlWbtcCurvePool = ICurveCryptoSwap(_ctdlWbtcCurvePool);
         wbtcBtcPriceFeed = IAggregatorV3Interface(_wbtcBtcPriceFeed);
 
-        wibbtcLpSett = IVault(_wibbtcLpSett);
-        wibbtcCrvPool = ICurvePool(wibbtcLpSett.token());
+        wibbtcLpVault = IVault(_wibbtcLpVault);
+        wibbtcCrvPool = ICurvePool(wibbtcLpVault.token());
     }
 
     /// =======================
@@ -53,18 +53,19 @@ contract CtdlWibbtcLpProvider is ChainlinkUtils, MedianOracleProvider {
         public
         view
         override
-        returns (uint256 wibbtcLpPriceInCtdl_)
+        returns (uint256 wibbtcLpVaultPriceInCtdl_)
     {
         uint256 wbtcPriceInBtc = safeLatestAnswer(wbtcBtcPriceFeed);
         // TODO: Take this as btc or wbtc?
-        uint256 wibbtcLpPriceInBtc = (wibbtcLpSett.getPricePerFullShare() *
-            wibbtcCrvPool.get_virtual_price()) / PRECISION;
+        uint256 wibbtcLpVaultPriceInBtc = (wibbtcLpVault
+            .getPricePerFullShare() * wibbtcCrvPool.get_virtual_price()) /
+            PRECISION;
 
         // 18 decimals
         uint256 wbtcPriceInCtdl = ctdlWbtcCurvePool.price_oracle();
 
-        wibbtcLpPriceInCtdl_ =
-            (wibbtcLpPriceInBtc *
+        wibbtcLpVaultPriceInCtdl_ =
+            (wibbtcLpVaultPriceInBtc *
                 wbtcPriceInCtdl *
                 10**wbtcBtcPriceFeed.decimals()) /
             wbtcPriceInBtc /
