@@ -2,6 +2,7 @@ const hre = require("hardhat");
 const ethers = hre.ethers;
 const getContractFactories = require("./utils/getContractFactories");
 const deployContracts = require("./utils/deployContracts");
+const getRoleSigners = require("./utils/getRoleSingers");
 
 const wbtc_address = "0x2260fac5e5542a773aa44fbcfedf7c193bc2c599";
 const cvx_address = "0x4e3fbd56cd56c3e72c1403e103b45db9da5b9d2b";
@@ -62,22 +63,17 @@ async function main() {
   const cvx = ERC20Upgradeable.attach(cvx_address); //
 
   /// === Variable Setup
-  const governance = signers[12];
-  const keeper = signers[11];
-  const guardian = signers[13];
-  const treasuryVault = signers[14];
-  const techOps = signers[15];
-  const treasuryOps = signers[18];
-  const citadelTree = signers[16];
-  const policyOps = signers[19];
-
-  const rando = signers[17];
-
-  const whale = signers[7];
-  const shrimp = signers[8];
-  const shark = signers[9];
-
-  const eoaOracle = signers[3];
+  const {
+    governance,
+    keeper,
+    guardian,
+    treasuryVault,
+    techOps,
+    treasuryOps,
+    citadelTree,
+    policyOps,
+    eoaOracle,
+  } = await getRoleSigners();
 
   /// === Initialization and Setup
 

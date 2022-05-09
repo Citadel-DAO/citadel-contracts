@@ -2,6 +2,7 @@ const fs = require("fs");
 const path = require("path");
 const getContractFactories = require("./utils/getContractFactories");
 const deployContracts = require("./utils/deployContracts");
+const getRoleSigners = require("./utils/getRoleSingers");
 
 const hre = require("hardhat");
 
@@ -71,22 +72,18 @@ async function main() {
   await usdc.mint(mintTo, ethers.BigNumber.from("100000000000"));
 
   /// === Variable Setup
-  const governance = signers[12];
-  const keeper = signers[11];
-  const guardian = signers[13];
-  const treasuryVault = signers[14];
-  const techOps = signers[15];
-  const treasuryOps = signers[18];
-  const citadelTree = signers[16];
-  const policyOps = signers[19];
 
-  const rando = signers[17];
-
-  const whale = signers[7];
-  const shrimp = signers[8];
-  const shark = signers[9];
-
-  const eoaOracle = signers[3];
+  const {
+    governance,
+    keeper,
+    guardian,
+    treasuryVault,
+    techOps,
+    treasuryOps,
+    citadelTree,
+    policyOps,
+    eoaOracle,
+  } = await getRoleSigners();
 
   /// === Initialization and Setup
 
