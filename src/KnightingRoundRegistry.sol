@@ -3,10 +3,12 @@ pragma solidity 0.8.12;
 
 import {Initializable} from "openzeppelin-contracts-upgradeable/proxy/utils/Initializable.sol";
 import "openzeppelin-contracts/utils/structs/EnumerableSet.sol";
+import "openzeppelin-contracts/proxy/beacon/BeaconProxy.sol";
 import {Clones} from "openzeppelin-contracts/proxy/Clones.sol";
 
 import "./KnightingRound.sol";
 import "./KnightingRoundWithEth.sol";
+import "./GACUpgradableBeacon.sol";
 
 /**
 A simple registry contract that help to register different knighting round
@@ -17,6 +19,9 @@ contract KnightingRoundRegistry is Initializable {
 
     bytes32 public constant CONTRACT_GOVERNANCE_ROLE =
         keccak256("CONTRACT_GOVERNANCE_ROLE");
+
+    GACUpgradableBeacon public knightingRoundBeacon;
+    GACUpgradableBeacon public knightingRoundWithEthBeacon;
 
     address public governance;
     address public tokenOut;
@@ -29,6 +34,7 @@ contract KnightingRoundRegistry is Initializable {
     address public knightingRoundWithEthImplementation;
 
     EnumerableSet.AddressSet private knightingRounds;
+    address private knightingRoundsWithEth;
 
     struct initParam {
         address _tokenIn;
@@ -77,49 +83,64 @@ contract KnightingRoundRegistry is Initializable {
             new KnightingRoundWithEth()
         );
 
+        knightingRoundBeacon = new GACUpgradableBeacon();
+        knightingRoundWithEthBeacon = new GACUpgradableBeacon();
+
+        knightingRoundBeacon.initialize(
+            _governance,
+            knightingRoundImplementation
+        );
+
+        knightingRoundWithEthBeacon.initialize(
+            _governance,
+            knightingRoundWithEthImplementation
+        );
+
         /// for weth
-        initializeEthRounds(_wethParams);
+        initializeRound(_wethParams);
+        initializeEthRound(_wethParams);
         /// for other
         for (uint256 i = 0; i < _roundParams.length; i++) {
-            address currKnightingRound = Clones.clone(
-                knightingRoundImplementation
-            );
-            initializeRound(currKnightingRound, _roundParams[i]);
+            initializeRound(_roundParams[i]);
         }
     }
 
-    function initializeRound(
-        address _roundAddress,
-        initParam calldata _roundParams
-    ) private {
-        KnightingRound(_roundAddress).initialize(
-            governance,
-            tokenOut,
-            _roundParams._tokenIn,
-            roundStart,
-            roundDuration,
-            _roundParams._tokenOutPerTokenIn,
-            saleRecipient,
-            guestlist,
-            _roundParams._tokenInLimit
+    function initializeRound(initParam calldata _roundParams) private {
+        BeaconProxy currKnightingRound = new BeaconProxy(
+            address(knightingRoundBeacon),
+            abi.encodeWithSelector(
+                KnightingRound(address(0)).initialize.selector,
+                governance,
+                tokenOut,
+                _roundParams._tokenIn,
+                roundStart,
+                roundDuration,
+                _roundParams._tokenOutPerTokenIn,
+                saleRecipient,
+                guestlist,
+                _roundParams._tokenInLimit
+            )
         );
-        knightingRounds.add(_roundAddress);
+        knightingRounds.add(address(currKnightingRound));
     }
 
-    function initializeEthRounds(initParam calldata _roundParams) private {
-        initializeRound(knightingRoundImplementation, _roundParams);
-        KnightingRoundWithEth(knightingRoundWithEthImplementation).initialize(
-            governance,
-            tokenOut,
-            _roundParams._tokenIn,
-            roundStart,
-            roundDuration,
-            _roundParams._tokenOutPerTokenIn,
-            saleRecipient,
-            guestlist,
-            _roundParams._tokenInLimit
+    function initializeEthRound(initParam calldata _roundParams) private {
+        BeaconProxy knightinRoundWEth = new BeaconProxy(
+            address(knightingRoundWithEthBeacon),
+            abi.encodeWithSelector(
+                KnightingRoundWithEth(address(0)).initialize.selector,
+                governance,
+                tokenOut,
+                _roundParams._tokenIn,
+                roundStart,
+                roundDuration,
+                _roundParams._tokenOutPerTokenIn,
+                saleRecipient,
+                guestlist,
+                _roundParams._tokenInLimit
+            )
         );
-        knightingRounds.add(knightingRoundImplementation);
+        knightingRoundsWithEth = address(knightinRoundWEth);
     }
 
     /// getRoundData
@@ -144,7 +165,7 @@ contract KnightingRoundRegistry is Initializable {
         roundData.tokenInNormalizationValue = targetRound
             .tokenInNormalizationValue();
         roundData.guestlist = address(targetRound.guestlist());
-        if (_roundAddress == knightingRoundWithEthImplementation) {
+        if (_roundAddress == knightingRoundsWithEth) {
             roundData.isEth = true;
         } else {
             roundData.isEth = false;
@@ -161,7 +182,7 @@ contract KnightingRoundRegistry is Initializable {
         }
         knightingRoundsList[
             knightingRounds.length()
-        ] = knightingRoundWithEthImplementation;
+        ] = knightingRoundsWithEth;
         return knightingRoundsList;
     }
 
@@ -174,7 +195,7 @@ contract KnightingRoundRegistry is Initializable {
             roundsData[i] = getRoundData(knightingRounds.at(i));
         }
         roundsData[knightingRounds.length()] = getRoundData(
-            knightingRoundWithEthImplementation
+            knightingRoundsWithEth
         );
         return roundsData;
     }

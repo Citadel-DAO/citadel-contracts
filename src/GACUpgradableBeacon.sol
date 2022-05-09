@@ -23,7 +23,10 @@ contract GACUpgradableBeacon is GlobalAccessControlManaged, IBeacon {
      * @dev Sets the address of the initial implementation, and the deployer account as the owner who can upgrade the
      * beacon.
      */
-    constructor(address _globalAccessControl, address implementation_) {
+    function initialize(address _globalAccessControl, address implementation_)
+        public
+        initializer
+    {
         __GlobalAccessControlManaged_init(_globalAccessControl);
 
         _setImplementation(implementation_);
