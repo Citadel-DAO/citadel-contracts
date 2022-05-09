@@ -1,6 +1,7 @@
 const hre = require("hardhat");
 const StakedCitadelLockerArtifact = require("../artifacts-external/StakedCitadelLocker.json");
 const ethers = hre.ethers;
+const getContractFactories = require("./utils/getContractFactories");
 
 const wbtc_address = "0x2260fac5e5542a773aa44fbcfedf7c193bc2c599";
 const cvx_address = "0x4e3fbd56cd56c3e72c1403e103b45db9da5b9d2b";
@@ -16,46 +17,23 @@ async function main() {
 
   /// === Contract Factories
 
-  const GlobalAccessControl = await ethers.getContractFactory(
-    "GlobalAccessControl"
-  );
-  const TransparentUpgradeableProxy = ethers.getContractFactory("TransparentUpgradeableProxy")
-  const ProxyAdmin = ethers.getContractFactory("ProxyAdmin")
-  const proxyAdmin = await ProxyAdmin.deploy()
-  await proxyAdmin.transferOwnership(governance)
-
-  const CitadelToken = await ethers.getContractFactory("CitadelToken");
-  const StakedCitadel = await ethers.getContractFactory("StakedCitadel");
-  const StakedCitadelVester = await ethers.getContractFactory(
-    "StakedCitadelVester"
-  );
-  const StakedCitadelLocker = await ethers.getContractFactoryFromArtifact({
-    ...StakedCitadelLockerArtifact,
-    _format: "hh-sol-artifact-1",
-    contractName: "StakedCitadelLocker",
-    sourceName: "src/StakedCitadelLocker.sol",
-    linkReferences: {
-      ...StakedCitadelLockerArtifact.bytecode.linkReferences,
-      ...StakedCitadelLockerArtifact.deployedBytecode.linkReferences,
-    },
-    deployedLinkReferences: {
-      ...StakedCitadelLockerArtifact.bytecode.deployedLinkReferences,
-      ...StakedCitadelLockerArtifact.deployedBytecode.deployedLinkReferences,
-    },
-    bytecode: StakedCitadelLockerArtifact.bytecode.object,
-    deployedBytecode: StakedCitadelLockerArtifact.deployedBytecode.object,
-  });
-
-  const SupplySchedule = await ethers.getContractFactory("SupplySchedule");
-  const CitadelMinter = await ethers.getContractFactory("CitadelMinter");
-
-  const KnightingRound = await ethers.getContractFactory("KnightingRound");
-
-  const Funding = await ethers.getContractFactory("Funding");
-
-  const ERC20Upgradeable = await ethers.getContractFactory("ERC20Upgradeable");
-
-  const KnightingRoundGuestlist = await ethers.getContractFactory("KnightingRoundGuestlist");
+  const {
+    GlobalAccessControl,
+    CitadelToken,
+    StakedCitadelVester,
+    StakedCitadel,
+    StakedCitadelLocker,
+    SupplySchedule,
+    CitadelMinter,
+    KnightingRound,
+    Funding,
+    ERC20Upgradeable,
+    KnightingRoundGuestlist,
+    TransparentUpgradeableProxy,
+    ProxyAdmin,
+  } = await getContractFactories();
+  const proxyAdmin = await ProxyAdmin.deploy();
+  await proxyAdmin.transferOwnership(governance);
 
   /// === Deploying Contracts & loggin addresses
   const gac = await GlobalAccessControl.deploy();
@@ -69,59 +47,62 @@ async function main() {
 
   const xCitadelVesterLogic = await StakedCitadelVester.deploy();
   const xCitadelVester = await TransparentUpgradeableProxy.deploy(
-      xCitadelVesterLogic,
-      proxyAdmin
-  )
-  
+    xCitadelVesterLogic,
+    proxyAdmin
+  );
+
   console.log("xCitadelVester address is: ", xCitadelVester.address);
 
   const xCitadelLockerLogic = await StakedCitadelLocker.deploy();
-  const xCitadelLockerLogic = await TransparentUpgradeableProxy.deploy(
-        xCitadelLockerLogic,
-        proxyAdmin
-  )
+  const xCitadelLockerProxy = await TransparentUpgradeableProxy.deploy(
+    xCitadelLockerLogic,
+    proxyAdmin
+  );
   console.log("xCitadelLocker address is: ", xCitadelLocker.address);
 
   const scheduleLogic = await SupplySchedule.deploy();
   const schedule = await TransparentUpgradeableProxy.deploy(
-        scheduleLogic,
-        proxyAdmin
-  )
+    scheduleLogic,
+    proxyAdmin
+  );
   console.log("schedule address is: ", schedule.address);
 
   const citadelMinterLogic = await CitadelMinter.deploy();
   const citadelMinter = await TransparentUpgradeableProxy.deploy(
-        citadelMinterLogic,
-        proxyAdmin
-  )
+    citadelMinterLogic,
+    proxyAdmin
+  );
   console.log("citadelMinter address is: ", citadelMinter.address);
 
   const knightingRoundLogic = await KnightingRound.deploy();
   const knightingRound = await TransparentUpgradeableProxy.deploy(
-        knightingRoundLogic,
-        proxyAdmin
-  )
+    knightingRoundLogic,
+    proxyAdmin
+  );
   console.log("knightingRound address is: ", knightingRound.address);
 
   const knightingRoundGuestlistLogic = await KnightingRoundGuestlist.deploy();
   const knightingRoundGuestlist = await TransparentUpgradeableProxy.deploy(
-        knightingRoundGuestlistLogic,
-        proxyAdmin
-  )
-  console.log("knightingRoundGuestlist address is: ", knightingRoundGuestlist.address);
+    knightingRoundGuestlistLogic,
+    proxyAdmin
+  );
+  console.log(
+    "knightingRoundGuestlist address is: ",
+    knightingRoundGuestlist.address
+  );
 
   const fundingWbtcLogic = await Funding.deploy();
   const fundingWbtc = await TransparentUpgradeableProxy.deploy(
-        fundingWbtcLogic,
-        proxyAdmin
-  )
+    fundingWbtcLogic,
+    proxyAdmin
+  );
   console.log("fundingWbtc address is: ", knightingRound.address);
 
   const fundingCvxLogic = await Funding.deploy();
   const fundingCvx = await TransparentUpgradeableProxy.deploy(
-        fundingCvxLogic,
-        proxyAdmin
-  )
+    fundingCvxLogic,
+    proxyAdmin
+  );
   console.log("fundingCvx address is: ", knightingRound.address);
 
   const wbtc = ERC20Upgradeable.attach(wbtc_address); //
@@ -148,20 +129,20 @@ async function main() {
 
   /// ======= Global Access Control
 
-  console.log(governance)
-  console.log(governance.address)
+  console.log(governance);
+  console.log(governance.address);
 
-  console.log("Initialize GAC...")
+  console.log("Initialize GAC...");
   await gac.connect(governance).initialize(governance.address);
 
   /// ======= Citadel Token
 
-  console.log("Initialize Citadel Token...")
+  console.log("Initialize Citadel Token...");
   await citadel.connect(governance).initialize("Citadel", "CTDL", gac.address);
 
   /// ======= Staked (x) Citadel Vault Token
 
-  console.log("Initialize xCitadel Token...")
+  console.log("Initialize xCitadel Token...");
 
   const xCitadelFees = [0, 0, 0, 0];
 
@@ -182,13 +163,13 @@ async function main() {
     );
 
   /// ======= Vested Exit | xCitadelVester
-  console.log("Initialize xCitadelVester...")
+  console.log("Initialize xCitadelVester...");
   await xCitadelVester
     .connect(governance)
     .initialize(address(gac), address(citadel), address(xCitadel));
 
   /// =======  xCitadelLocker
-  console.log("Initialize xCitadelLocker...")
+  console.log("Initialize xCitadelLocker...");
   await xCitadelLocker
     .connect(governance)
     .initialize(address(xCitadel), "Vote Locked xCitadel", "vlCTDL");
@@ -198,11 +179,11 @@ async function main() {
     .addReward(address(xCitadel), address(citadelMinter), true);
 
   // ========  SupplySchedule || CTDL Token Distribution
-  console.log("Initialize supplySchedule...")
+  console.log("Initialize supplySchedule...");
   await schedule.connect(governance).initialize(address(gac));
 
   // ========  CitadelMinter || CTDLMinter
-  console.log("Initialize citadelMinter...")
+  console.log("Initialize citadelMinter...");
   await citadelMinter
     .connect(governance)
     .initialize(
@@ -213,13 +194,15 @@ async function main() {
       address(schedule)
     );
 
-    console.log("Initialize knightingRoundGuestlist...")
+  console.log("Initialize knightingRoundGuestlist...");
   // knightingRoundGuestlist.connect(governance).initialize(address(gac));
   // knightingRoundGuestlist.connect(techOps).setGuestRoot("0xa792f206b3e190ce3670653ece23b5ffac811e402f37d3c6d37638e310c2b081");
 
   /// ========  Knighting Round
   const knightingRoundParams = {
-    start: ethers.BigNumber.from(((new Date().getTime() + 1000 * 1000) / 1000).toPrecision(10).toString()),
+    start: ethers.BigNumber.from(
+      ((new Date().getTime() + 1000 * 1000) / 1000).toPrecision(10).toString()
+    ),
     duration: ethers.BigNumber.from(14 * 24 * 3600),
     citadelWbtcPrice: ethers.utils.parseUnits("21", 18), // 21 CTDL per wBTC
     wbtcLimit: ethers.utils.parseUnits("100", 8), // 100 wBTC
@@ -230,9 +213,9 @@ async function main() {
     knightingRoundParams.duration,
     knightingRoundParams.citadelWbtcPrice,
     knightingRoundParams.wbtcLimit
-  )
+  );
 
-  console.log("Initialize knightingRound...")
+  console.log("Initialize knightingRound...");
   // TODO: need to deploy a guest list contract, address 0 won't run
   await knightingRound.connect(governance).initialize(
     address(gac),
@@ -247,7 +230,7 @@ async function main() {
   );
 
   // /// ========  Funding
-  console.log("Initialize funding...")
+  console.log("Initialize funding...");
   await fundingWbtc.initialize(
     address(gac),
     address(citadel),
@@ -268,7 +251,7 @@ async function main() {
   );
 
   /// ======== Grant roles
-  console.log("Grant roles...")
+  console.log("Grant roles...");
   await gac
     .connect(governance)
     .grantRole(hashIt("CONTRACT_GOVERNANCE_ROLE"), address(governance));

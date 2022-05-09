@@ -1,6 +1,7 @@
 const hre = require("hardhat");
 const StakedCitadelLockerArtifact = require("../artifacts-external/StakedCitadelLocker.json");
 const ethers = hre.ethers;
+const getContractFactories = require("./utils/getContractFactories");
 
 const { formatUnits, parseUnits } = ethers.utils;
 
@@ -21,40 +22,19 @@ async function main() {
   const signers = await ethers.getSigners();
 
   /// === Contract Factories
-  const GlobalAccessControl = await ethers.getContractFactory(
-    "GlobalAccessControl"
-  );
-
-  const CitadelToken = await ethers.getContractFactory("CitadelToken");
-  const StakedCitadel = await ethers.getContractFactory("StakedCitadel");
-  const StakedCitadelVester = await ethers.getContractFactory(
-    "StakedCitadelVester"
-  );
-  const StakedCitadelLocker = await ethers.getContractFactoryFromArtifact({
-    ...StakedCitadelLockerArtifact,
-    _format: "hh-sol-artifact-1",
-    contractName: "StakedCitadelLocker",
-    sourceName: "src/StakedCitadelLocker.sol",
-    linkReferences: {
-      ...StakedCitadelLockerArtifact.bytecode.linkReferences,
-      ...StakedCitadelLockerArtifact.deployedBytecode.linkReferences,
-    },
-    deployedLinkReferences: {
-      ...StakedCitadelLockerArtifact.bytecode.deployedLinkReferences,
-      ...StakedCitadelLockerArtifact.deployedBytecode.deployedLinkReferences,
-    },
-    bytecode: StakedCitadelLockerArtifact.bytecode.object,
-    deployedBytecode: StakedCitadelLockerArtifact.deployedBytecode.object,
-  });
-
-  const SupplySchedule = await ethers.getContractFactory("SupplySchedule");
-  const CitadelMinter = await ethers.getContractFactory("CitadelMinter");
-
-  const KnightingRound = await ethers.getContractFactory("KnightingRound");
-
-  const Funding = await ethers.getContractFactory("Funding");
-
-  const ERC20Upgradeable = await ethers.getContractFactory("ERC20Upgradeable");
+  const {
+    GlobalAccessControl,
+    CitadelToken,
+    StakedCitadelVester,
+    StakedCitadel,
+    StakedCitadelLocker,
+    SupplySchedule,
+    CitadelMinter,
+    KnightingRound,
+    Funding,
+    ERC20Upgradeable,
+    KnightingRoundGuestlist,
+  } = await getContractFactories();
 
   /// === Deploying Contracts & loggin addresses
   const gac = await GlobalAccessControl.deploy();

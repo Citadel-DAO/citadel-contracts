@@ -5,6 +5,7 @@ const {
   calcTokenOutPerTokenIn,
   getTokensPrices,
 } = require("./utils/getTokensPrice");
+const getContractFactories = require("./utils/getContractFactories");
 
 const address = (entity) =>
   entity.address ? entity.address : ethers.constants.AddressZero;
@@ -21,6 +22,9 @@ async function main() {
     citadelTokenAddress: "0xE8addD62feD354203d079926a8e563BC1A7FE81e", // Change this with your own deployed citadel token address
     citadelMultising: signers[2].address, // ATTENTION!!!! CHANGE THIS!!!!!!!!
   };
+
+  const { GlobalAccessControl, KnightingRoundGuestlist, KnightingRound } =
+    await getContractFactories();
 
   // Adding 180 second to not be in past
   // if you got this "KnightingRound: start date may not be in the past"
@@ -42,20 +46,11 @@ async function main() {
   const governance = signers[12];
   const techOp = signers[13];
 
-  const GlobalAccessControl = await ethers.getContractFactory(
-    "GlobalAccessControl"
-  );
-
   const gac = await GlobalAccessControl.deploy();
   await gac.connect(governance).initialize(governance.address);
   await gac
     .connect(governance)
     .grantRole(hashIt("TECH_OPERATIONS_ROLE"), address(techOp));
-
-  const KnightingRound = await ethers.getContractFactory("KnightingRound");
-  const KnightingRoundGuestlist = await ethers.getContractFactory(
-    "KnightingRoundGuestlist"
-  );
 
   const tokenInsPhase1 = [
     {
