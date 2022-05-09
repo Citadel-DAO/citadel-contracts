@@ -62,19 +62,41 @@ contract GuestlistTest is BaseFixture {
         bytes32[] memory emptyProof = new bytes32[](0);
 
         address user1 = 0x6D3Ee34A020e7565e78540C74300218104C8e4a9;
-        bytes32[] memory user1_proof = new bytes32[](11);
+        bytes32[] memory user1Proof = new bytes32[](11);
         // Assiging dynamically because function expects a dynamically sized array
-        user1_proof[0] = bytes32(0x7e642443461a19363a2262ebeb0f861461d246a1df1410e36a56f81a303a61d7);
-        user1_proof[1] = bytes32(0x290ed5a7b68bcd95f6ed8e136e2a0335d6cade78450b018ec8bb946ac15b8803);
-        user1_proof[2] = bytes32(0x69ba581dd0b2fba6045504ae875cca9a10deab15085bd1865502b056626c92be);
-        user1_proof[3] = bytes32(0xf8c46b8d0b30a8b4b9e4e07fd75989218167806fb87d21137c6f910fa9d13684);
-        user1_proof[4] = bytes32(0xaafe989cc1b652283b764f4d8e5a08e8272eb95a9dc3722a677c93557b2b3a74);
-        user1_proof[5] = bytes32(0x9f55639f22ada6a30c36ba41812d963b80ab60b33cdeff64658f696330e55844);
-        user1_proof[6] = bytes32(0xf565c18009395df2293275976481508c33a11f13922581d036cd09533a3bc1ae);
-        user1_proof[7] = bytes32(0x1bb36e9226e33ff930484e467b0aaa0e3fac1f498d5cb57a7ec3ead58ab1a087);
-        user1_proof[8] = bytes32(0xd6aec7180836100f0a6c10929e02e0dda1f4a117d6368ddef6e7210302c74675);
-        user1_proof[9] = bytes32(0xc262f8edb842d4953bb6c5df6178315e3d763890292a53210c99c36dd7a7a9bb);
-        user1_proof[10] = bytes32(0x477817bd252134c4213e1dcb56f0c40608cb264ea7191730417452086dd7066c);
+        user1Proof[0] = bytes32(
+            0x7e642443461a19363a2262ebeb0f861461d246a1df1410e36a56f81a303a61d7
+        );
+        user1Proof[1] = bytes32(
+            0x290ed5a7b68bcd95f6ed8e136e2a0335d6cade78450b018ec8bb946ac15b8803
+        );
+        user1Proof[2] = bytes32(
+            0x69ba581dd0b2fba6045504ae875cca9a10deab15085bd1865502b056626c92be
+        );
+        user1Proof[3] = bytes32(
+            0xf8c46b8d0b30a8b4b9e4e07fd75989218167806fb87d21137c6f910fa9d13684
+        );
+        user1Proof[4] = bytes32(
+            0xaafe989cc1b652283b764f4d8e5a08e8272eb95a9dc3722a677c93557b2b3a74
+        );
+        user1Proof[5] = bytes32(
+            0x9f55639f22ada6a30c36ba41812d963b80ab60b33cdeff64658f696330e55844
+        );
+        user1Proof[6] = bytes32(
+            0xf565c18009395df2293275976481508c33a11f13922581d036cd09533a3bc1ae
+        );
+        user1Proof[7] = bytes32(
+            0x1bb36e9226e33ff930484e467b0aaa0e3fac1f498d5cb57a7ec3ead58ab1a087
+        );
+        user1Proof[8] = bytes32(
+            0xd6aec7180836100f0a6c10929e02e0dda1f4a117d6368ddef6e7210302c74675
+        );
+        user1Proof[9] = bytes32(
+            0xc262f8edb842d4953bb6c5df6178315e3d763890292a53210c99c36dd7a7a9bb
+        );
+        user1Proof[10] = bytes32(
+            0x477817bd252134c4213e1dcb56f0c40608cb264ea7191730417452086dd7066c
+        );
 
         // Mint assets for test user
         erc20utils.forceMintTo(user1, address(wbtc), 100e8);
@@ -93,11 +115,11 @@ contract GuestlistTest is BaseFixture {
         knightingRound.buy(1e8, 0, emptyProof);
 
         // Using a valid proof allows user to buy
-        uint256 amountOut = knightingRound.buy(1e8, 0, user1_proof);
+        uint256 amountOut = knightingRound.buy(1e8, 0, user1Proof);
         require(amountOut > 0, "Buy unsuccessful");
 
         // User, with a valid proof, can prove invitation and buy without using the proof
-        guestList.proveInvitation(user1, user1_proof);
+        guestList.proveInvitation(user1, user1Proof);
         amountOut = knightingRound.buy(1e8, 0, emptyProof);
         require(amountOut > 0, "Buy unsuccessful");
 
@@ -137,7 +159,10 @@ contract GuestlistTest is BaseFixture {
 
         // User, added manually, can buy
         vm.prank(shark);
-        uint256 amountOut = knightingRoundWithEth.buyEth{value: 1 ether}(0, emptyProof);
+        uint256 amountOut = knightingRoundWithEth.buyEth{value: 1 ether}(
+            0,
+            emptyProof
+        );
         require(amountOut > 0, "Buy unsuccessful");
 
         // Manually removing user from guestlist
@@ -157,19 +182,41 @@ contract GuestlistTest is BaseFixture {
         bytes32[] memory emptyProof = new bytes32[](0);
 
         address user1 = 0x6D3Ee34A020e7565e78540C74300218104C8e4a9;
-        bytes32[] memory user1_proof = new bytes32[](11);
+        bytes32[] memory user1Proof = new bytes32[](11);
         // Assiging dynamically because function expects a dynamically sized array
-        user1_proof[0] = bytes32(0x7e642443461a19363a2262ebeb0f861461d246a1df1410e36a56f81a303a61d7);
-        user1_proof[1] = bytes32(0x290ed5a7b68bcd95f6ed8e136e2a0335d6cade78450b018ec8bb946ac15b8803);
-        user1_proof[2] = bytes32(0x69ba581dd0b2fba6045504ae875cca9a10deab15085bd1865502b056626c92be);
-        user1_proof[3] = bytes32(0xf8c46b8d0b30a8b4b9e4e07fd75989218167806fb87d21137c6f910fa9d13684);
-        user1_proof[4] = bytes32(0xaafe989cc1b652283b764f4d8e5a08e8272eb95a9dc3722a677c93557b2b3a74);
-        user1_proof[5] = bytes32(0x9f55639f22ada6a30c36ba41812d963b80ab60b33cdeff64658f696330e55844);
-        user1_proof[6] = bytes32(0xf565c18009395df2293275976481508c33a11f13922581d036cd09533a3bc1ae);
-        user1_proof[7] = bytes32(0x1bb36e9226e33ff930484e467b0aaa0e3fac1f498d5cb57a7ec3ead58ab1a087);
-        user1_proof[8] = bytes32(0xd6aec7180836100f0a6c10929e02e0dda1f4a117d6368ddef6e7210302c74675);
-        user1_proof[9] = bytes32(0xc262f8edb842d4953bb6c5df6178315e3d763890292a53210c99c36dd7a7a9bb);
-        user1_proof[10] = bytes32(0x477817bd252134c4213e1dcb56f0c40608cb264ea7191730417452086dd7066c);
+        user1Proof[0] = bytes32(
+            0x7e642443461a19363a2262ebeb0f861461d246a1df1410e36a56f81a303a61d7
+        );
+        user1Proof[1] = bytes32(
+            0x290ed5a7b68bcd95f6ed8e136e2a0335d6cade78450b018ec8bb946ac15b8803
+        );
+        user1Proof[2] = bytes32(
+            0x69ba581dd0b2fba6045504ae875cca9a10deab15085bd1865502b056626c92be
+        );
+        user1Proof[3] = bytes32(
+            0xf8c46b8d0b30a8b4b9e4e07fd75989218167806fb87d21137c6f910fa9d13684
+        );
+        user1Proof[4] = bytes32(
+            0xaafe989cc1b652283b764f4d8e5a08e8272eb95a9dc3722a677c93557b2b3a74
+        );
+        user1Proof[5] = bytes32(
+            0x9f55639f22ada6a30c36ba41812d963b80ab60b33cdeff64658f696330e55844
+        );
+        user1Proof[6] = bytes32(
+            0xf565c18009395df2293275976481508c33a11f13922581d036cd09533a3bc1ae
+        );
+        user1Proof[7] = bytes32(
+            0x1bb36e9226e33ff930484e467b0aaa0e3fac1f498d5cb57a7ec3ead58ab1a087
+        );
+        user1Proof[8] = bytes32(
+            0xd6aec7180836100f0a6c10929e02e0dda1f4a117d6368ddef6e7210302c74675
+        );
+        user1Proof[9] = bytes32(
+            0xc262f8edb842d4953bb6c5df6178315e3d763890292a53210c99c36dd7a7a9bb
+        );
+        user1Proof[10] = bytes32(
+            0x477817bd252134c4213e1dcb56f0c40608cb264ea7191730417452086dd7066c
+        );
 
         // Mint assets for test user
         vm.deal(user1, 100 ether);
@@ -188,11 +235,14 @@ contract GuestlistTest is BaseFixture {
         knightingRoundWithEth.buyEth{value: 1 ether}(0, emptyProof);
 
         // Using a valid proof allows user to buy
-        uint256 amountOut = knightingRoundWithEth.buyEth{value: 1 ether}(0, user1_proof);
+        uint256 amountOut = knightingRoundWithEth.buyEth{value: 1 ether}(
+            0,
+            user1Proof
+        );
         require(amountOut > 0, "Buy unsuccessful");
 
         // User, with a valid proof, can prove invitation and buy without using the proof
-        guestList.proveInvitation(user1, user1_proof);
+        guestList.proveInvitation(user1, user1Proof);
         amountOut = knightingRoundWithEth.buyEth{value: 1 ether}(0, emptyProof);
         require(amountOut > 0, "Buy unsuccessful");
 
