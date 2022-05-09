@@ -1,7 +1,12 @@
 const { hashIt, address } = require("./helpers");
 
-const grantRoles = async (gac, governance, getRoleSigners) => {
-  const { governance, treasuryVault, techOps, treasuryOps, policyOps } =
+const grantRoles = async (
+  gac,
+  governance,
+  getRoleSigners,
+  { citadelMinter }
+) => {
+  const { treasuryVault, techOps, treasuryOps, policyOps } =
     await getRoleSigners();
   console.log("Grant roles...");
   await gac

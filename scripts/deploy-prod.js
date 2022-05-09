@@ -244,7 +244,7 @@ async function main() {
 
   /// ======== Grant roles
   console.log("Grant roles...");
-  await grantRoles(gac, governance, getRoleSigners);
+  await grantRoles(gac, governance, getRoleSigners, {citadelMinter})
 }
 
 main()

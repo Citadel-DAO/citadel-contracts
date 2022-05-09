@@ -5,6 +5,7 @@ const deployContracts = require("./utils/deployContracts");
 const getRoleSigners = require("./utils/getRoleSingers");
 const { address, hashIt } = require("./utils/helpers");
 const grantRoles = require("./utils/grantRoles");
+const initializer = require("./actions/initializer");
 
 const wbtc_address = "0x2260fac5e5542a773aa44fbcfedf7c193bc2c599";
 const cvx_address = "0x4e3fbd56cd56c3e72c1403e103b45db9da5b9d2b";
@@ -59,7 +60,6 @@ async function main() {
   const wbtc = ERC20Upgradeable.attach(wbtc_address); //
   const cvx = ERC20Upgradeable.attach(cvx_address); //
 
-  /// === Variable Setup
   const {
     governance,
     keeper,
@@ -72,74 +72,30 @@ async function main() {
     eoaOracle,
   } = await getRoleSigners();
 
-  /// === Initialization and Setup
-
-  /// ======= Global Access Control
-
-  console.log(governance);
-  console.log(governance.address);
-
   console.log("Initialize GAC...");
-  await gac.connect(governance).initialize(governance.address);
 
-  /// ======= Citadel Token
-
-  console.log("Initialize Citadel Token...");
-  await citadel.connect(governance).initialize("Citadel", "CTDL", gac.address);
-
-  /// ======= Staked (x) Citadel Vault Token
-
-  console.log("Initialize xCitadel Token...");
-
-  const xCitadelFees = [0, 0, 0, 0];
-
-  await xCitadel
-    .connect(governance)
-    .initialize(
-      address(citadel),
-      address(governance),
-      address(keeper),
-      address(guardian),
-      address(treasuryVault),
-      address(techOps),
-      address(citadelTree),
-      address(xCitadelVester),
-      "Staked Citadel",
-      "xCTDL",
-      xCitadelFees
-    );
-
-  /// ======= Vested Exit | xCitadelVester
-  console.log("Initialize xCitadelVester...");
-  await xCitadelVester
-    .connect(governance)
-    .initialize(address(gac), address(citadel), address(xCitadel));
-
-  /// =======  xCitadelLocker
-  console.log("Initialize xCitadelLocker...");
-  await xCitadelLocker
-    .connect(governance)
-    .initialize(address(xCitadel), "Vote Locked xCitadel", "vlCTDL");
-  // add reward token to be distributed to staker
-  await xCitadelLocker
-    .connect(governance)
-    .addReward(address(xCitadel), address(citadelMinter), true);
-
-  // ========  SupplySchedule || CTDL Token Distribution
-  console.log("Initialize supplySchedule...");
-  await schedule.connect(governance).initialize(address(gac));
-
-  // ========  CitadelMinter || CTDLMinter
-  console.log("Initialize citadelMinter...");
-  await citadelMinter
-    .connect(governance)
-    .initialize(
-      address(gac),
-      address(citadel),
-      address(xCitadel),
-      address(xCitadelLocker),
-      address(schedule)
-    );
+  await initializer({
+    gac,
+    citadel,
+    xCitadel,
+    xCitadelVester,
+    xCitadelLocker,
+    citadelMinter,
+    schedule,
+    fundingWbtc,
+    fundingCvx,
+  })({
+    governance,
+    xCitadelFees,
+    keeper,
+    guardian,
+    treasuryVault,
+    techOps,
+    citadelTree,
+    wbtc,
+    cvx,
+    eoaOracle,
+  });
 
   console.log("Initialize knightingRoundGuestlist...");
   // knightingRoundGuestlist.connect(governance).initialize(address(gac));
@@ -176,29 +132,8 @@ async function main() {
     knightingRoundParams.wbtcLimit
   );
 
-  // /// ========  Funding
-  console.log("Initialize funding...");
-  await fundingWbtc.initialize(
-    address(gac),
-    address(citadel),
-    address(wbtc),
-    address(xCitadel),
-    address(treasuryVault),
-    address(eoaOracle),
-    ethers.utils.parseUnits("100", 8)
-  );
-  await fundingCvx.initialize(
-    address(gac),
-    address(citadel),
-    address(cvx),
-    address(xCitadel),
-    address(treasuryVault),
-    address(eoaOracle),
-    ethers.utils.parseUnits("100000", 18)
-  );
-
   /// ======== Grant roles
-  await grantRoles(gac, governance, getRoleSigners);
+  await grantRoles(gac, governance, getRoleSigners, { citadelMinter });
 }
 
 main()
