@@ -192,7 +192,7 @@ contract FundingOraclesTest is BaseFixture {
         vm.startPrank(keeper);
         medianOracleWbtc.pushReport(0);
 
-        uint _citadelPerAsset;
+        uint256 _citadelPerAsset;
         bool _valid;
 
         (_citadelPerAsset, _valid) = IMedianOracle(medianOracleWbtc).getData();
