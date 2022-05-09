@@ -3,14 +3,11 @@ const StakedCitadelLockerArtifact = require("../artifacts-external/StakedCitadel
 const ethers = hre.ethers;
 const getContractFactories = require("./utils/getContractFactories");
 const getRoleSigners = require("./utils/getRoleSingers");
+const { address, hashIt } = require("./utils/helpers");
 
 const wbtc_address = "0x2260fac5e5542a773aa44fbcfedf7c193bc2c599";
 const cvx_address = "0x4e3fbd56cd56c3e72c1403e103b45db9da5b9d2b";
 
-const address = (entity) =>
-  entity.address ? entity.address : ethers.constants.AddressZero;
-
-const hashIt = (str) => ethers.utils.keccak256(ethers.utils.toUtf8Bytes(str));
 
 async function main() {
   const signers = await ethers.getSigners();

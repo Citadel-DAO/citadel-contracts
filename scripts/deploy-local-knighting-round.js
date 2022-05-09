@@ -6,11 +6,7 @@ const {
   getTokensPrices,
 } = require("./utils/getTokensPrice");
 const getContractFactories = require("./utils/getContractFactories");
-
-const address = (entity) =>
-  entity.address ? entity.address : ethers.constants.AddressZero;
-
-const hashIt = (str) => ethers.utils.keccak256(ethers.utils.toUtf8Bytes(str));
+const { address, hashIt } = require("./utils/helpers");
 
 /// THIS SCRIPT MUST BE RUN WITH A FORKNET OR MAINNET
 /// IT DOES NOT WORK OTHERWISE

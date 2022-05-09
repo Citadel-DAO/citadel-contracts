@@ -1,18 +1,11 @@
+const hre = require("hardhat");
+const ethers = hre.ethers;
 const fs = require("fs");
 const path = require("path");
 const getContractFactories = require("./utils/getContractFactories");
 const deployContracts = require("./utils/deployContracts");
 const getRoleSigners = require("./utils/getRoleSingers");
-
-const hre = require("hardhat");
-
-const StakedCitadelLockerArtifact = require("../artifacts-external/StakedCitadelLocker.json");
-const ethers = hre.ethers;
-
-const address = (entity) =>
-  entity.address ? entity.address : ethers.constants.AddressZero;
-
-const hashIt = (str) => ethers.utils.keccak256(ethers.utils.toUtf8Bytes(str));
+const { address, hashIt } = require("./utils/helpers");
 
 async function main() {
   const signers = await ethers.getSigners();

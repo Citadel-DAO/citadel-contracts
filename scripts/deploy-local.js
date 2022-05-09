@@ -4,6 +4,7 @@ const ethers = hre.ethers;
 const getContractFactories = require("./utils/getContractFactories");
 const deployContracts = require("./utils/deployContracts");
 const getRoleSigners = require("./utils/getRoleSingers");
+const { address, hashIt } = require("./utils/helpers");
 
 const { formatUnits, parseUnits } = ethers.utils;
 
@@ -14,11 +15,6 @@ const wbtc_minter_address = "0xCA06411bd7a7296d7dbdd0050DFc846E95fEBEB7"; // own
 const cvx_minter_address = "0xF403C135812408BFbE8713b5A23a04b3D48AAE31"; // operator address of cvx
 
 const erc20_mintable_abi = ["function mint(address, uint256)"];
-
-const address = (entity) =>
-  entity.address ? entity.address : ethers.constants.AddressZero;
-
-const hashIt = (str) => ethers.utils.keccak256(ethers.utils.toUtf8Bytes(str));
 
 async function main() {
   const signers = await ethers.getSigners();
