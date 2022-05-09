@@ -4,7 +4,6 @@ pragma solidity 0.8.12;
 import {Initializable} from "openzeppelin-contracts-upgradeable/proxy/utils/Initializable.sol";
 import "openzeppelin-contracts/utils/structs/EnumerableSet.sol";
 import "openzeppelin-contracts/proxy/beacon/BeaconProxy.sol";
-import {Clones} from "openzeppelin-contracts/proxy/Clones.sol";
 
 import "./KnightingRound.sol";
 import "./KnightingRoundWithEth.sol";
