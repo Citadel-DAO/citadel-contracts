@@ -64,7 +64,10 @@ contract CtdlWibbtcLpProvider is ChainlinkUtils, MedianOracleProvider {
         uint256 wbtcPriceInCtdl = ctdlWbtcCurvePool.price_oracle();
 
         wibbtcLpPriceInCtdl_ =
-            (wibbtcLpPriceInBtc * wbtcPriceInCtdl) /
-            wbtcPriceInBtc;
+            (wibbtcLpPriceInBtc *
+                wbtcPriceInCtdl *
+                10**wbtcBtcPriceFeed.decimals()) /
+            wbtcPriceInBtc /
+            PRECISION;
     }
 }
