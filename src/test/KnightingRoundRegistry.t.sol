@@ -124,9 +124,7 @@ contract KnightingRoundRegistryTest is BaseFixture {
         assertTrue(wethRound.isEth == false);
 
         KnightingRoundRegistry.RoundData memory ethRound = knightinRoundRegistry
-            .getRoundData(
-                knightinRoundRegistry.getAllRounds()[3]
-            );
+            .getRoundData(knightinRoundRegistry.getAllRounds()[3]);
 
         assertEq(
             ethRound.roundAddress,
