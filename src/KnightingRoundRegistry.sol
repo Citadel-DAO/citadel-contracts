@@ -35,7 +35,7 @@ contract KnightingRoundRegistry is Initializable {
     EnumerableSet.AddressSet private knightingRounds;
     address private knightingRoundsWithEth;
 
-    struct initParam {
+    struct InitParam {
         address _tokenIn;
         uint256 _tokenInLimit;
         uint256 _tokenOutPerTokenIn;
@@ -67,8 +67,8 @@ contract KnightingRoundRegistry is Initializable {
         address _tokenOut,
         address _saleRecipient,
         address _guestlist,
-        initParam calldata _wethParams,
-        initParam[] calldata _roundParams
+        InitParam calldata _wethParams,
+        InitParam[] calldata _roundParams
     ) public initializer {
         governance = _governance;
         roundStart = _roundStart;
@@ -104,7 +104,7 @@ contract KnightingRoundRegistry is Initializable {
         }
     }
 
-    function initializeRound(initParam calldata _roundParams) private {
+    function initializeRound(InitParam calldata _roundParams) private {
         BeaconProxy currKnightingRound = new BeaconProxy(
             address(knightingRoundBeacon),
             abi.encodeWithSelector(
@@ -123,7 +123,7 @@ contract KnightingRoundRegistry is Initializable {
         knightingRounds.add(address(currKnightingRound));
     }
 
-    function initializeEthRound(initParam calldata _roundParams) private {
+    function initializeEthRound(InitParam calldata _roundParams) private {
         BeaconProxy knightinRoundWEth = new BeaconProxy(
             address(knightingRoundWithEthBeacon),
             abi.encodeWithSelector(
