@@ -89,7 +89,7 @@ contract BaseFixture is DSTest, Utils, stdCheats {
     address constant renBTC_address = 0xEB4C2781e4ebA804CE9a9803C67d0893436bB27D;
     address constant ibBTC_address = 0xc4E15973E6fF2A35cC804c2CF9D2a1b817a8b40F;
     address constant frax_address = 0x853d955aCEf822Db058eb8505911ED77F175b99e;
-    address constant ust_address = 0xa693b19d2931d498c5b318df961919bb4aee87a5; // UST(Wormhole)
+    address constant ust_address = 0xa693B19d2931d498c5B318dF961919BB4aee87a5; // UST(Wormhole)
     address constant usdc_address = 0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48;
     address constant badger_address = 0x3472A5A71965499acd81997a54BBA8D852C6E53d;
     address constant bveCVX_address = 0xfd05D3C7fe2924020620A8bE4961bBaA747e6305;
