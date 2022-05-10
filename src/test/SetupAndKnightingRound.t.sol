@@ -207,9 +207,11 @@ contract KnightingRoundTest is BaseFixture {
         // Amount bought = 60% of initial supply, therefore total citadel ~= 1.67 amount bought.
         uint256 initialSupply = (citadelBought * 1666666666666666667) / 1e18;
 
-        // Let's transfer citadel to kinghtingRound so that users can claim their bought citadel.
+        // Let's transfer xCitadel to kinghtingRound so that users can claim their bought citadel.
         citadel.mint(governance, initialSupply);
-        citadel.transfer(address(knightingRound), citadelBought);
+        citadel.approve(address(xCitadel), citadelBought);
+        xCitadel.depositFor(address(knightingRound), citadelBought); // xCTDL 1:1 CTDL
+
         knightingRound.finalize(); // round finalized
         vm.stopPrank();
 
@@ -220,7 +222,7 @@ contract KnightingRoundTest is BaseFixture {
         knightingRound.claim(); // now shrimp can claim
         comparator.snapCurr();
 
-        assertEq(comparator.diff("citadel.balanceOf(shrimp)"), tokenOutAmount);
+        assertEq(comparator.diff("xCitadel.balanceOf(shrimp)"), tokenOutAmount);
 
         assertTrue(knightingRound.hasClaimed(shrimp)); // hasClaimed should be true
 
@@ -355,7 +357,10 @@ contract KnightingRoundTest is BaseFixture {
         // Mint citadel bought and finilize
         vm.startPrank(governance);
         uint256 citadelBought = knightingRound.totalTokenOutBought();
-        citadel.mint(address(knightingRound), citadelBought);
+        citadel.mint(governance, citadelBought);
+        citadel.approve(address(xCitadel), citadelBought);
+        xCitadel.depositFor(address(knightingRound), citadelBought); // xCTDL 1:1 CTDL
+
         knightingRound.finalize();
         vm.stopPrank();
 
@@ -421,41 +426,44 @@ contract KnightingRoundTest is BaseFixture {
 
     function testSweep() public {
         vm.expectRevert("GAC: invalid-caller-role");
-        knightingRound.sweep(address(citadel));
+        knightingRound.sweep(address(xCitadel));
 
         vm.prank(treasuryOps);
         vm.expectRevert("nothing to sweep");
-        knightingRound.sweep(address(citadel));
+        knightingRound.sweep(address(xCitadel));
 
-        // Mint 22 CTDL to the knightingRound contract
-        vm.prank(governance);
-        citadel.mint(address(knightingRound), 22e18);
+        // Mint 22 xCTDL to the knightingRound contract
+        vm.startPrank(governance);
+        citadel.mint(governance, 100e18);
+        citadel.approve(address(xCitadel), 22e18);
+        xCitadel.depositFor(address(knightingRound), 22e18); // xCTDL 1:1 CTDL
+        vm.stopPrank();
 
         // Move to knighting round start
         vm.warp(block.timestamp + 100);
 
-        // A user buys 21 CTDL with 1 wBTC
+        // A user buys 21 xCTDL with 1 wBTC
         bytes32[] memory emptyProof = new bytes32[](0);
         vm.startPrank(shark);
         wbtc.approve(address(knightingRound), wbtc.balanceOf(shark));
         knightingRound.buy(1e8, 0, emptyProof);
         vm.stopPrank();
 
-        assertEq(knightingRound.totalTokenOutBought(), 21e18); // 21 CTDL were bought at current price
+        assertEq(knightingRound.totalTokenOutBought(), 21e18); // 21 xCTDL were bought at current price
 
         // treasuryOps should be able to sweep the leftover CTDL (22 on contract - 21 bought = 1 token)
         address saleRecipient = knightingRound.saleRecipient();
 
-        uint256 prevBalance = citadel.balanceOf(saleRecipient);
+        uint256 prevBalance = xCitadel.balanceOf(saleRecipient);
         vm.prank(treasuryOps);
-        knightingRound.sweep(address(citadel));
+        knightingRound.sweep(address(xCitadel));
 
-        uint256 afterBalance = citadel.balanceOf(saleRecipient);
+        uint256 afterBalance = xCitadel.balanceOf(saleRecipient);
 
         // the difference should be 1e18
         assertEq(afterBalance - prevBalance, 1e18);
 
-        // treasuryOps should be able to sweep any amount of any token other than CTDL
+        // treasuryOps should be able to sweep any amount of any token other than xCTDL
         erc20utils.forceMintTo(address(knightingRound), address(wbtc), 10e8);
 
         prevBalance = wbtc.balanceOf(saleRecipient);

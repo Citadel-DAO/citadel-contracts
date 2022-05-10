@@ -169,9 +169,11 @@ contract KnightingRoundWithEthTest is BaseFixture {
         // Amount bought = 60% of initial supply, therefore total citadel ~= 1.67 amount bought.
         uint256 initialSupply = (citadelBought * 1666666666666666667) / 1e18;
 
-        // Let's transfer citadel to kinghtingRound so that users can claim their bought citadel.
+        // Let's transfer xCitadel to kinghtingRound so that users can claim their bought citadel.
         citadel.mint(governance, initialSupply);
-        citadel.transfer(address(knightingRoundWithEth), citadelBought);
+        citadel.approve(address(xCitadel), citadelBought);
+        xCitadel.depositFor(address(knightingRoundWithEth), citadelBought); // xCTDL 1:1 CTDL
+
         knightingRoundWithEth.finalize(); // round finalized
         vm.stopPrank();
 
@@ -182,7 +184,7 @@ contract KnightingRoundWithEthTest is BaseFixture {
         knightingRoundWithEth.claim(); // now shrimp can claim
         comparator.snapCurr();
 
-        assertEq(comparator.diff("citadel.balanceOf(shrimp)"), tokenOutAmount);
+        assertEq(comparator.diff("xCitadel.balanceOf(shrimp)"), tokenOutAmount);
 
         assertTrue(knightingRoundWithEth.hasClaimed(shrimp)); // hasClaimed should be true
 
@@ -341,7 +343,10 @@ contract KnightingRoundWithEthTest is BaseFixture {
         // Mint citadel bought and finilize
         vm.startPrank(governance);
         uint256 citadelBought = knightingRoundWithEth.totalTokenOutBought();
-        citadel.mint(address(knightingRoundWithEth), citadelBought);
+        citadel.mint(governance, citadelBought);
+        citadel.approve(address(xCitadel), citadelBought);
+        xCitadel.depositFor(address(knightingRoundWithEth), citadelBought); // xCTDL 1:1 CTDL
+
         knightingRoundWithEth.finalize();
         vm.stopPrank();
 
@@ -407,41 +412,44 @@ contract KnightingRoundWithEthTest is BaseFixture {
 
     function testSweepWithEth() public {
         vm.expectRevert("GAC: invalid-caller-role");
-        knightingRoundWithEth.sweep(address(citadel));
+        knightingRoundWithEth.sweep(address(xCitadel));
 
         vm.prank(treasuryOps);
         vm.expectRevert("nothing to sweep");
-        knightingRoundWithEth.sweep(address(citadel));
+        knightingRoundWithEth.sweep(address(xCitadel));
 
-        // Mint 22 CTDL to the knightingRoundWithEth contract
-        vm.prank(governance);
-        citadel.mint(address(knightingRoundWithEth), 22e18);
+        // Mint 22 xCTDL to the knightingRoundWithEth contract
+        vm.startPrank(governance);
+        citadel.mint(governance, 100e18);
+        citadel.approve(address(xCitadel), 22e18);
+        xCitadel.depositFor(address(knightingRoundWithEth), 22e18); // xCTDL 1:1 CTDL
+        vm.stopPrank();
 
         // Move to knighting round start
         vm.warp(block.timestamp + 100);
 
-        // A user buys 21 CTDL with 1 WETH
+        // A user buys 21 xCTDL with 1 WETH
         bytes32[] memory emptyProof = new bytes32[](0);
         vm.startPrank(shark);
         weth.approve(address(knightingRoundWithEth), type(uint256).max);
         knightingRoundWithEth.buyEth{value: 1e18}(0, emptyProof);
         vm.stopPrank();
 
-        assertEq(knightingRoundWithEth.totalTokenOutBought(), 21e18); // 21 CTDL were bought at current price
+        assertEq(knightingRoundWithEth.totalTokenOutBought(), 21e18); // 21 xCTDL were bought at current price
 
-        // treasuryOps should be able to sweep the leftover CTDL (22 on contract - 21 bought = 1 token)
+        // treasuryOps should be able to sweep the leftover xCTDL (22 on contract - 21 bought = 1 token)
         address saleRecipient = knightingRoundWithEth.saleRecipient();
 
-        uint256 prevBalance = citadel.balanceOf(saleRecipient);
+        uint256 prevBalance = xCitadel.balanceOf(saleRecipient);
         vm.prank(treasuryOps);
-        knightingRoundWithEth.sweep(address(citadel));
+        knightingRoundWithEth.sweep(address(xCitadel));
 
-        uint256 afterBalance = citadel.balanceOf(saleRecipient);
+        uint256 afterBalance = xCitadel.balanceOf(saleRecipient);
 
         // the difference should be 1e18
         assertEq(afterBalance - prevBalance, 1e18);
 
-        // treasuryOps should be able to sweep any amount of any token other than CTDL
+        // treasuryOps should be able to sweep any amount of any token other than xCTDL
         vm.deal(address(knightingRoundWithEth), 10e18);
         vm.prank(address(knightingRoundWithEth));
         WETH(weth_address).deposit{value: 10e18}();
