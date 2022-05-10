@@ -64,4 +64,6 @@ interface IStakedCitadelLocker {
         external
         view
         returns (uint256 amount);
+
+    function cumulativeDistributed(address _token) external view returns(uint256) ;
 }
