@@ -1,5 +1,4 @@
 const hre = require("hardhat");
-const StakedCitadelLockerArtifact = require("../artifacts-external/StakedCitadelLocker.json");
 const ethers = hre.ethers;
 const getContractFactories = require("./utils/getContractFactories");
 const deployContracts = require("./utils/deployContracts");
@@ -7,6 +6,7 @@ const getRoleSigners = require("./utils/getRoleSingers");
 const grantRoles = require("./utils/grantRoles");
 const { address } = require("./utils/helpers");
 const initializer = require("./actions/initializer");
+const changeBlockTimestamp = require("./utils/changeBlockTimestamp");
 
 const { formatUnits, parseUnits } = ethers.utils;
 
@@ -160,27 +160,6 @@ async function main() {
     eoaOracle,
   });
 
-  /// ========  Knighting Round
-  const knightingRoundParams = {
-    start: new Date(new Date().getTime() + 10 * 1000),
-    duration: 7 * 24 * 3600 * 1000,
-    citadelWbtcPrice: ethers.utils.parseUnits("21", 18), // 21 CTDL per wBTC
-    wbtcLimit: ethers.utils.parseUnits("100", 8), // 100 wBTC
-  };
-
-  // TODO: need to deploy a guest list contract, address 0 won't run
-  // await knightingRound.connect(governance).initialize(
-  //   address(gac),
-  //   address(citadel),
-  //   address(wbtc),
-  //   knightingRoundParams.start,
-  //   knightingRoundParams.duration,
-  //   knightingRoundParams.citadelWbtcPrice,
-  //   address(governance),
-  //   address(0), // TODO: Add guest list and test with it
-  //   knightingRoundParams.wbtcLimit
-  // );
-
   /// ======== Grant roles
 
   await grantRoles(gac, governance, getRoleSigners, { citadelMinter });
@@ -196,10 +175,7 @@ async function main() {
 
   // control the time to fast forward
   const depositTokenTime = scheduleStartTime + 1 * 86400;
-  await hre.network.provider.send("evm_setNextBlockTimestamp", [
-    depositTokenTime,
-  ]);
-  await hre.network.provider.send("evm_mine");
+  await changeBlockTimestamp(depositTokenTime);
 
   // set distribution split
   await citadelMinter
@@ -270,8 +246,7 @@ async function main() {
     `fast forward to 10 days later to have some vested CTDL unlocked`
   );
   const getVestedTime = depositTokenTime + 10 * 86400;
-  await hre.network.provider.send("evm_setNextBlockTimestamp", [getVestedTime]);
-  await hre.network.provider.send("evm_mine");
+  await changeBlockTimestamp(getVestedTime);
 
   // claim some vested CTDL
   await xCitadelVester.claim(address(user), parseUnits("20", 18));
@@ -302,8 +277,8 @@ async function main() {
   // fast forward to make a position unlockable
   console.log(`fast forward to 22 weeks later to make the position unlockable`);
   const unlockTime = getVestedTime + 7 * 22 * 86400; // 22 weeks later
-  await hre.network.provider.send("evm_setNextBlockTimestamp", [unlockTime]);
-  await hre.network.provider.send("evm_mine");
+
+  await changeBlockTimestamp(unlockTime);
 
   await xCitadelLocker.checkpointEpoch();
   await citadelMinter.connect(policyOps).mintAndDistribute();
@@ -321,10 +296,7 @@ async function main() {
 
   // to make some rewards available
   const cannotUnlockTime = unlockTime + 7 * 5 * 86400; // 5 weeks later
-  await hre.network.provider.send("evm_setNextBlockTimestamp", [
-    cannotUnlockTime,
-  ]);
-  await hre.network.provider.send("evm_mine");
+  await changeBlockTimestamp(cannotUnlockTime);
 
   await xCitadelLocker.checkpointEpoch();
   console.log(
