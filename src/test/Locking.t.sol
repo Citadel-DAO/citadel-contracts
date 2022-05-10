@@ -9,7 +9,36 @@ contract LockingTest is BaseFixture {
         BaseFixture.setUp();
     }
 
-    function testUnlockAndReward() public {
+    function testLockAndUnlock() public {
+        address user = address(1);
+
+        uint256 xCitadelLocked = lockAmount();
+
+        vm.startPrank(user);
+        assertEq(xCitadelLocked, 10e18);
+        assertEq(xCitadelLocker.lockedBalanceOf(user), xCitadelLocked);
+
+        // try to withdraw before the lock duration ends
+        vm.expectRevert("no exp locks");
+        xCitadelLocker.withdrawExpiredLocksTo(user); // withdraw
+
+        vm.warp(block.timestamp + 148 days); // lock period = 147 days + 1 day(rewards_duration cause 1st time lock)
+        
+        uint256 xCitadelUserBalanceBefore = xCitadel.balanceOf(user);
+        xCitadelLocker.withdrawExpiredLocksTo(user); // withdraw
+        uint256 xCitadelUserBalanceAfter = xCitadel.balanceOf(user);
+        uint256 xCitadelUnlocked = xCitadelUserBalanceAfter -
+            xCitadelUserBalanceBefore;
+
+        // user gets unlocked amount
+        assertEq(xCitadelUnlocked, xCitadelLocked);
+        // locked balance should be zero
+        assertEq(xCitadelLocker.lockedBalanceOf(user), 0); 
+
+        vm.stopPrank();
+    }
+
+    function testGetReward() public{
         address user = address(1);
 
         uint256 xCitadelLocked = lockAmount();
@@ -20,13 +49,9 @@ contract LockingTest is BaseFixture {
 
         vm.startPrank(user);
 
-        // try to withdraw before the lock duration ends
-        vm.expectRevert("no exp locks");
-        xCitadelLocker.withdrawExpiredLocksTo(user); // withdraw
-
         uint256 xCitadelUserBalanceBefore = xCitadel.balanceOf(user);
         uint256 wbtcUserBalanceBefore = wbtc.balanceOf(user);
-        vm.warp(block.timestamp + 148 days); // lock period = 147 days + 1 day(rewards_duration cause 1st time lock)
+        // vm.warp(block.timestamp + 148 days); // lock period = 147 days + 1 day(rewards_duration cause 1st time lock)
 
         xCitadelLocker.getReward(user); // user collects rewards
 
@@ -57,29 +82,7 @@ contract LockingTest is BaseFixture {
         assertTrue(xCitadelUserBalanceAfter - xCitadelUserBalanceBefore > 0);
         assertTrue(wbtcUserBalanceAfter - wbtcUserBalanceBefore > 0);
 
-        xCitadelUserBalanceBefore = xCitadel.balanceOf(user);
-        xCitadelLocker.withdrawExpiredLocksTo(user); // withdraw
-        xCitadelUserBalanceAfter = xCitadel.balanceOf(user);
-        uint256 xCitadelUnlocked = xCitadelUserBalanceAfter -
-            xCitadelUserBalanceBefore;
-
-        // user gets unlocked amount
-        assertEq(xCitadelUnlocked, xCitadelLocked);
-
-        xCitadelUserBalanceBefore = xCitadel.balanceOf(user);
-        wbtcUserBalanceBefore = wbtc.balanceOf(user);
-        // user try to claim rewards again
-        xCitadelLocker.getReward(user);
-
-        xCitadelUserBalanceAfter = xCitadel.balanceOf(user);
-        wbtcUserBalanceAfter = wbtc.balanceOf(user);
-
-        assertEq(xCitadelUserBalanceBefore, xCitadelUserBalanceAfter); // user's balance should not change
-        assertEq(wbtcUserBalanceBefore, wbtcUserBalanceAfter);
-
-        vm.stopPrank();
     }
-
     function testRelocking() public {
         address user = address(1);
 
