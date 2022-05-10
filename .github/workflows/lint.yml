@@ -1,6 +1,10 @@
 name: Linter
 
-on: [push, pull_request]
+on:
+  pull_request:
+  workflow_dispatch:
+  push:
+    branches: [main]
 
 jobs:
   check:
@@ -12,14 +16,12 @@ jobs:
           submodules: recursive
 
       - name: Use Node.js
-        uses: actions/setup-node@v2
+        uses: actions/setup-node@v3
         with:
             node-version: '16.x'
 
       - name: Install Dependencies
         run: npm install
 
-      - name: Run linter/formatter check
+      - name: Run linter/formatting checks
         run: npm run solhint
-
-

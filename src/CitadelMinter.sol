@@ -34,7 +34,8 @@ contract CitadelMinter is
     bytes32 public constant TREASURY_GOVERNANCE_ROLE =
         keccak256("TREASURY_GOVERNANCE_ROLE");
 
-    bytes32 public constant XCITADEL_LOCKER_EMISSIONS = keccak256("xcitadel-locker-emissions");
+    bytes32 public constant XCITADEL_LOCKER_EMISSIONS =
+        keccak256("xcitadel-locker-emissions");
 
     ICitadelToken public citadelToken;
     IVault public xCitadel;
@@ -137,10 +138,16 @@ contract CitadelMinter is
 
         // Approve xCitadel vault for use of citadel tokens
         // NOTE: Using input params as those cost 3 to read vs 100 from storage
-        IERC20Upgradeable(_citadelToken).safeApprove(_xCitadel, type(uint256).max);
+        IERC20Upgradeable(_citadelToken).safeApprove(
+            _xCitadel,
+            type(uint256).max
+        );
 
         // Approve xCitadel for locker to use
-        IERC20Upgradeable(_xCitadel).safeApprove(_xCitadelLocker, type(uint256).max);
+        IERC20Upgradeable(_xCitadel).safeApprove(
+            _xCitadelLocker,
+            type(uint256).max
+        );
     }
 
     /// =======================
@@ -231,7 +238,10 @@ contract CitadelMinter is
         if (cachedStakingBps != 0) {
             stakingAmount = (mintable * cachedStakingBps) / MAX_BPS;
 
-            IERC20Upgradeable(address(citadelToken)).safeTransfer(address(cachedXCitadel), stakingAmount);
+            IERC20Upgradeable(address(citadelToken)).safeTransfer(
+                address(cachedXCitadel),
+                stakingAmount
+            );
             emit CitadelDistributionToStaking(
                 cachedLastMintTimestamp,
                 block.timestamp,
@@ -251,15 +261,25 @@ contract CitadelMinter is
         }
 
         if (cachedDaoBps != 0) {
-
             // Note: will revert if no treasury governance role set. Assumes only a single member for this role which should be enforced on GAC.
-            address treasuryVault = gac.getRoleMember(TREASURY_GOVERNANCE_ROLE, 0);
+            address treasuryVault = gac.getRoleMember(
+                TREASURY_GOVERNANCE_ROLE,
+                0
+            );
 
             daoAmount = (mintable * cachedDaoBps) / MAX_BPS;
-            IERC20Upgradeable(address(citadelToken)).safeTransfer(treasuryVault, daoAmount);
+            IERC20Upgradeable(address(citadelToken)).safeTransfer(
+                treasuryVault,
+                daoAmount
+            );
         }
 
-        emit CitadelDistribution(fundingAmount, stakingAmount, lockingAmount, daoAmount);
+        emit CitadelDistribution(
+            fundingAmount,
+            stakingAmount,
+            lockingAmount,
+            daoAmount
+        );
 
         lastMintTimestamp = block.timestamp;
     }
@@ -331,7 +351,12 @@ contract CitadelMinter is
         lockingBps = _lockingBps;
         daoBps = _daoBps;
 
-        emit CitadelDistributionSplitSet(_fundingBps, _stakingBps, _lockingBps, _daoBps);
+        emit CitadelDistributionSplitSet(
+            _fundingBps,
+            _stakingBps,
+            _lockingBps,
+            _daoBps
+        );
     }
 
     /// ==============================

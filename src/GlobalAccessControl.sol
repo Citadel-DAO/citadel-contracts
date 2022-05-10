@@ -3,7 +3,7 @@
 pragma solidity ^0.8.0;
 pragma experimental ABIEncoderV2;
 
-import {IERC20Upgradeable} from "openzeppelin-contracts-upgradeable/token/ERC20/IERC20Upgradeable.sol"; 
+import {IERC20Upgradeable} from "openzeppelin-contracts-upgradeable/token/ERC20/IERC20Upgradeable.sol";
 import {SafeERC20Upgradeable} from "openzeppelin-contracts-upgradeable/token/ERC20/utils/SafeERC20Upgradeable.sol";
 import {PausableUpgradeable} from "openzeppelin-contracts-upgradeable/security/PausableUpgradeable.sol";
 import {AccessControlEnumerableUpgradeable} from "openzeppelin-contracts-upgradeable/access/AccessControlEnumerableUpgradeable.sol";
@@ -63,7 +63,7 @@ contract GlobalAccessControl is
 
         // Set this for assumptions and clarity
         _setupRole(DEFAULT_ADMIN_ROLE, _initialContractGovernance);
-        
+
         _setupRole(CONTRACT_GOVERNANCE_ROLE, _initialContractGovernance);
 
         // All roles are managed by CONTRACT_GOVERNANCE_ROLE

@@ -234,14 +234,14 @@ contract BaseFixture is DSTest, Utils, stdCheats {
         knightingRoundParams = KnightingRoundParams({
             start: block.timestamp + 100,
             duration: 7 days,
-            citadelWbtcPrice: 21e18, // 21 CTDL per wBTC
+            citadelWbtcPrice: 21e18, // 21 xCTDL per wBTC
             tokenInLimit: 100e8 // 100 wBTC
         });
 
         knightingRoundWithEthParams = KnightingRoundParams({
             start: block.timestamp + 100,
             duration: 7 days,
-            citadelWbtcPrice: 21e18, // 21 CTDL per ETH
+            citadelWbtcPrice: 21e18, // 21 xCTDL per ETH
             tokenInLimit: 100e18 // 100 ETH
         });
 
@@ -463,9 +463,6 @@ contract BaseFixture is DSTest, Utils, stdCheats {
                     accounts_to_track[i]
                 )
             );
-
-            // emit log(wbtc_key);
-            // emit log(citadel_key);
         }
 
         comparator.addCall(
@@ -553,8 +550,15 @@ contract BaseFixture is DSTest, Utils, stdCheats {
         uint256 initialSupply = (citadelBought * 1666666666666666667) / 1e18; // Amount bought = 60% of initial supply, therefore total citadel ~= 1.67 amount bought.
 
         citadel.mint(governance, initialSupply);
-        citadel.transfer(address(knightingRound), citadelBought);
-        citadel.transfer(address(knightingRoundWithEth), citadelBoughtWithEth);
+        citadel.approve(
+            address(xCitadel),
+            citadelBought + citadelBoughtWithEth
+        );
+        xCitadel.depositFor(address(knightingRound), citadelBought);
+        xCitadel.depositFor(
+            address(knightingRoundWithEth),
+            citadelBoughtWithEth
+        );
         uint256 remainingSupply = initialSupply - citadelBought - 1e18; // one coin for seeding xCitadel
 
         citadel.approve(address(xCitadel), 1e18);

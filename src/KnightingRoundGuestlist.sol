@@ -44,7 +44,10 @@ contract KnightingRoundGuestlist is GlobalAccessControlManaged {
      * @param _invited A flag for each guest at the matching index, inviting or
      * uninviting the guest.
      */
-    function setGuests(address[] calldata _guests, bool[] calldata _invited) external onlyRole(TECH_OPERATIONS_ROLE) {
+    function setGuests(address[] calldata _guests, bool[] calldata _invited)
+        external
+        onlyRole(TECH_OPERATIONS_ROLE)
+    {
         _setGuests(_guests, _invited);
     }
 
@@ -53,7 +56,9 @@ contract KnightingRoundGuestlist is GlobalAccessControlManaged {
      * @notice Note that the list is designed to ONLY EXPAND in future instances
      * @notice The admin does retain the ability to ban individual addresses
      */
-    function proveInvitation(address account, bytes32[] calldata merkleProof) public {
+    function proveInvitation(address account, bytes32[] calldata merkleProof)
+        public
+    {
         // Verify Merkle Proof
         require(_verifyInvitationProof(account, merkleProof));
 
@@ -73,7 +78,10 @@ contract KnightingRoundGuestlist is GlobalAccessControlManaged {
      * @notice Note that accounts not included in the root will still be invited if their inviation was previously approved.
      * @notice Setting to 0 removes proof verification versus the root, opening access
      */
-    function setGuestRoot(bytes32 guestRoot_) external onlyRole(TECH_OPERATIONS_ROLE) {
+    function setGuestRoot(bytes32 guestRoot_)
+        external
+        onlyRole(TECH_OPERATIONS_ROLE)
+    {
         guestRoot = guestRoot_;
 
         emit SetGuestRoot(guestRoot);
@@ -84,13 +92,16 @@ contract KnightingRoundGuestlist is GlobalAccessControlManaged {
      * the party.
      * @param _guest The guest's address to check.
      */
-    function authorized(
-        address _guest,
-        bytes32[] calldata _merkleProof
-    ) external view returns (bool) {
+    function authorized(address _guest, bytes32[] calldata _merkleProof)
+        external
+        view
+        returns (bool)
+    {
         // Yes: If the user is on the list or there's no guestRoot set
         // No: If the user is not on the list
-        bool invited = guests[_guest] || _verifyInvitationProof(_guest, _merkleProof) || guestRoot == bytes32(0);
+        bool invited = guests[_guest] ||
+            _verifyInvitationProof(_guest, _merkleProof) ||
+            guestRoot == bytes32(0);
 
         // If the user was previously invited, or proved invitiation via list, verify if the amount to deposit keeps them under the cap
         if (invited) {
@@ -100,7 +111,9 @@ contract KnightingRoundGuestlist is GlobalAccessControlManaged {
         }
     }
 
-    function _setGuests(address[] memory _guests, bool[] memory _invited) internal {
+    function _setGuests(address[] memory _guests, bool[] memory _invited)
+        internal
+    {
         require(_guests.length == _invited.length);
         for (uint256 i = 0; i < _guests.length; i++) {
             if (_guests[i] == address(0)) {
@@ -110,7 +123,10 @@ contract KnightingRoundGuestlist is GlobalAccessControlManaged {
         }
     }
 
-    function _verifyInvitationProof(address account, bytes32[] calldata merkleProof) internal view returns (bool) {
+    function _verifyInvitationProof(
+        address account,
+        bytes32[] calldata merkleProof
+    ) internal view returns (bool) {
         bytes32 node = keccak256(abi.encodePacked(account));
         return MerkleProofUpgradeable.verify(merkleProof, guestRoot, node);
     }

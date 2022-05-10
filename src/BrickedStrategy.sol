@@ -22,7 +22,13 @@ contract BrickedStrategy is BaseStrategy {
     /// @dev Return a list of protected tokens
     /// @notice It's very important all tokens that are meant to be in the strategy to be marked as protected
     /// @notice this provides security guarantees to the depositors they can't be sweeped away
-    function getProtectedTokens() public view virtual override returns (address[] memory) {
+    function getProtectedTokens()
+        public
+        view
+        virtual
+        override
+        returns (address[] memory)
+    {
         address[] memory protectedTokens = new address[](1);
         protectedTokens[0] = want;
         return protectedTokens;
@@ -42,18 +48,25 @@ contract BrickedStrategy is BaseStrategy {
 
     /// @dev Withdraw `_amount` of want, so that it can be sent to the vault / depositor
     /// @notice just unlock the funds and return the amount you could unlock
-    function _withdrawSome(uint256 _amount) internal override returns (uint256) {
+    function _withdrawSome(uint256 _amount)
+        internal
+        override
+        returns (uint256)
+    {
         // No-op
         return _amount;
     }
 
-
     /// @dev Does this function require `tend` to be called?
-    function _isTendable() internal override pure returns (bool) {
+    function _isTendable() internal pure override returns (bool) {
         return false; // Change to true if the strategy should be tended
     }
 
-    function _harvest() internal override returns (TokenAmount[] memory harvested) {
+    function _harvest()
+        internal
+        override
+        returns (TokenAmount[] memory harvested)
+    {
         // No-op as we don't do anything with funds
 
         // Nothing harvested, we have 2 tokens, return both 0s
@@ -66,9 +79,8 @@ contract BrickedStrategy is BaseStrategy {
         return harvested;
     }
 
-
     // Example tend is a no-op which returns the values, could also just revert
-    function _tend() internal override returns (TokenAmount[] memory tended){
+    function _tend() internal override returns (TokenAmount[] memory tended) {
         // Nothing tended
         tended = new TokenAmount[](1);
         tended[0] = TokenAmount(want, 0);
@@ -83,7 +95,12 @@ contract BrickedStrategy is BaseStrategy {
 
     /// @dev Return the balance of rewards that the strategy has accrued
     /// @notice Used for offChain APY and Harvest Health monitoring
-    function balanceOfRewards() external view override returns (TokenAmount[] memory rewards) {
+    function balanceOfRewards()
+        external
+        view
+        override
+        returns (TokenAmount[] memory rewards)
+    {
         // Rewards are 0
         rewards = new TokenAmount[](1);
         rewards[0] = TokenAmount(want, 0);

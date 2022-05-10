@@ -13,7 +13,10 @@ import "./lib/GlobalAccessControlManaged.sol";
  * @notice Sells citadel at a predetermined price to whitelisted buyers. Citadel tokens are not distributed until the finalize event.
  * TODO: Better revert strings
  */
-contract KnightingRound is GlobalAccessControlManaged, ReentrancyGuardUpgradeable {
+contract KnightingRound is
+    GlobalAccessControlManaged,
+    ReentrancyGuardUpgradeable
+{
     using SafeERC20Upgradeable for ERC20Upgradeable;
 
     bytes32 public constant CONTRACT_GOVERNANCE_ROLE =
@@ -40,7 +43,7 @@ contract KnightingRound is GlobalAccessControlManaged, ReentrancyGuardUpgradeabl
     bool public finalized;
 
     /// CTDL per tokenIn scaled to 10^18
-    /// eg. 1 WBTC = 21 CTDL => 21 x 10^18 
+    /// eg. 1 WBTC = 21 CTDL => 21 x 10^18
     uint256 public tokenOutPerTokenIn;
 
     /// Amounts bought by accounts
@@ -400,7 +403,12 @@ contract KnightingRound is GlobalAccessControlManaged, ReentrancyGuardUpgradeabl
      *      (current contract balance - amount left to be claimed)
      * @param _token The token to sweep
      */
-    function sweep(address _token) external gacPausable nonReentrant onlyRole(TREASURY_OPERATIONS_ROLE) {
+    function sweep(address _token)
+        external
+        gacPausable
+        nonReentrant
+        onlyRole(TREASURY_OPERATIONS_ROLE)
+    {
         uint256 amount = ERC20Upgradeable(_token).balanceOf(address(this));
 
         if (_token == address(tokenOut)) {
