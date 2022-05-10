@@ -536,9 +536,15 @@ contract BaseFixture is DSTest, Utils, stdCheats {
         uint256 initialSupply = (citadelBought * 1666666666666666667) / 1e18; // Amount bought = 60% of initial supply, therefore total citadel ~= 1.67 amount bought.
 
         citadel.mint(governance, initialSupply);
-        citadel.approve(address(xCitadel), citadelBought + citadelBoughtWithEth);
+        citadel.approve(
+            address(xCitadel),
+            citadelBought + citadelBoughtWithEth
+        );
         xCitadel.depositFor(address(knightingRound), citadelBought);
-        xCitadel.depositFor(address(knightingRoundWithEth), citadelBoughtWithEth);
+        xCitadel.depositFor(
+            address(knightingRoundWithEth),
+            citadelBoughtWithEth
+        );
         uint256 remainingSupply = initialSupply - citadelBought - 1e18; // one coin for seeding xCitadel
 
         citadel.approve(address(xCitadel), 1e18);
