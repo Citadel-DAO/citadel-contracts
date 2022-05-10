@@ -22,7 +22,8 @@ contract Funding is GlobalAccessControlManaged, ReentrancyGuardUpgradeable {
         keccak256("CONTRACT_GOVERNANCE_ROLE");
     bytes32 public constant POLICY_OPERATIONS_ROLE =
         keccak256("POLICY_OPERATIONS_ROLE");
-    bytes32 public constant TREASURY_OPERATIONS_ROLE = keccak256("TREASURY_OPERATIONS_ROLE");
+    bytes32 public constant TREASURY_OPERATIONS_ROLE =
+        keccak256("TREASURY_OPERATIONS_ROLE");
     bytes32 public constant KEEPER_ROLE = keccak256("KEEPER_ROLE");
 
     uint256 public constant MAX_BPS = 10000;
@@ -109,14 +110,8 @@ contract Funding is GlobalAccessControlManaged, ReentrancyGuardUpgradeable {
         address _citadelPerAssetOracle,
         uint256 _assetCap
     ) external initializer {
-        require(
-            _saleRecipient != address(0),
-            "Funding: 0 sale"
-        );
-        require(
-            _citadelPerAssetOracle != address(0),
-            "Funding: 0 oracle"
-        );
+        require(_saleRecipient != address(0), "Funding: 0 sale");
+        require(_citadelPerAssetOracle != address(0), "Funding: 0 oracle");
 
         __GlobalAccessControlManaged_init(_gac);
         __ReentrancyGuard_init();
@@ -171,22 +166,20 @@ contract Funding is GlobalAccessControlManaged, ReentrancyGuardUpgradeable {
             funding.assetCumulativeFunded + _assetAmountIn <= funding.assetCap,
             "asset funding cap exceeded"
         );
-        funding.assetCumulativeFunded = funding.assetCumulativeFunded + _assetAmountIn;
+        funding.assetCumulativeFunded =
+            funding.assetCumulativeFunded +
+            _assetAmountIn;
         // Take in asset from user
         citadelAmount_ = getAmountOut(_assetAmountIn);
         require(citadelAmount_ >= _minCitadelOut, "minCitadelOut");
 
         asset.safeTransferFrom(msg.sender, saleRecipient, _assetAmountIn);
-        
+
         // Deposit xCitadel and send to user
         // TODO: Check gas costs. How does this relate to market buying if you do want to deposit to xCTDL?
         xCitadel.depositFor(msg.sender, citadelAmount_);
 
-        emit Deposit(
-            msg.sender,
-            _assetAmountIn,
-            citadelAmount_
-        );
+        emit Deposit(msg.sender, _assetAmountIn, citadelAmount_);
     }
 
     /// =======================
@@ -222,9 +215,15 @@ contract Funding is GlobalAccessControlManaged, ReentrancyGuardUpgradeable {
      * @param _assetAmountIn Amount of `asset` to exchange
      * @return xCitadelAmount_ Amount of `xCitadel` received at current price per share
      */
-    function getStakedCitadelAmountOut(uint256 _assetAmountIn) public view returns (uint256 xCitadelAmount_) {
-        uint citadelAmount = getAmountOut(_assetAmountIn);
-        xCitadelAmount_ = citadelAmount * ONE_ETH / xCitadel.getPricePerFullShare();
+    function getStakedCitadelAmountOut(uint256 _assetAmountIn)
+        public
+        view
+        returns (uint256 xCitadelAmount_)
+    {
+        uint256 citadelAmount = getAmountOut(_assetAmountIn);
+        xCitadelAmount_ =
+            (citadelAmount * ONE_ETH) /
+            xCitadel.getPricePerFullShare();
     }
 
     /**
@@ -402,7 +401,6 @@ contract Funding is GlobalAccessControlManaged, ReentrancyGuardUpgradeable {
         gacPausable
         onlyRole(CONTRACT_GOVERNANCE_ROLE)
     {
-
         require(_minPrice <= _maxPrice, "minPrice > maxPrice");
         minCitadelPerAsset = _minPrice;
         maxCitadelPerAsset = _maxPrice;
@@ -420,11 +418,12 @@ contract Funding is GlobalAccessControlManaged, ReentrancyGuardUpgradeable {
         external
         gacPausable
         onlyRole(KEEPER_ROLE)
-    {   
-        uint _citadelPerAsset;
+    {
+        uint256 _citadelPerAsset;
         bool _valid;
 
-        (_citadelPerAsset, _valid) = IMedianOracle(citadelPerAssetOracle).getData();
+        (_citadelPerAsset, _valid) = IMedianOracle(citadelPerAssetOracle)
+            .getData();
 
         require(_citadelPerAsset > 0, "price must not be zero");
         require(_valid, "oracle data must be valid");

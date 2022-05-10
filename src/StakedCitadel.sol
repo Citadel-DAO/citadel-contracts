@@ -458,10 +458,13 @@ contract StakedCitadel is
             performanceFeeStrategist
         );
 
-        if(governanceRewardsFee != 0) {
-            IERC20Upgradeable(_token).safeTransfer(treasury, governanceRewardsFee);
+        if (governanceRewardsFee != 0) {
+            IERC20Upgradeable(_token).safeTransfer(
+                treasury,
+                governanceRewardsFee
+            );
         }
-        if(strategistRewardsFee != 0) {
+        if (strategistRewardsFee != 0) {
             IERC20Upgradeable(_token).safeTransfer(
                 strategist,
                 strategistRewardsFee
@@ -836,7 +839,7 @@ contract StakedCitadel is
 
         // After you burned the shares, and you have sent the funds, adding here is equivalent to depositing
         // Process withdrawal fee
-        if(_fee > 0) {
+        if (_fee > 0) {
             _mintSharesFor(treasury, _fee, balance() - _fee);
         }
     }
