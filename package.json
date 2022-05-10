@@ -22,8 +22,8 @@
     "moment": "^2.29.3"
   },
   "scripts": {
-    "solhint": "./node_modules/.bin/solhint -f table src/**/*.sol",
-    "prettier:solidity": "./node_modules/.bin/prettier --write src/**/*.sol",
+    "solhint": "solhint -f table 'src/**/*.sol'",
+    "prettier:solidity": "prettier --write 'src/**/*.sol'",
     "prepare": "husky install",
     "gen-types": "./gen-types.sh"
   }
