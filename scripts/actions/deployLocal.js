@@ -13,6 +13,7 @@ const approveFundingTokens = require("./approveFundingTokens");
 const medianOracleUpdatePrice = require("./medianOracleUpdatePrice");
 const setDiscount = require("./setDiscount");
 const bondTokenForXCTDL = require("./bondTokenForXCTDL");
+const xCTDLVesting = require("./xCTDLVesting");
 
 const deployLocal = async () => {
   const signers = await ethers.getSigners();
@@ -43,7 +44,9 @@ const deployLocal = async () => {
     setDiscount,
     () => console.log("Discount setted ..."),
     bondTokenForXCTDL,
-    () => console.log("bond some WBTC and CVX to get xCTDL ...")
+    () => console.log("bond some WBTC and CVX to get xCTDL ..."),
+    xCTDLVesting,
+    () => console.log("xCTDL vesting")
   );
 };
 
