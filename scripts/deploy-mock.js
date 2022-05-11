@@ -2,20 +2,25 @@ const hre = require("hardhat");
 const ethers = hre.ethers;
 const fs = require("fs");
 const path = require("path");
-const getContractFactories = require("./utils/getContractFactories");
-const deployContracts = require("./utils/deployContracts");
+const deployContracts = require("./actions/deployContracts");
 const getRoleSigners = require("./utils/getRoleSingers");
 const { address, hashIt } = require("./utils/helpers");
 const grantRoles = require("./utils/grantRoles");
-const initializer = require("./actions/initializer");
 const storeConfigs = require("./utils/storeConfigs");
+
+const pipeActions = require("./utils/pipeActions");
+
+const initializer = require("./actions/initializer");
+const getContractFactories = require("./actions/getContractFactories");
+
+const setupAndDeploy = require("./actions/setupAndDeploy");
 
 async function main() {
   const signers = await ethers.getSigners();
 
   /// === Contract Factories
 
-  const {
+  /*const {
     GlobalAccessControl,
     CitadelToken,
     StakedCitadelVester,
@@ -28,10 +33,11 @@ async function main() {
     wBTC,
     CVX,
     USDC,
-  } = await getContractFactories();
+  } = await getContractFactories();*/
+
 
   /// === Deploying Contracts & loggin addresses
-  const {
+  /* const {
     gac,
     citadel,
     xCitadel,
@@ -59,7 +65,10 @@ async function main() {
     { factory: wBTC, instance: "wbtc" },
     { factory: CVX, instance: "cvx" },
     { factory: USDC, instance: "usdc" },
-  ]);
+  ]);*/
+
+    await pipeActions({})(setupAndDeploy, console.log);
+
 
   const mintTo = signers[0].address;
 
@@ -69,7 +78,7 @@ async function main() {
 
   /// === Variable Setup
 
-  const {
+/*  const {
     governance,
     keeper,
     guardian,
@@ -130,7 +139,7 @@ async function main() {
       wbtc: address(wbtc),
       cvx: address(cvx),
     }
-  );
+  );*/
 }
 
 main()
