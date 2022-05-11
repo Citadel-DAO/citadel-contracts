@@ -8,6 +8,7 @@ const grantRoles = async ({
   techOps,
   treasuryOps,
   policyOps,
+  keeper,
 }) => {
   await gac
     .connect(governance)
@@ -39,6 +40,10 @@ const grantRoles = async ({
   await gac
     .connect(governance)
     .grantRole(hashIt("UNPAUSER_ROLE"), address(techOps));
+
+  await gac
+    .connect(governance)
+    .grantRole(hashIt("KEEPER_ROLE"), address(keeper));
 };
 
 module.exports = grantRoles;

@@ -1,8 +1,12 @@
 const hre = require("hardhat");
+
 const StakedCitadelLockerArtifact = require("../../artifacts-external/StakedCitadelLocker.json");
+const MedianOracleArtifact = require("../../artifacts-external/MedianOracle.json");
 const ethers = hre.ethers;
 
 const getContractFactories = async () => {
+  const signers = await ethers.getSigners();
+
   const GlobalAccessControl = await ethers.getContractFactory(
     "GlobalAccessControl"
   );
@@ -28,6 +32,12 @@ const getContractFactories = async () => {
     bytecode: StakedCitadelLockerArtifact.bytecode.object,
     deployedBytecode: StakedCitadelLockerArtifact.deployedBytecode.object,
   });
+
+  const MedianOracle = new ethers.ContractFactory(
+    MedianOracleArtifact.abi,
+    MedianOracleArtifact.bytecode,
+    signers[0]
+  );
 
   const ProxyAdmin = await ethers.getContractFactory("ProxyAdmin");
 
@@ -69,6 +79,7 @@ const getContractFactories = async () => {
     CVX,
     USDC,
     TransparentUpgradeableProxy,
+    MedianOracle,
   };
 };
 

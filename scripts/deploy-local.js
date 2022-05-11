@@ -22,7 +22,6 @@ const deployLocal = require("./actions/deployLocal");
 async function main() {
   const signers = await ethers.getSigners();
 
-
   /// === Contract Factories
   /* const {
     GlobalAccessControl,
@@ -153,9 +152,7 @@ async function main() {
     )}`
   );
 
-  */
-  await deployLocal();
-  /*
+
 
   // approve the tokens to funding
   const apeWbtcAmount = parseUnits("10", 8);
@@ -170,6 +167,11 @@ async function main() {
   await fundingCvx
     .connect(eoaOracle)
     .functions["updateCitadelPerAsset(uint256)"](parseUnits("0.21", 18));
+
+
+      */
+  await deployLocal();
+  /*
 
   // set max discount
   await fundingWbtc.connect(governance).setDiscountLimits(0, 1000);

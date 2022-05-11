@@ -12,7 +12,8 @@ const setupAndDeploy = async () => {
     CitadelMinter,
     KnightingRound,
     Funding,
-    ERC20Upgradeable
+    ERC20Upgradeable,
+    MedianOracle,
   } = await getContractFactories();
 
   const {
@@ -39,6 +40,9 @@ const setupAndDeploy = async () => {
     { factory: Funding, instance: "fundingCvx" },
   ]);
 
+  const medianOracleWbtc = await MedianOracle.deploy(10000, 0, 1);
+  const medianOracleCvx = await MedianOracle.deploy(10000, 0, 1);
+
   return {
     GlobalAccessControl,
     CitadelToken,
@@ -60,6 +64,9 @@ const setupAndDeploy = async () => {
     knightingRound,
     fundingWbtc,
     fundingCvx,
+    MedianOracle,
+    medianOracleWbtc,
+    medianOracleCvx,
   };
 };
 

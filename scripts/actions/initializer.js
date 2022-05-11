@@ -22,6 +22,8 @@ const initializer = async ({
   wbtc,
   cvx,
   eoaOracle,
+  medianOracleWbtc,
+  medianOracleCvx,
 }) => {
   /// ======= Global Access Control
   if (gac) {
@@ -108,7 +110,7 @@ const initializer = async ({
       address(wbtc),
       address(xCitadel),
       address(treasuryVault),
-      address(eoaOracle),
+      address(medianOracleWbtc),
       ethers.utils.parseUnits("100", 8)
     );
     console.log("fundingWbtc initialized.");
@@ -120,7 +122,7 @@ const initializer = async ({
       address(cvx),
       address(xCitadel),
       address(treasuryVault),
-      address(eoaOracle),
+      address(medianOracleCvx),
       ethers.utils.parseUnits("100000", 18)
     );
     console.log("fundingCvx initialized.");
