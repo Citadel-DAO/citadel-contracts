@@ -9,6 +9,7 @@ const initializer = require("./initializer");
 const grantRoles = require("./grantRoles");
 const setXCitadelStrategy = require("./setXCitadelStrategy");
 const citadelMinterSetup = require("./citadelMinterSetup");
+const approveFundingTokens = require("./approveFundingTokens");
 
 const deployLocal = async () => {
   const signers = await ethers.getSigners();
@@ -30,7 +31,9 @@ const deployLocal = async () => {
     grantRoles,
     () => console.log("Roles Granted ..."),
     citadelMinterSetup,
-    () => console.log("Citadel minter setup ...")
+    () => console.log("Citadel minter setup ..."),
+    approveFundingTokens,
+    () => console.log("Funding tokens approved ...")
   );
 };
 

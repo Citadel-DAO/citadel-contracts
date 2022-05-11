@@ -68,9 +68,7 @@ async function main() {
   /// === mint wbtc and cvx to signers[0]
   // impersonate the token owner
   
-*/
-    await deployLocal();
-/*
+
 
   /// === Variable Setup
   const {
@@ -154,6 +152,10 @@ async function main() {
       18
     )}`
   );
+
+  */
+  await deployLocal();
+  /*
 
   // approve the tokens to funding
   const apeWbtcAmount = parseUnits("10", 8);
