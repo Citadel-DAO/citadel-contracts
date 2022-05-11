@@ -138,94 +138,146 @@ contract StakingTest is BaseFixture {
         citadel.mint(user3, 100e18);
         vm.stopPrank();
 
+        // user1 deposits some amount
         vm.startPrank(user1);
         citadel.approve(address(xCitadel), 10e18); // approve staking amount
         xCitadel.deposit(10e18); // deposit
-
         vm.stopPrank();
 
+        // user2 deposits some amount
         vm.startPrank(user2);
         citadel.approve(address(xCitadel), 15e18); // approve staking amount
         xCitadel.deposit(15e18); // deposit
         vm.stopPrank();
 
-        vm.startPrank(user3);
-        // approve staking amount
-        citadel.approve(address(xCitadel), 20e18);
-
-        // deposit
-        xCitadel.deposit(20e18);
-
-        vm.stopPrank();
-
         mintAndDistribute(); // minting 1st
 
-        vm.warp(block.timestamp + 2000);
-
-        vm.prank(policyOps);
-        citadelMinter.mintAndDistribute(); // minting again
-
-        uint256 expectedClaimableAmount1 = (xCitadel.balance() *
+        uint256 user1AmountMinting1 = (xCitadel.balance() *
             xCitadel.balanceOf(user1)) / xCitadel.totalSupply();
-        uint256 expectedClaimableAmount2 = (xCitadel.balance() *
+        uint256 user2AmountMinting1 = (xCitadel.balance() *
             xCitadel.balanceOf(user2)) / xCitadel.totalSupply();
-        uint256 expectedClaimableAmount3 = ((xCitadel.balance() *
-            xCitadel.balanceOf(user3)) / 2) / xCitadel.totalSupply();
+        uint256 user3AmountMinting1 = (
+            (xCitadel.balance() * xCitadel.balanceOf(user3))
+        ) / xCitadel.totalSupply();
+
+        // user1 should have more than deposited because of minting
+        assertTrue(user1AmountMinting1 > 10e18);
+        // user2 should have more than deposited because of minting
+        assertTrue(user2AmountMinting1 > 15e18);
+        // as user3 has not deposited anything yet
+        assertEq(user3AmountMinting1, 0);
 
         vm.prank(user1);
         xCitadel.withdrawAll();
 
-        vm.prank(user2);
-        xCitadel.withdraw(15e18);
+        // user3 depositing note that user3 deposits same amount as user2
+        vm.startPrank(user3);
+        citadel.approve(address(xCitadel), 15e18); // approve staking amount
+        xCitadel.deposit(15e18); // deposit
+        vm.stopPrank();
 
-        vm.prank(user3);
-        xCitadel.withdraw(10e18); // withdraw some amount only
+        // vm.prank(user3);
+        // xCitadel.withdraw(10e18); // withdraw some amount only
 
         // move forward so that the vesting period ends
         vm.warp(block.timestamp + xCitadelVester.INITIAL_VESTING_DURATION());
 
-        // as the vesting period is ended. user should be able claim full amount
-        assertEq(
-            xCitadelVester.claimableBalance(user1),
-            expectedClaimableAmount1
-        );
+        // as the vesting period is ended. user1 should be able claim full amount
+        assertEq(xCitadelVester.claimableBalance(user1), user1AmountMinting1);
+
+        // as user2 has not done any withdrawls
+        assertEq(xCitadelVester.claimableBalance(user2), 0);
+        // as user3 has not done any withdrawls
+        assertEq(xCitadelVester.claimableBalance(user3), 0);
+
+        // minting again 2nd
+        vm.warp(block.timestamp + 2000);
+
+        vm.prank(policyOps);
+        citadelMinter.mintAndDistribute();
+
+        uint256 user1AmountMinting2 = (xCitadel.balance() *
+            xCitadel.balanceOf(user1)) / xCitadel.totalSupply();
+        uint256 user2AmountMinting2 = (xCitadel.balance() *
+            xCitadel.balanceOf(user2)) / xCitadel.totalSupply();
+        uint256 user3AmountMinting2 = (
+            (xCitadel.balance() * xCitadel.balanceOf(user3))
+        ) / xCitadel.totalSupply();
+
+        // user1 has withdrawn all before 2nd minting so no amount after minting
+        assertTrue(user1AmountMinting2 == 0);
+        // user2 should have more than user2AmountMinting1 deposited because of 2 minting cycles
+        assertTrue(user2AmountMinting2 > user2AmountMinting1);
+        // for user3
+        assertTrue(user3AmountMinting2 > 15e18);
+        // as user2 deposited before 2 minting cycles and user3 deposited just before 1 minting cycle
+        // user2 will get more amount than user3
+        assertTrue(user2AmountMinting2 > user3AmountMinting2);
+
+        // user2 withdraws some amount
+        vm.prank(user2);
+        xCitadel.withdraw(5e18);
+
+        uint256 expectedClaimableAmount2 = (xCitadel.balance() * 5e18) /
+            xCitadel.totalSupply();
+
+        // move forward so that the vesting period ends
+        vm.warp(block.timestamp + xCitadelVester.INITIAL_VESTING_DURATION());
+
+        // as the vesting period is ended.
+        // user1 still have claimable balance as user1 has not claimed it yet
+        assertEq(xCitadelVester.claimableBalance(user1), user1AmountMinting1);
+        // as user2 has withdrawn some amount
         assertEq(
             xCitadelVester.claimableBalance(user2),
             expectedClaimableAmount2
         );
-        assertEq(
-            xCitadelVester.claimableBalance(user3),
-            expectedClaimableAmount3
-        );
+        // as user3 has not done any withdrawls
+        assertEq(xCitadelVester.claimableBalance(user3), 0);
 
-        uint256 user1BalanceBefore = citadel.balanceOf(user1);
+        // minting again
+        vm.warp(block.timestamp + 2000);
+
+        vm.prank(policyOps);
+        citadelMinter.mintAndDistribute();
+
+        uint256 user2AmountMinting3 = (xCitadel.balance() *
+            xCitadel.balanceOf(user2)) / xCitadel.totalSupply();
+        uint256 user3AmountMinting3 = (
+            (xCitadel.balance() * xCitadel.balanceOf(user3))
+        ) / xCitadel.totalSupply();
+
+        // user2 has withdrawn only some amount, user1 still have shares
+        assertTrue(user2AmountMinting2 > 0);
+        // user3 should have more than compare to minting cycle 2
+        assertTrue(user3AmountMinting3 > user3AmountMinting2);
+
+        // all users claim the amount they should get expected
+        uint256 userBalanceBefore = citadel.balanceOf(user1);
         vm.prank(user1);
-        xCitadelVester.claim(user1, expectedClaimableAmount1);
-        uint256 user1BalanceAfter = citadel.balanceOf(user1);
+        xCitadelVester.claim(user1, user1AmountMinting1);
+        uint256 userBalanceAfter = citadel.balanceOf(user1);
 
-        uint256 user2BalanceBefore = citadel.balanceOf(user2);
+        // user1 has withdrawn all amount
+        assertEq(userBalanceAfter - userBalanceBefore, user1AmountMinting1);
+        userBalanceBefore = citadel.balanceOf(user2);
         vm.prank(user2);
         xCitadelVester.claim(user2, expectedClaimableAmount2);
-        uint256 user2BalanceAfter = citadel.balanceOf(user2);
+        userBalanceAfter = citadel.balanceOf(user2);
 
-        uint256 user3BalanceBefore = citadel.balanceOf(user3);
-        vm.prank(user3);
-        xCitadelVester.claim(user3, expectedClaimableAmount3);
-
-        uint256 user3BalanceAfter = citadel.balanceOf(user3);
-
+        // user2 has withdrawn some amount
         assertEq(
-            user1BalanceAfter - user1BalanceBefore,
-            expectedClaimableAmount1
-        );
-        assertEq(
-            user2BalanceAfter - user2BalanceBefore,
+            userBalanceAfter - userBalanceBefore,
             expectedClaimableAmount2
         );
-        assertEq(
-            user3BalanceAfter - user3BalanceBefore,
-            expectedClaimableAmount3
-        );
+
+        userBalanceBefore = citadel.balanceOf(user3);
+        vm.prank(user3);
+        xCitadelVester.claim(user3, 10e18);
+        userBalanceAfter = citadel.balanceOf(user3);
+
+        // user3 has not withdrawn anything
+        assertEq(userBalanceAfter, userBalanceBefore);
     }
 
     function mintAndDistribute() public {
