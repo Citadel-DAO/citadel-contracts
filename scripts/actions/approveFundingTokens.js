@@ -6,6 +6,11 @@ const approveFundingTokens = async ({ wbtc, cvx, fundingCvx, fundingWbtc }) => {
   const apeCvxAmount = parseUnits("1000", 18);
   await wbtc.approve(address(fundingWbtc), apeWbtcAmount);
   await cvx.approve(address(fundingCvx), apeCvxAmount);
+
+  return {
+    apeWbtcAmount,
+    apeCvxAmount,
+  };
 };
 
 module.exports = approveFundingTokens;

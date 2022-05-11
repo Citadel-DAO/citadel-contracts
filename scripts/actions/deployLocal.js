@@ -12,14 +12,16 @@ const citadelMinterSetup = require("./citadelMinterSetup");
 const approveFundingTokens = require("./approveFundingTokens");
 const medianOracleUpdatePrice = require("./medianOracleUpdatePrice");
 const setDiscount = require("./setDiscount");
+const bondTokenForXCTDL = require("./bondTokenForXCTDL");
 
 const deployLocal = async () => {
   const signers = await ethers.getSigners();
 
+  const user = signers[0];
   const mintTo = signers[0];
   const xCitadelFees = [0, 0, 0, 0];
 
-  await pipeActions({ mintTo, xCitadelFees })(
+  await pipeActions({ mintTo, xCitadelFees, user })(
     setupAndDeploy,
     () => console.log("Contracts setted up ..."),
     mintForknet,
@@ -39,7 +41,9 @@ const deployLocal = async () => {
     medianOracleUpdatePrice,
     () => console.log("Median oracle update the price ..."),
     setDiscount,
-    () => console.log("Discount setted ...")
+    () => console.log("Discount setted ..."),
+    bondTokenForXCTDL,
+    () => console.log("bond some WBTC and CVX to get xCTDL ...")
   );
 };
 

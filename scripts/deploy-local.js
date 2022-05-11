@@ -169,9 +169,6 @@ async function main() {
     .functions["updateCitadelPerAsset(uint256)"](parseUnits("0.21", 18));
 
 
-      */
-  await deployLocal();
-  /*
 
   // set max discount
   await fundingWbtc.connect(governance).setDiscountLimits(0, 1000);
@@ -191,6 +188,11 @@ async function main() {
       18
     )}`
   );
+
+
+      */
+  await deployLocal();
+  /*
 
   // withdraw some xCTDL to start vesting
   await xCitadel.connect(user).withdraw(parseUnits("50", 18));
