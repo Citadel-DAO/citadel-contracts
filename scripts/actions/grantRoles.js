@@ -1,14 +1,14 @@
-const { hashIt, address } = require("./helpers");
+const { hashIt, address } = require("../utils/helpers");
 
-const grantRoles = async (
+const grantRoles = async ({
   gac,
   governance,
-  getRoleSigners,
-  { citadelMinter }
-) => {
-  const { treasuryVault, techOps, treasuryOps, policyOps } =
-    await getRoleSigners();
-  console.log("Grant roles...");
+  citadelMinter,
+  treasuryVault,
+  techOps,
+  treasuryOps,
+  policyOps,
+}) => {
   await gac
     .connect(governance)
     .grantRole(hashIt("CONTRACT_GOVERNANCE_ROLE"), address(governance));

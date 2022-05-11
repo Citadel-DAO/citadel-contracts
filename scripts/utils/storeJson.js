@@ -1,7 +1,7 @@
 const path = require("path");
 const fs = require("fs");
 
-const storeConfigs = (basePath, filename, config) => {
+const storeJson = (basePath, filename, json) => {
   if (!fs.existsSync(basePath)) {
     fs.mkdirSync(basePath);
   }
@@ -10,7 +10,7 @@ const storeConfigs = (basePath, filename, config) => {
   }
   fs.writeFileSync(
     path.join(basePath, `${filename}.json`),
-    JSON.stringify(config),
+    JSON.stringify(json),
     (err) => {
       if (err) {
         console.error(err);
@@ -20,4 +20,4 @@ const storeConfigs = (basePath, filename, config) => {
   );
 };
 
-module.exports = storeConfigs;
+module.exports = storeJson;
