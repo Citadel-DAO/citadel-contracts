@@ -11,6 +11,7 @@ const setXCitadelStrategy = require("./setXCitadelStrategy");
 const citadelMinterSetup = require("./citadelMinterSetup");
 const approveFundingTokens = require("./approveFundingTokens");
 const medianOracleUpdatePrice = require("./medianOracleUpdatePrice");
+const setDiscount = require("./setDiscount");
 
 const deployLocal = async () => {
   const signers = await ethers.getSigners();
@@ -36,7 +37,9 @@ const deployLocal = async () => {
     approveFundingTokens,
     () => console.log("Funding tokens approved ..."),
     medianOracleUpdatePrice,
-    () => console.log("median oracle update the price ...")
+    () => console.log("Median oracle update the price ..."),
+    setDiscount,
+    () => console.log("Discount setted ...")
   );
 };
 
