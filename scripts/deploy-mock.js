@@ -14,6 +14,7 @@ const initializer = require("./actions/initializer");
 const getContractFactories = require("./actions/getContractFactories");
 
 const setupAndDeploy = require("./actions/setupAndDeploy");
+const mockMint = require("./actions/mockMint");
 
 async function main() {
   const signers = await ethers.getSigners();
@@ -34,7 +35,6 @@ async function main() {
     CVX,
     USDC,
   } = await getContractFactories();*/
-
 
   /// === Deploying Contracts & loggin addresses
   /* const {
@@ -67,18 +67,13 @@ async function main() {
     { factory: USDC, instance: "usdc" },
   ]);*/
 
-    await pipeActions({})(setupAndDeploy, console.log);
-
-
   const mintTo = signers[0].address;
 
-  await wbtc.mint(mintTo, ethers.BigNumber.from("100000000"));
-  await cvx.mint(mintTo, ethers.constants.WeiPerEther);
-  await usdc.mint(mintTo, ethers.BigNumber.from("100000000000"));
+  await pipeActions({})(setupAndDeploy, mockMint(mintTo), console.log);
 
   /// === Variable Setup
 
-/*  const {
+  /*  const {
     governance,
     keeper,
     guardian,

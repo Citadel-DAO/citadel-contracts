@@ -1,5 +1,5 @@
 const getContractFactories = require("./getContractFactories");
-const deployContracts = require('./deployContracts')
+const deployContracts = require("./deployContracts");
 
 const setupAndDeploy = async () => {
   const {
@@ -12,9 +12,6 @@ const setupAndDeploy = async () => {
     CitadelMinter,
     KnightingRound,
     Funding,
-    wBTC,
-    CVX,
-    USDC,
   } = await getContractFactories();
 
   const {
@@ -28,9 +25,6 @@ const setupAndDeploy = async () => {
     knightingRound,
     fundingWbtc,
     fundingCvx,
-    wbtc,
-    cvx,
-    usdc,
   } = await deployContracts([
     { factory: GlobalAccessControl, instance: "gac" },
     { factory: CitadelToken, instance: "citadel" },
@@ -42,9 +36,6 @@ const setupAndDeploy = async () => {
     { factory: KnightingRound, instance: "knightingRound" },
     { factory: Funding, instance: "fundingWbtc" },
     { factory: Funding, instance: "fundingCvx" },
-    { factory: wBTC, instance: "wbtc" },
-    { factory: CVX, instance: "cvx" },
-    { factory: USDC, instance: "usdc" },
   ]);
 
   return {
@@ -57,9 +48,6 @@ const setupAndDeploy = async () => {
     CitadelMinter,
     KnightingRound,
     Funding,
-    wBTC,
-    CVX,
-    USDC,
     gac,
     citadel,
     xCitadel,
@@ -70,9 +58,6 @@ const setupAndDeploy = async () => {
     knightingRound,
     fundingWbtc,
     fundingCvx,
-    wbtc,
-    cvx,
-    usdc,
   };
 };
 
