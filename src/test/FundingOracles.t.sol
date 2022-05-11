@@ -6,7 +6,7 @@ import {SupplySchedule} from "../SupplySchedule.sol";
 import {GlobalAccessControl} from "../GlobalAccessControl.sol";
 
 import {CtdlWbtcCurveV2Provider} from "../oracles/CtdlWbtcCurveV2Provider.sol";
-import {CtdlCvxProvider} from "../oracles/CtdlCvxProvider.sol";
+import {CtdlAssetChainlinkProvider} from "../oracles/CtdlAssetChainlinkProvider.sol";
 
 import "../interfaces/citadel/IMedianOracle.sol";
 
@@ -16,7 +16,7 @@ contract FundingOraclesTest is BaseFixture {
     /// =================
 
     CtdlWbtcCurveV2Provider ctdlWbtcProvider;
-    CtdlCvxProvider ctdlCvxProvider;
+    CtdlAssetChainlinkProvider ctdlCvxProvider;
 
     /// =====================
     /// ===== Constants =====
@@ -45,7 +45,7 @@ contract FundingOraclesTest is BaseFixture {
             CTDL_WBTC_CURVE_POOL
         );
 
-        ctdlCvxProvider = new CtdlCvxProvider(
+        ctdlCvxProvider = new CtdlAssetChainlinkProvider(
             address(medianOracleCvx),
             CTDL_WBTC_CURVE_POOL,
             WBTC_BTC_PRICE_FEED,

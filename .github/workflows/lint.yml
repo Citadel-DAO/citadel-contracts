@@ -23,5 +23,5 @@ jobs:
       - name: Install Dependencies
         run: npm install
 
-      - name: Run linter/formatting checks
+      - name: Run linter/formatter checks
         run: npm run solhint
