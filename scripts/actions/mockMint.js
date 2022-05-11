@@ -3,7 +3,7 @@ const ethers = hre.ethers;
 const getContractFactories = require("./getContractFactories");
 const deployContracts = require("./deployContracts");
 
-const mockMint = (mintTo) => async () => {
+const mockMint = async ({ mintTo }) => {
   const { wBTC, CVX, USDC } = await getContractFactories();
 
   const { wbtc, cvx, usdc } = await deployContracts([

@@ -3,8 +3,6 @@ const pipeActions =
   async (...actions) => {
     if (actions.length === 0) return initArgs;
 
-    console.log(initArgs)
-
     const currentArgs = await actions[0](initArgs);
 
     return pipeActions({ ...initArgs, ...currentArgs })(

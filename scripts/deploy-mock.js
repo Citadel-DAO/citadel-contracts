@@ -67,10 +67,6 @@ async function main() {
     { factory: USDC, instance: "usdc" },
   ]);*/
 
-  const mintTo = signers[0].address;
-
-  await pipeActions({})(setupAndDeploy, mockMint(mintTo), console.log);
-
   /// === Variable Setup
 
   /*  const {
@@ -83,11 +79,25 @@ async function main() {
     citadelTree,
     policyOps,
     eoaOracle,
-  } = await getRoleSigners();
+  } = await getRoleSigners(); */
+
+  const mintTo = signers[0].address;
+  const xCitadelFees = [0, 0, 0, 0];
+
+  await pipeActions({ xCitadelFees, mintTo })(
+    setupAndDeploy,
+    () => console.log("Contracts setted up ..."),
+    mockMint,
+    () => console.log("Mock mints ready ..."),
+    getRoleSigners,
+    () => console.log("Roles assigned ..."),
+    initializer,
+    () => console.log("Contracts initialized ...")
+  );
 
   /// === Initialization and Setup
 
-  const xCitadelFees = [0, 0, 0, 0];
+  /* const xCitadelFees = [0, 0, 0, 0];
 
   await initializer({
     gac,
