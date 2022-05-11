@@ -32,7 +32,7 @@ const deployWithMock = async () => {
     grantRoles,
     () => console.log("Roles Granted ..."),
     storeConfigs,
-    () => console.log("Config stored ...")
+    () => console.log("Config stored ..."),
   );
 };
 

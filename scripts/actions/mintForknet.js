@@ -70,6 +70,15 @@ const mintForknet = async ({ mintTo, ERC20Upgradeable }) => {
   console.log(`wbtc balance of signers[0]: ${formatUnits(balance_wbtc, 8)}`);
   const balance_cvx = await cvx.balanceOf(address(user));
   console.log(`cvx balance of signers[0]: ${formatUnits(balance_cvx, 18)}`);
+
+  return {
+    wbtc_minter,
+    cvx_minter,
+    wbtcMintable,
+    cvxMintable,
+    wbtc,
+    cvx,
+  };
 };
 
 module.exports = mintForknet;

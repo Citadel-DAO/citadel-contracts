@@ -22,7 +22,6 @@ const deployLocal = require("./actions/deployLocal");
 async function main() {
   const signers = await ethers.getSigners();
 
-  await deployLocal();
 
   /// === Contract Factories
   /* const {
@@ -69,6 +68,9 @@ async function main() {
   /// === mint wbtc and cvx to signers[0]
   // impersonate the token owner
   
+*/
+    await deployLocal();
+/*
 
   /// === Variable Setup
   const {
