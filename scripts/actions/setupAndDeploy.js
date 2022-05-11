@@ -12,6 +12,7 @@ const setupAndDeploy = async () => {
     CitadelMinter,
     KnightingRound,
     Funding,
+    ERC20Upgradeable
   } = await getContractFactories();
 
   const {
@@ -48,6 +49,7 @@ const setupAndDeploy = async () => {
     CitadelMinter,
     KnightingRound,
     Funding,
+    ERC20Upgradeable,
     gac,
     citadel,
     xCitadel,
