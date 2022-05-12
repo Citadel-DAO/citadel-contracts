@@ -22,10 +22,13 @@ contract AtomicLaunchTest is BaseFixture {
 
     address constant renBTC_owner = 0xe4b679400F0f267212D5D812B95f58C83243EE71;
     address constant ust_owner = 0x3ee18B2214AFF97000D974cf647E7C347E8fa585;
-    address constant usdcMasterMinter = 0xE982615d461DD5cD06575BbeA87624fda4e3de17;
-    address constant usdcMasterMinter_owner = 0x79E0946e1C186E745f1352d7C21AB04700C99F71;
+    address constant usdcMasterMinter =
+        0xE982615d461DD5cD06575BbeA87624fda4e3de17;
+    address constant usdcMasterMinter_owner =
+        0x79E0946e1C186E745f1352d7C21AB04700C99F71;
     address constant usdc_owner = 0x5B6122C109B78C6755486966148C1D70a50A47D7;
-    address constant badger_treasury = 0xD0A7A8B98957b9CD3cFB9c0425AbE44551158e9e;
+    address constant badger_treasury =
+        0xD0A7A8B98957b9CD3cFB9c0425AbE44551158e9e;
 
     // NOTE: wBTC and wETH are handled on fixture
     KnightingRound knightingRound_cvx = new KnightingRound();
@@ -166,9 +169,7 @@ contract AtomicLaunchTest is BaseFixture {
         vm.prank(ust_owner); // UST Owner
         ISpecialMinter(ust_address).mint(stable_user, 100000e6);
         vm.prank(usdcMasterMinter_owner);
-        IUSDCMasterMinter(usdcMasterMinter).incrementMinterAllowance(
-            100000e6
-        );
+        IUSDCMasterMinter(usdcMasterMinter).incrementMinterAllowance(100000e6);
         vm.prank(usdc_owner); // USDC Owner
         ISpecialMinter(usdc_address).mint(stable_user, 100000e6);
 
