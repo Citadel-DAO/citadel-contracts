@@ -14,10 +14,7 @@ const bondTokenForXCTDL = async ({
 }) => {
   // bond some WBTC and CVX to get xCTDL
 
-  console.log('here we are')
   await fundingWbtc.connect(user).deposit(parseUnits("1", 8), 0); // max slippage as there's no competition
-  console.log('but not here')
-
   await fundingCvx.connect(user).deposit(apeCvxAmount, 0); // max slippage as there's no competition
   // user should be getting ~200 xCTDL
   console.log(

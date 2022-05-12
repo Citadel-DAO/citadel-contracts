@@ -57,6 +57,7 @@ const getContractFactories = async () => {
   const wBTC = await ethers.getContractFactory("WrapBitcoin");
   const CVX = await ethers.getContractFactory("Convex");
   const USDC = await ethers.getContractFactory("USDC");
+  const MintableToken = await ethers.getContractFactory("MintableToken");
 
   const TransparentUpgradeableProxy = await ethers.getContractFactory(
     "TransparentUpgradeableProxy"
@@ -78,6 +79,7 @@ const getContractFactories = async () => {
     wBTC,
     CVX,
     USDC,
+    MintableToken,
     TransparentUpgradeableProxy,
     MedianOracle,
   };

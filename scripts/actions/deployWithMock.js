@@ -11,16 +11,34 @@ const grantRoles = require("./grantRoles");
 const storeConfigs = require("./storeConfig");
 const getRoleSigners = require("./getRoleSingers");
 
+const setXCitadelStrategy = require("./setXCitadelStrategy");
+const citadelMinterSetup = require("./citadelMinterSetup");
+const approveFundingTokens = require("./approveFundingTokens");
+const medianOracleUpdatePrice = require("./medianOracleUpdatePrice");
+const setDiscount = require("./setDiscount");
+const bondTokenForXCTDL = require("./bondTokenForXCTDL");
+const xCTDLVesting = require("./xCTDLVesting");
+const setupKnightingRound = require("./setupKnightingRound");
+
 const deployWithMock = async () => {
   const signers = await ethers.getSigners();
 
   const mintTo = signers[0].address;
   const xCitadelFees = [0, 0, 0, 0];
+  const user = signers[0];
+  const multisig = signers[2];
 
   const basePath = path.join(__dirname, "..", "..", "scripts-data");
   const configFile = `${hre.network.name}-mock-config`;
 
-  await pipeActions({ xCitadelFees, mintTo, basePath, configFile })(
+  await pipeActions({
+    xCitadelFees,
+    mintTo,
+    basePath,
+    configFile,
+    user,
+    multisig,
+  })(
     setupAndDeploy,
     () => console.log("Contracts setted up ..."),
     mockMint,
@@ -29,10 +47,26 @@ const deployWithMock = async () => {
     () => console.log("Roles assigned ..."),
     initializer,
     () => console.log("Contracts initialized ..."),
+    setXCitadelStrategy,
+    () => console.log("Setted xCitadel strategy  ..."),
     grantRoles,
     () => console.log("Roles Granted ..."),
-    storeConfigs,
-    () => console.log("Config stored ..."),
+    citadelMinterSetup,
+    () => console.log("Citadel minter setup ..."),
+    approveFundingTokens,
+    () => console.log("Funding tokens approved ..."),
+    medianOracleUpdatePrice,
+    () => console.log("Median oracle update the price ..."),
+    setDiscount,
+    () => console.log("Discount setted ..."),
+    bondTokenForXCTDL,
+    () => console.log("bond some WBTC and CVX to get xCTDL ..."),
+    xCTDLVesting,
+    () => console.log("xCTDL vesting"),
+    setupKnightingRound,
+    () => console.log("Knighting round setup")
+    //storeConfigs,
+    //() => console.log("Config stored ...")
   );
 };
 

@@ -14,7 +14,6 @@ const medianOracleUpdatePrice = require("./medianOracleUpdatePrice");
 const setDiscount = require("./setDiscount");
 const bondTokenForXCTDL = require("./bondTokenForXCTDL");
 const xCTDLVesting = require("./xCTDLVesting");
-
 const setupKnightingRound = require("./setupKnightingRound");
 
 const deployLocal = async () => {

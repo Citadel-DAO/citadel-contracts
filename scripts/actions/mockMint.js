@@ -2,9 +2,11 @@ const hre = require("hardhat");
 const ethers = hre.ethers;
 const getContractFactories = require("./getContractFactories");
 const deployContracts = require("./deployContracts");
+const { address } = require("../utils/helpers");
+const { formatUnits, parseUnits } = ethers.utils;
 
-const mockMint = async ({ mintTo }) => {
-  const { wBTC, CVX, USDC } = await getContractFactories();
+const mockMint = async ({ user }) => {
+  const { wBTC, CVX, USDC, MintableToken } = await getContractFactories();
 
   const { wbtc, cvx, usdc } = await deployContracts([
     { factory: wBTC, instance: "wbtc" },
@@ -12,9 +14,27 @@ const mockMint = async ({ mintTo }) => {
     { factory: USDC, instance: "usdc" },
   ]);
 
-  await wbtc.mint(mintTo, ethers.BigNumber.from("100000000"));
-  await cvx.mint(mintTo, ethers.constants.WeiPerEther);
-  await usdc.mint(mintTo, ethers.BigNumber.from("100000000000"));
+  const renBTC = await MintableToken.deploy("renBTC", "rentBTC");
+  console.log(`renBTC address is: ${renBTC.address}`);
+  const ibBTC = await MintableToken.deploy("ibBTC", "ibBTC");
+  console.log(`ibBTC address is: ${ibBTC.address}`);
+  const wETH = await MintableToken.deploy("wETH", "wETH");
+  console.log(`wETH address is: ${wETH.address}`);
+  const frax = await MintableToken.deploy("frax", "frax");
+  console.log(`frax address is: ${frax.address}`);
+  const badger = await MintableToken.deploy("badger", "badger");
+  console.log(`badger address is: ${badger.address}`);
+
+  await wbtc.mint(address(user), parseUnits("20", 8));
+  await cvx.mint(address(user), parseUnits("100000", 18));
+  await usdc.mint(address(user), parseUnits("100000", 18));
+
+  await renBTC.mint(address(user), parseUnits("100000", 18));
+  await ibBTC.mint(address(user), parseUnits("100000", 18));
+
+  await wETH.mint(address(user), parseUnits("100000", 18));
+  await frax.mint(address(user), parseUnits("100000", 18));
+  await badger.mint(address(user), parseUnits("100000", 18));
 
   return {
     wBTC,
@@ -23,6 +43,11 @@ const mockMint = async ({ mintTo }) => {
     wbtc,
     cvx,
     usdc,
+    renBTC,
+    ibBTC,
+    wETH,
+    frax,
+    badger,
   };
 };
 

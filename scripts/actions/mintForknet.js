@@ -62,8 +62,22 @@ const mintForknet = async ({ mintTo, ERC20Upgradeable }) => {
     parseUnits("100000", 18) // 100000 cvx
   );
 
-  const wbtc = ERC20Upgradeable.attach(wbtc_address); //
-  const cvx = ERC20Upgradeable.attach(cvx_address); //
+  const wbtc = ERC20Upgradeable.attach(wbtc_address);
+  console.log(`wbtc address is: ${wbtc.address}`);
+  const cvx = ERC20Upgradeable.attach(cvx_address);
+  console.log(`cvx address is: ${cvx.address}`);
+  const usdc = ERC20Upgradeable.attach("0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48");
+  console.log(`usdc address is: ${usdc.address}`);
+  const renBTC = ERC20Upgradeable.attach("0xeb4c2781e4eba804ce9a9803c67d0893436bb27d");
+  console.log(`renBTC address is: ${renBTC.address}`);
+  const ibBTC = ERC20Upgradeable.attach("0xc4e15973e6ff2a35cc804c2cf9d2a1b817a8b40f");
+  console.log(`ibBTC address is: ${ibBTC.address}`);
+  const wETH = ERC20Upgradeable.attach("0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2");
+  console.log(`wETH address is: ${wETH.address}`);
+  const frax = ERC20Upgradeable.attach("0x853d955acef822db058eb8505911ed77f175b99e");
+  console.log(`frax address is: ${frax.address}`);
+  const badger = ERC20Upgradeable.attach("0x3472a5a71965499acd81997a54bba8d852c6e53d");
+  console.log(`badger address is: ${badger.address}`);
 
   // check the balance
   const balance_wbtc = await wbtc.balanceOf(address(user));
@@ -78,6 +92,12 @@ const mintForknet = async ({ mintTo, ERC20Upgradeable }) => {
     cvxMintable,
     wbtc,
     cvx,
+    usdc,
+    renBTC,
+    ibBTC,
+    wETH,
+    frax,
+    badger,
   };
 };
 
