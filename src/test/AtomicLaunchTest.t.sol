@@ -2,6 +2,7 @@ pragma solidity 0.8.12;
 
 import {BaseFixture} from "./BaseFixture.sol";
 import {KnightingRound} from "../KnightingRound.sol";
+import {KnightingRoundWithEth} from "../KnightingRoundWithEth.sol";
 import {FixedPointMathLib} from "solmate/utils/FixedPointMathLib.sol";
 
 import "../interfaces/erc20/IERC20.sol";
@@ -202,16 +203,27 @@ contract AtomicLaunchTest is BaseFixture {
         // Move to knighting round start
         vm.warp(knightingRound.saleStart());
 
-        knightingRoundBuy(
-            knightingRound_cvx,
-            cvx,
-            influence_user
-        );
+        knightingRoundBuy(knightingRound, wbtc, btc_user);
 
-        // //Whale ETH
-        // knightingRoundWithEth.buyEth{value: address(whale).balance / 2}(
-        //     0,
-        //     emptyProof
+        knightingRoundBuy(knightingRound_ibBTC, ibBTC, btc_user);
+
+        knightingRoundBuy(knightingRound_renBTC, renBTC, btc_user);
+
+        knightingRoundBuy(knightingRound_frax, frax, stable_user);
+
+        knightingRoundBuy(knightingRound_ust, ust, stable_user);
+
+        knightingRoundBuy(knightingRound_usdc, usdc, stable_user);
+
+        knightingRoundBuy(knightingRound_cvx, cvx, influence_user);
+
+        knightingRoundBuy(knightingRound_bveCVX, bveCVX, influence_user);
+
+        knightingRoundBuy(knightingRound_badger, badger, influence_user);
+
+        // knightingRoundBuy_ETH(
+        //     knightingRoundWithEth,
+        //     eth_user
         // );
 
         vm.stopPrank();
@@ -235,8 +247,7 @@ contract AtomicLaunchTest is BaseFixture {
         tokenIn.approve(address(round), amountIn);
 
         uint256 tokenOutAmountExpected = (amountIn *
-            round.tokenOutPerTokenIn()) /
-            round.tokenInNormalizationValue();
+            round.tokenOutPerTokenIn()) / round.tokenInNormalizationValue();
 
         vm.expectEmit(true, true, false, true);
         emit Sale(user, 0, amountIn, tokenOutAmountExpected);
@@ -249,7 +260,40 @@ contract AtomicLaunchTest is BaseFixture {
         assertEq(round.daoCommitments(0), tokenOutAmount); // daoCommitments should be tokenOutAmount
 
         require(tokenIn.balanceOf(user) == 0, "Token in not deposited");
-        require(tokenIn.balanceOf(round.saleRecipient()) == amountIn, "Token in not received");
+        require(
+            tokenIn.balanceOf(round.saleRecipient()) == amountIn,
+            "Token in not received"
+        );
+
+        vm.stopPrank();
+    }
+
+    function knightingRoundBuy_ETH(KnightingRoundWithEth round, address user)
+        internal
+    {
+        bytes32[] memory emptyProof = new bytes32[](1);
+        vm.startPrank(user);
+
+        uint256 amountIn = user.balance;
+
+        uint256 tokenOutAmountExpected = (amountIn *
+            round.tokenOutPerTokenIn()) / round.tokenInNormalizationValue();
+
+        vm.expectEmit(true, true, false, true);
+        emit Sale(user, 0, amountIn, tokenOutAmountExpected);
+        uint256 tokenOutAmount = round.buyEth{value: amountIn}(0, emptyProof);
+
+        assertEq(round.totalTokenIn(), amountIn); // totalTokenIn should be equal to deposit
+        assertEq(tokenOutAmount, tokenOutAmountExpected); // transferred amount should be equal to expected
+        assertEq(round.totalTokenOutBought(), tokenOutAmount);
+        assertEq(round.daoVotedFor(user), 0); // daoVotedFor should be set
+        assertEq(round.daoCommitments(0), tokenOutAmount); // daoCommitments should be tokenOutAmount
+
+        require(user.balance == 0, "ETH in not deposited");
+        require(
+            weth.balanceOf(round.saleRecipient()) == amountIn,
+            "Token in not received"
+        );
 
         vm.stopPrank();
     }
