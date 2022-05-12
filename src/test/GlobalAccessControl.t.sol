@@ -334,4 +334,158 @@ contract GlobalAccessControlTest is BaseFixture {
 
         vm.stopPrank();
     }
+
+    function testFundingCallerRoles() public {
+        // calling with wrong address
+        vm.expectRevert(bytes("GAC: invalid-caller-role"));
+        fundingCvx.setDiscountLimits(0, 20);
+        vm.prank(address(governance));
+        fundingCvx.setDiscountLimits(10, 50);
+
+        // calling from wrong account
+        vm.expectRevert(bytes("GAC: invalid-caller-role-or-address"));
+        fundingCvx.setDiscount(20);
+        vm.prank(address(policyOps)); // calling from correct account
+        fundingCvx.setDiscount(20);
+
+        vm.expectRevert("GAC: invalid-caller-role");
+        fundingCvx.setAssetCap(10e18);
+        // setting asset cap from correct account
+        vm.prank(policyOps);
+        fundingCvx.setAssetCap(1000e18);
+
+        vm.expectRevert("GAC: invalid-caller-role");
+        fundingCvx.claimAssetToTreasury();
+        erc20utils.forceMintTo(address(fundingCvx), address(cvx), 100e18); // give some amount to fundingCvx
+        vm.prank(treasuryOps);
+        fundingCvx.claimAssetToTreasury();
+
+        vm.expectRevert("GAC: invalid-caller-role");
+        fundingCvx.sweep(address(cvx));
+        erc20utils.forceMintTo(address(fundingCvx), address(wbtc), 100e8); // give some wbtc to fundingCvx
+        vm.prank(treasuryOps);
+        fundingCvx.sweep(address(wbtc));
+
+        vm.expectRevert("GAC: invalid-caller-role");
+        fundingCvx.setDiscountManager(address(2));
+        // setting discountManager from correct account
+        vm.prank(governance);
+        fundingCvx.setDiscountManager(address(2));
+
+        vm.expectRevert("GAC: invalid-caller-role");
+        fundingCvx.updateCitadelPerAsset();
+        vm.startPrank(keeper);
+        medianOracleCvx.pushReport(1000);
+        fundingCvx.updateCitadelPerAsset();
+        vm.stopPrank();
+
+        vm.expectRevert("GAC: invalid-caller-role");
+        fundingCvx.setSaleRecipient(address(2));
+        // setting setSaleRecipient from correct account
+        vm.prank(governance);
+        fundingCvx.setSaleRecipient(address(2));
+
+        vm.expectRevert("GAC: invalid-caller-role");
+        fundingCvx.setCitadelPerAssetBounds(0, 5000);
+        vm.prank(governance);
+        fundingCvx.setCitadelPerAssetBounds(0, 5000);
+
+        vm.expectRevert("GAC: invalid-caller-role");
+        fundingCvx.clearCitadelPriceFlag();
+        // setting setSaleRecipient from correct account
+        vm.prank(policyOps);
+        fundingCvx.clearCitadelPriceFlag();
+    }
+
+    function testMintingAndScheduleCallerRoles() public {
+        vm.expectRevert("GAC: invalid-caller-role");
+        citadelMinter.setCitadelDistributionSplit(5000, 3000, 1000, 1000);
+        vm.prank(policyOps);
+        citadelMinter.setCitadelDistributionSplit(5000, 2500, 1000, 1500);
+
+        vm.expectRevert("GAC: invalid-caller-role");
+        citadelMinter.setFundingPoolWeight(address(fundingCvx), 1000);
+        vm.prank(policyOps);
+        citadelMinter.setFundingPoolWeight(address(fundingCvx), 2000);
+
+        vm.expectRevert("GAC: invalid-caller-role");
+        schedule.setEpochRate(7, 10e5);
+        vm.prank(governance);
+        schedule.setEpochRate(7, 10e5);
+
+        vm.expectRevert("GAC: invalid-caller-role");
+        schedule.setMintingStart(1000);
+        vm.prank(governance);
+        schedule.setMintingStart(block.timestamp);
+
+        vm.expectRevert("GAC: invalid-caller-role");
+        citadelMinter.initializeLastMintTimestamp();
+        vm.prank(governance);
+        citadelMinter.initializeLastMintTimestamp();
+
+        vm.warp(block.timestamp + 100);
+        vm.expectRevert("GAC: invalid-caller-role");
+        citadelMinter.mintAndDistribute();
+        vm.prank(policyOps);
+        citadelMinter.mintAndDistribute();
+    }
+
+    function testKnightingRoundCallerRoles() public {
+        vm.expectRevert("GAC: invalid-caller-role");
+        knightingRound.setSaleStart(block.timestamp);
+        // calling with correct role
+        vm.prank(governance);
+        knightingRound.setSaleStart(block.timestamp);
+
+        vm.expectRevert("GAC: invalid-caller-role");
+        knightingRound.setSaleDuration(8 days);
+        // calling with correct role
+        vm.prank(governance);
+        knightingRound.setSaleDuration(8 days);
+
+        vm.expectRevert("GAC: invalid-caller-role");
+        knightingRound.setTokenInLimit(25e8);
+        // calling with correct role
+        vm.prank(techOps);
+        knightingRound.setTokenInLimit(25e8);
+
+        vm.expectRevert("GAC: invalid-caller-role");
+        knightingRound.setTokenOutPerTokenIn(25e18);
+        vm.prank(governance);
+        knightingRound.setTokenOutPerTokenIn(25e18);
+
+        // calling from different account
+        vm.prank(address(1));
+        vm.expectRevert("GAC: invalid-caller-role");
+        knightingRound.setSaleRecipient(address(2));
+        vm.prank(governance);
+        knightingRound.setSaleRecipient(address(2));
+
+        // tests for setGuestlist
+        vm.prank(address(1));
+        vm.expectRevert("GAC: invalid-caller-role");
+        knightingRound.setGuestlist(address(3));
+        vm.prank(techOps);
+        knightingRound.setGuestlist(address(3));
+
+        vm.expectRevert("GAC: invalid-caller-role");
+        knightingRound.sweep(address(xCitadel));
+        // treasuryOps should be able to sweep any amount of any token other than xCTDL
+        erc20utils.forceMintTo(address(knightingRound), address(wbtc), 10e8);
+        vm.prank(treasuryOps);
+        knightingRound.sweep(address(wbtc));
+
+        vm.warp(block.timestamp + knightingRound.saleDuration());
+        vm.expectRevert("GAC: invalid-caller-role");
+        knightingRound.finalize();
+        vm.prank(governance);
+        knightingRound.finalize();
+    }
+
+    function testStakingCallerRoles() public {
+        vm.expectRevert("GAC: invalid-caller-role");
+        xCitadelVester.setVestingDuration(8 days);
+        vm.prank(governance);
+        xCitadelVester.setVestingDuration(8 days);
+    }
 }
