@@ -18,6 +18,13 @@ interface IUSDCMasterMinter {
 contract AtomicLaunchTest is BaseFixture {
     using FixedPointMathLib for uint256;
 
+    event Sale(
+        address indexed buyer,
+        uint8 indexed daoId,
+        uint256 amountIn,
+        uint256 amountOut
+    );
+
     uint256 constant MAX_UINT256 = type(uint256).max;
 
     address constant renBTC_owner = 0xe4b679400F0f267212D5D812B95f58C83243EE71;
@@ -39,6 +46,11 @@ contract AtomicLaunchTest is BaseFixture {
     KnightingRound knightingRound_usdc = new KnightingRound();
     KnightingRound knightingRound_badger = new KnightingRound();
     KnightingRound knightingRound_bveCVX = new KnightingRound();
+
+    address btc_user = address(1);
+    address stable_user = address(2);
+    address influence_user = address(3);
+    address eth_user = address(4);
 
     function setUp() public override {
         BaseFixture.setUp();
@@ -153,10 +165,6 @@ contract AtomicLaunchTest is BaseFixture {
         vm.stopPrank();
 
         // Mint assets for users
-        address btc_user = address(1);
-        address stable_user = address(2);
-        address influence_user = address(3);
-        address eth_user = address(4);
 
         // Mint BTC based assets
         erc20utils.forceMintTo(btc_user, wbtc_address, 1000e8);
@@ -173,7 +181,7 @@ contract AtomicLaunchTest is BaseFixture {
         vm.prank(usdc_owner); // USDC Owner
         ISpecialMinter(usdc_address).mint(stable_user, 100000e6);
 
-        // // Mint influence assets
+        // Mint influence assets
         erc20utils.forceMintTo(influence_user, cvx_address, 10000e18);
         vm.startPrank(badger_treasury);
         bveCVX.transfer(influence_user, bveCVX.balanceOf(badger_treasury));
@@ -187,42 +195,24 @@ contract AtomicLaunchTest is BaseFixture {
     }
 
     function testAtomicLaunch() public {
-        require(true, "test setup");
+        _simulateeKnightingRound();
     }
 
     function _simulateeKnightingRound() public {
-        bytes32[] memory emptyProof = new bytes32[](1);
-
         // Move to knighting round start
         vm.warp(knightingRound.saleStart());
 
-        // Shrimp BTC
-        vm.startPrank(shrimp);
-        wbtc.approve(address(knightingRound), wbtc.balanceOf(shrimp));
-        weth.approve(address(knightingRound), address(shrimp).balance);
-
-        knightingRound.buy(wbtc.balanceOf(shrimp) / 2, 0, emptyProof);
-
-        //Shrimp ETH
-        knightingRoundWithEth.buyEth{value: address(shrimp).balance / 2}(
-            0,
-            emptyProof
+        knightingRoundBuy(
+            knightingRound_cvx,
+            cvx,
+            influence_user
         );
 
-        vm.stopPrank();
-
-        // Whale BTC
-        vm.startPrank(whale);
-        wbtc.approve(address(knightingRound), wbtc.balanceOf(whale));
-        weth.approve(address(knightingRound), address(whale).balance);
-
-        knightingRound.buy(wbtc.balanceOf(whale) / 2, 0, emptyProof);
-
-        //Whale ETH
-        knightingRoundWithEth.buyEth{value: address(whale).balance / 2}(
-            0,
-            emptyProof
-        );
+        // //Whale ETH
+        // knightingRoundWithEth.buyEth{value: address(whale).balance / 2}(
+        //     0,
+        //     emptyProof
+        // );
 
         vm.stopPrank();
         // Knighting round concludes...
@@ -230,5 +220,37 @@ contract AtomicLaunchTest is BaseFixture {
             knightingRoundParams.duration -
             block.timestamp;
         vm.warp(timeTillEnd);
+    }
+
+    function knightingRoundBuy(
+        KnightingRound round,
+        IERC20 tokenIn,
+        address user
+    ) internal {
+        bytes32[] memory emptyProof = new bytes32[](1);
+        vm.startPrank(user);
+
+        uint256 amountIn = tokenIn.balanceOf(user);
+
+        tokenIn.approve(address(round), amountIn);
+
+        uint256 tokenOutAmountExpected = (amountIn *
+            round.tokenOutPerTokenIn()) /
+            round.tokenInNormalizationValue();
+
+        vm.expectEmit(true, true, false, true);
+        emit Sale(user, 0, amountIn, tokenOutAmountExpected);
+        uint256 tokenOutAmount = round.buy(amountIn, 0, emptyProof);
+
+        assertEq(round.totalTokenIn(), amountIn); // totalTokenIn should be equal to deposit
+        assertEq(tokenOutAmount, tokenOutAmountExpected); // transferred amount should be equal to expected
+        assertEq(round.totalTokenOutBought(), tokenOutAmount);
+        assertEq(round.daoVotedFor(user), 0); // daoVotedFor should be set
+        assertEq(round.daoCommitments(0), tokenOutAmount); // daoCommitments should be tokenOutAmount
+
+        require(tokenIn.balanceOf(user) == 0, "Token in not deposited");
+        require(tokenIn.balanceOf(round.saleRecipient()) == amountIn, "Token in not received");
+
+        vm.stopPrank();
     }
 }
