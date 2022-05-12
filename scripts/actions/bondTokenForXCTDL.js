@@ -2,7 +2,7 @@ const hre = require("hardhat");
 const ethers = hre.ethers;
 const { address } = require("../utils/helpers");
 
-const { formatUnits } = ethers.utils;
+const { formatUnits, parseUnits } = ethers.utils;
 
 const bondTokenForXCTDL = async ({
   fundingWbtc,
@@ -14,7 +14,10 @@ const bondTokenForXCTDL = async ({
 }) => {
   // bond some WBTC and CVX to get xCTDL
 
-  await fundingWbtc.connect(user).deposit(apeWbtcAmount, 0); // max slippage as there's no competition
+  console.log('here we are')
+  await fundingWbtc.connect(user).deposit(parseUnits("1", 8), 0); // max slippage as there's no competition
+  console.log('but not here')
+
   await fundingCvx.connect(user).deposit(apeCvxAmount, 0); // max slippage as there's no competition
   // user should be getting ~200 xCTDL
   console.log(

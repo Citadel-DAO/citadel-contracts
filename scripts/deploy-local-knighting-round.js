@@ -79,6 +79,16 @@ async function main() {
       address: "0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48",
       decimals: 6,
     },
+    {
+      name: "Badger",
+      address: "0x3472a5a71965499acd81997a54bba8d852c6e53d",
+      decimals: 18,
+    },
+    {
+      name: "CVX",
+      address: "0x4e3fbd56cd56c3e72c1403e103b45db9da5b9d2b",
+      decimals: 18,
+    },
   ];
 
   const knightingRoundGuestList = await KnightingRoundGuestlist.deploy();
@@ -86,7 +96,7 @@ async function main() {
   await knightingRoundGuestList.initialize(address(gac));
 
   const guestListRoot =
-    "0x7e5eaba80a7bd7636e9edd5c7a84daa71b476e698bb85f06202152751fb9b5f8";
+    "0x8916c3fedd925241fcbba35af8d2380b5658ad8fa17e1b525bb1851107a36b35";
 
   await knightingRoundGuestList.connect(techOp).setGuestRoot(guestListRoot);
 
