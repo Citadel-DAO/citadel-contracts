@@ -15,14 +15,17 @@ const setDiscount = require("./setDiscount");
 const bondTokenForXCTDL = require("./bondTokenForXCTDL");
 const xCTDLVesting = require("./xCTDLVesting");
 
+const setupKnightingRound = require("./setupKnightingRound");
+
 const deployLocal = async () => {
   const signers = await ethers.getSigners();
 
   const user = signers[0];
   const mintTo = signers[0];
   const xCitadelFees = [0, 0, 0, 0];
+  const multisig = signers[2];
 
-  await pipeActions({ mintTo, xCitadelFees, user })(
+  await pipeActions({ mintTo, xCitadelFees, user, multisig })(
     setupAndDeploy,
     () => console.log("Contracts setted up ..."),
     mintForknet,
@@ -46,7 +49,9 @@ const deployLocal = async () => {
     bondTokenForXCTDL,
     () => console.log("bond some WBTC and CVX to get xCTDL ..."),
     xCTDLVesting,
-    () => console.log("xCTDL vesting")
+    () => console.log("xCTDL vesting"),
+    setupKnightingRound,
+    () => console.log("Knighting round setup")
   );
 };
 
