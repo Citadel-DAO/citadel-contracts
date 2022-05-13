@@ -19,9 +19,9 @@ interface IUSDCMasterMinter {
 // Curve Pool Factory
 interface ICurvePoolFactory {
     function deploy_pool(
-        string calldata _name,
-        string calldata _symbol,
-        address[] calldata _coins,
+        string memory _name,
+        string memory _symbol,
+        address[2] memory _coins,
         uint256 A,
         uint256 gamma,
         uint256 mid_fee,
@@ -306,49 +306,26 @@ contract AtomicLaunchTest is BaseFixture {
 
         // Use 15% of total CTDL to deploy and seed liquidity pool on Curve
         uint256 toLiquidity = (remainingSupply * 4e17) / 1e18; // 15% of total, or 40% of remaining 40%
-        address[] memory coins = new address[](2);
+        address[2] memory coins;
         coins[0] = address(citadel);
         coins[1] = address(wbtc);
 
         // NOTE: Parameters acquired from test deployment:
         // https://etherscan.io/tx/0x20a9182e7644e216d7a26785223fb2947a3ba70998eac4da98a63ec4652b1821
-        // address pool = ICurvePoolFactory(curvePoolFactory).deploy_pool(
-        //     "CTDL/wBTC",
-        //     "CTDL",
-        //     coins,
-        //     400000,
-        //     145000000000000,
-        //     26000000,
-        //     45000000,
-        //     2000000000000,
-        //     230000000000000,
-        //     146000000000000,
-        //     5000000000,
-        //     600,
-        //     47619047619047620 // $21/~$30k = 0.0007 (Current external rate for CTDL/WBTC)
-        // );
-
-        // curvePoolFactory.call(
-        //     abi.encodeWithSelector(
-        //         0xc955fa04, // deploy_pool()
-        //         "CTDL/wBTC",
-        //         "CTDL",
-        //         coins,
-        //         400000,
-        //         145000000000000,
-        //         26000000,
-        //         45000000,
-        //         2000000000000,
-        //         230000000000000,
-        //         146000000000000,
-        //         5000000000,
-        //         600,
-        //         47619047619047620
-        //     )
-        // );
-
-        curvePoolFactory.call(
-            hex"c955fa0400000000000000000000000000000000000000000000000000000000000001c00000000000000000000000000000000000000000000000000000000000000200000000000000000000000000af0b1fdf9c6bfec7b3512f207553c0ba00d7f1a20000000000000000000000002260fac5e5542a773aa44fbcfedf7c193bc2c5990000000000000000000000000000000000000000000000000000000000061a80000000000000000000000000000000000000000000000000000083e0717e100000000000000000000000000000000000000000000000000000000000018cba800000000000000000000000000000000000000000000000000000000002aea540000000000000000000000000000000000000000000000000000001d1a94a20000000000000000000000000000000000000000000000000000000d12f0c4c6000000000000000000000000000000000000000000000000000000084c946232000000000000000000000000000000000000000000000000000000000012a05f200000000000000000000000000000000000000000000000000000000000000025800000000000000000000000000000000000000000000000000a92d4581e030c400000000000000000000000000000000000000000000000000000000000000155b546573745d2054657374204354444c2f7742544300000000000000000000000000000000000000000000000000000000000000000000000000000000000008746573744354444c000000000000000000000000000000000000000000000000"
+        address pool = ICurvePoolFactory(curvePoolFactory).deploy_pool(
+            "CTDL/wBTC",
+            "CTDL",
+            coins,
+            400000,
+            145000000000000,
+            26000000,
+            45000000,
+            2000000000000,
+            230000000000000,
+            146000000000000,
+            5000000000,
+            600,
+            47619047619047620 // $21/~$30k = 0.0007 (Current external rate for CTDL/WBTC)
         );
     }
 
