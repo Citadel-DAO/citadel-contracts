@@ -221,10 +221,10 @@ contract AtomicLaunchTest is BaseFixture {
 
         knightingRoundBuy(knightingRound_badger, badger, influence_user);
 
-        // knightingRoundBuy_ETH(
-        //     knightingRoundWithEth,
-        //     eth_user
-        // );
+        knightingRoundBuy_ETH(
+            knightingRoundWithEth,
+            eth_user
+        );
 
         vm.stopPrank();
         // Knighting round concludes...
@@ -276,6 +276,8 @@ contract AtomicLaunchTest is BaseFixture {
 
         uint256 amountIn = user.balance;
 
+        weth.approve(address(round), amountIn);
+
         uint256 tokenOutAmountExpected = (amountIn *
             round.tokenOutPerTokenIn()) / round.tokenInNormalizationValue();
 
@@ -292,7 +294,7 @@ contract AtomicLaunchTest is BaseFixture {
         require(user.balance == 0, "ETH in not deposited");
         require(
             weth.balanceOf(round.saleRecipient()) == amountIn,
-            "Token in not received"
+            "wETH in not received"
         );
 
         vm.stopPrank();
