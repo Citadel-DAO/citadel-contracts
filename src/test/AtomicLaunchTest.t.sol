@@ -313,19 +313,19 @@ contract AtomicLaunchTest is BaseFixture {
         // NOTE: Parameters acquired from test deployment:
         // https://etherscan.io/tx/0x20a9182e7644e216d7a26785223fb2947a3ba70998eac4da98a63ec4652b1821
         // address pool = ICurvePoolFactory(curvePoolFactory).deploy_pool(
-        // "CTDL/wBTC",
-        // "CTDL",
-        // coins,
-        // 400000,
-        // 145000000000000,
-        // 26000000,
-        // 45000000,
-        // 2000000000000,
-        // 230000000000000,
-        // 146000000000000,
-        // 5000000000,
-        // 600,
-        // 47619047619047620 // $21/~$30k = 0.0007 (Current external rate for CTDL/WBTC)
+        //     "CTDL/wBTC",
+        //     "CTDL",
+        //     coins,
+        //     400000,
+        //     145000000000000,
+        //     26000000,
+        //     45000000,
+        //     2000000000000,
+        //     230000000000000,
+        //     146000000000000,
+        //     5000000000,
+        //     600,
+        //     47619047619047620 // $21/~$30k = 0.0007 (Current external rate for CTDL/WBTC)
         // );
 
         // curvePoolFactory.call(
