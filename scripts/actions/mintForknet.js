@@ -78,6 +78,8 @@ const mintForknet = async ({ mintTo, ERC20Upgradeable }) => {
   console.log(`frax address is: ${frax.address}`);
   const badger = ERC20Upgradeable.attach("0x3472a5a71965499acd81997a54bba8d852c6e53d");
   console.log(`badger address is: ${badger.address}`);
+  const bveCVX = ERC20Upgradeable.attach("0xfd05D3C7fe2924020620A8bE4961bBaA747e6305");
+  console.log(`bveCVX address is: ${badger.address}`);
 
   // check the balance
   const balance_wbtc = await wbtc.balanceOf(address(user));
@@ -98,6 +100,7 @@ const mintForknet = async ({ mintTo, ERC20Upgradeable }) => {
     wETH,
     frax,
     badger,
+    bveCVX
   };
 };
 

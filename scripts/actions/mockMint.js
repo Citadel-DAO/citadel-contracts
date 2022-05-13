@@ -24,6 +24,8 @@ const mockMint = async ({ user }) => {
   console.log(`frax address is: ${frax.address}`);
   const badger = await MintableToken.deploy("badger", "badger");
   console.log(`badger address is: ${badger.address}`);
+  const bveCVX = await MintableToken.deploy("bveCVX", "bveCVX");
+  console.log(`badger address is: ${badger.address}`);
 
   await wbtc.mint(address(user), parseUnits("20", 8));
   await cvx.mint(address(user), parseUnits("100000", 18));
@@ -34,6 +36,7 @@ const mockMint = async ({ user }) => {
 
   await wETH.mint(address(user), parseUnits("100000", 18));
   await frax.mint(address(user), parseUnits("100000", 18));
+  await badger.mint(address(user), parseUnits("100000", 18));
   await badger.mint(address(user), parseUnits("100000", 18));
 
   return {
@@ -48,6 +51,7 @@ const mockMint = async ({ user }) => {
     wETH,
     frax,
     badger,
+    bveCVX
   };
 };
 

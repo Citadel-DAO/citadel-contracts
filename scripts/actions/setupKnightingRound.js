@@ -21,6 +21,7 @@ const setupKnightingRound = async ({
   wETH,
   frax,
   badger,
+  bveCVX
 }) => {
   const blockNumBefore = await ethers.provider.getBlockNumber();
   const blockBefore = await ethers.provider.getBlock(blockNumBefore);
@@ -90,6 +91,12 @@ const setupKnightingRound = async ({
       name: "CVX",
       priceAddress: "0x4e3fbd56cd56c3e72c1403e103b45db9da5b9d2b",
       address: address(cvx),
+      decimals: 18,
+    },
+    {
+      name: "bveCVX",
+      priceAddress: "0x4e3fbd56cd56c3e72c1403e103b45db9da5b9d2b",
+      address: address(bveCVX),
       decimals: 18,
     },
   ];
