@@ -16,10 +16,27 @@ interface IUSDCMasterMinter {
     function incrementMinterAllowance(uint256 _allowanceIncrement) external;
 }
 
+// Curve Pool Factory
+interface ICurvePoolFactory {
+    function deploy_pool(
+        string calldata _name,
+        string calldata _symbol,
+        address[] calldata _coins,
+        uint256 A,
+        uint256 gamma,
+        uint256 mid_fee,
+        uint256 out_fee,
+        uint256 allowed_extra_profit,
+        uint256 fee_gamma,      
+        uint256 adjustment_step,
+        uint256 admin_fee,
+        uint256 ma_half_time,
+        uint256 initial_price
+    ) external returns (address);
+}
+
 contract AtomicLaunchTest is BaseFixture {
     using FixedPointMathLib for uint256;
-
-    KnightingRound[] roundsArray;
 
     event Sale(
         address indexed buyer,
@@ -30,6 +47,7 @@ contract AtomicLaunchTest is BaseFixture {
 
     uint256 constant MAX_UINT256 = type(uint256).max;
 
+    // Asset minting addresses (Just for testing)
     address constant renBTC_owner = 0xe4b679400F0f267212D5D812B95f58C83243EE71;
     address constant ust_owner = 0x3ee18B2214AFF97000D974cf647E7C347E8fa585;
     address constant usdcMasterMinter =
@@ -40,6 +58,9 @@ contract AtomicLaunchTest is BaseFixture {
     address constant badger_treasury =
         0xD0A7A8B98957b9CD3cFB9c0425AbE44551158e9e;
 
+    // Involved addresses
+    address constant curvePoolFactory = 0xF18056Bbd320E96A48e3Fbf8bC061322531aac99;
+
     // NOTE: wBTC and wETH are handled on fixture
     KnightingRound knightingRound_cvx = new KnightingRound();
     KnightingRound knightingRound_renBTC = new KnightingRound();
@@ -49,6 +70,8 @@ contract AtomicLaunchTest is BaseFixture {
     KnightingRound knightingRound_usdc = new KnightingRound();
     KnightingRound knightingRound_badger = new KnightingRound();
     KnightingRound knightingRound_bveCVX = new KnightingRound();
+
+    KnightingRound[] roundsArray;
 
     address btc_user = address(1);
     address stable_user = address(2);
@@ -223,11 +246,13 @@ contract AtomicLaunchTest is BaseFixture {
         uint256 citadelBoughtEthRound = knightingRoundWithEth.totalTokenOutBought();
         totalCitadelBought += citadelBoughtEthRound;
 
+
         // Mint the required TotalSupply of CTDL
         uint256 initialSupply = (totalCitadelBought * 1666666666666666667) / 1e18; // Amount bought = 60% of initial supply, therefore total citadel ~= 1.67 amount bought.
 
         citadel.mint(governance, initialSupply);
         assertEq(citadel.balanceOf(governance), initialSupply);
+
 
         // Distribute bought amounts of xCTDL to each round
         citadel.approve(
@@ -255,12 +280,14 @@ contract AtomicLaunchTest is BaseFixture {
         );
         assertEq(xCitadel.balanceOf(governance), 0);
 
-        // Seed CTDL
+
+        // Seed xCTDL
         uint256 remainingSupply = initialSupply - totalCitadelBought - 1e18; // one coin for seeding xCitadel
 
         citadel.approve(address(xCitadel), 1e18);
         xCitadel.deposit(1e18);
         assertEq(xCitadel.balanceOf(governance), 1e18);
+
 
         // Transfer 25% of total CTDL and acquired sale assets to Treasury
         uint256 toTreasury = (remainingSupply * 6e17) / 1e18; // 25% of total, or 60% of remaining 40%
@@ -282,6 +309,33 @@ contract AtomicLaunchTest is BaseFixture {
         weth.transfer(treasuryVault, govWethBalance);
         assertEq(weth.balanceOf(governance), 0);
         assertEq(weth.balanceOf(treasuryVault), govWethBalance);
+
+
+        // Use 15% of total CTDL to deploy and seed liquidity pool on Curve
+        uint256 toLiquidity = (remainingSupply * 4e17) / 1e18; // 15% of total, or 40% of remaining 40%
+        address[] memory coins = new address[](2);
+        coins[0] = address(citadel);
+        coins[1] = address(wbtc);
+
+        // NOTE: Parameters acquired from test deployment: 
+        // https://etherscan.io/tx/0x20a9182e7644e216d7a26785223fb2947a3ba70998eac4da98a63ec4652b1821
+        address pool = ICurvePoolFactory(curvePoolFactory).deploy_pool(
+            "CTDL/wBTC",
+            "CTDL",
+            coins,
+            400000,
+            145000000000000,
+            26000000,
+            45000000,
+            2000000000000,
+            230000000000000,      
+            146000000000000,
+            5000000000,
+            600,
+            47619047619047620 // $21/~$30k = 0.0007 (Current external rate for CTDL/WBTC) 
+        );
+
+        
     }
 
     function _simulateeKnightingRound() public {
