@@ -19,6 +19,8 @@ interface IUSDCMasterMinter {
 contract AtomicLaunchTest is BaseFixture {
     using FixedPointMathLib for uint256;
 
+    KnightingRound[] roundsArray;
+
     event Sale(
         address indexed buyer,
         uint8 indexed daoId,
@@ -67,17 +69,7 @@ contract AtomicLaunchTest is BaseFixture {
         knightingRound.setTokenOutPerTokenIn(1500e18); //1500 xCTDL per wBTC
         knightingRoundWithEth.setTokenOutPerTokenIn(115e18); // 115 xCTDL per ETH
 
-        knightingRound_cvx.initialize(
-            address(gac),
-            address(xCitadel),
-            address(cvx),
-            knightingRoundParams.start,
-            knightingRoundParams.duration,
-            1e18, // 1 xCTDL per CVX
-            address(governance),
-            address(guestList),
-            MAX_UINT256
-        );
+        roundsArray.push(knightingRound);
 
         knightingRound_renBTC.initialize(
             address(gac),
@@ -90,6 +82,7 @@ contract AtomicLaunchTest is BaseFixture {
             address(guestList),
             MAX_UINT256
         );
+        roundsArray.push(knightingRound_renBTC);
 
         knightingRound_ibBTC.initialize(
             address(gac),
@@ -102,6 +95,7 @@ contract AtomicLaunchTest is BaseFixture {
             address(guestList),
             MAX_UINT256
         );
+        roundsArray.push(knightingRound_ibBTC);
 
         knightingRound_frax.initialize(
             address(gac),
@@ -114,6 +108,7 @@ contract AtomicLaunchTest is BaseFixture {
             address(guestList),
             MAX_UINT256
         );
+        roundsArray.push(knightingRound_frax);
 
         knightingRound_ust.initialize(
             address(gac),
@@ -126,6 +121,7 @@ contract AtomicLaunchTest is BaseFixture {
             address(guestList),
             MAX_UINT256
         );
+        roundsArray.push(knightingRound_ust);
 
         knightingRound_usdc.initialize(
             address(gac),
@@ -138,18 +134,20 @@ contract AtomicLaunchTest is BaseFixture {
             address(guestList),
             MAX_UINT256
         );
+        roundsArray.push(knightingRound_usdc);
 
-        knightingRound_badger.initialize(
+        knightingRound_cvx.initialize(
             address(gac),
             address(xCitadel),
-            address(badger),
+            address(cvx),
             knightingRoundParams.start,
             knightingRoundParams.duration,
-            333333333333333333, // 0.333 xCTDL per badger
+            1e18, // 1 xCTDL per CVX
             address(governance),
             address(guestList),
             MAX_UINT256
         );
+        roundsArray.push(knightingRound_cvx);
 
         knightingRound_bveCVX.initialize(
             address(gac),
@@ -162,6 +160,20 @@ contract AtomicLaunchTest is BaseFixture {
             address(guestList),
             MAX_UINT256
         );
+        roundsArray.push(knightingRound_bveCVX);
+
+        knightingRound_badger.initialize(
+            address(gac),
+            address(xCitadel),
+            address(badger),
+            knightingRoundParams.start,
+            knightingRoundParams.duration,
+            333333333333333333, // 0.333 xCTDL per badger
+            address(governance),
+            address(guestList),
+            MAX_UINT256
+        );
+        roundsArray.push(knightingRound_badger);
 
         vm.stopPrank();
 
@@ -197,6 +209,79 @@ contract AtomicLaunchTest is BaseFixture {
 
     function testAtomicLaunch() public {
         _simulateeKnightingRound();
+
+        vm.startPrank(governance);
+
+        // Get all the Citadel bought from all KRs
+        uint256 totalCitadelBought;
+        uint256[] memory citdatelBoughtPerRound =
+            new uint256[](roundsArray.length);
+        for (uint i; i < roundsArray.length; i++) {
+            totalCitadelBought += roundsArray[i].totalTokenOutBought();
+            citdatelBoughtPerRound[i] = roundsArray[i].totalTokenOutBought();
+        }
+        uint256 citadelBoughtEthRound = knightingRoundWithEth.totalTokenOutBought();
+        totalCitadelBought += citadelBoughtEthRound;
+
+        // Mint the required TotalSupply of CTDL
+        uint256 initialSupply = (totalCitadelBought * 1666666666666666667) / 1e18; // Amount bought = 60% of initial supply, therefore total citadel ~= 1.67 amount bought.
+
+        citadel.mint(governance, initialSupply);
+        assertEq(citadel.balanceOf(governance), initialSupply);
+
+        // Distribute bought amounts of xCTDL to each round
+        citadel.approve(
+            address(xCitadel),
+            totalCitadelBought
+        );
+
+        for (uint i; i < roundsArray.length; i++) {
+            xCitadel.depositFor(
+                address(roundsArray[i]),
+                citdatelBoughtPerRound[i]
+            );
+            assertEq(
+                xCitadel.balanceOf(address(roundsArray[i])),
+                citdatelBoughtPerRound[i]
+            );
+        }
+        xCitadel.depositFor(
+            address(knightingRoundWithEth),
+            citadelBoughtEthRound
+        );
+        assertEq(
+            xCitadel.balanceOf(address(knightingRoundWithEth)),
+            citadelBoughtEthRound
+        );
+        assertEq(xCitadel.balanceOf(governance), 0);
+
+        // Seed CTDL
+        uint256 remainingSupply = initialSupply - totalCitadelBought - 1e18; // one coin for seeding xCitadel
+
+        citadel.approve(address(xCitadel), 1e18);
+        xCitadel.deposit(1e18);
+        assertEq(xCitadel.balanceOf(governance), 1e18);
+
+        // Transfer 25% of total CTDL and acquired sale assets to Treasury
+        uint256 toTreasury = (remainingSupply * 6e17) / 1e18; // 25% of total, or 60% of remaining 40%
+
+        citadel.transfer(treasuryVault, toTreasury);
+        assertEq(citadel.balanceOf(treasuryVault), toTreasury);
+
+        for (uint i; i < roundsArray.length; i++) {
+            IERC20 tokenIn = IERC20(address(roundsArray[i].tokenIn()));
+            uint256 govTokenInBalance = tokenIn.balanceOf(governance);
+            tokenIn.transfer(
+                treasuryVault,
+                govTokenInBalance
+            );
+            assertEq(tokenIn.balanceOf(governance), 0);
+            assertEq(tokenIn.balanceOf(treasuryVault), govTokenInBalance);
+        }
+        uint256 govWethBalance = weth.balanceOf(governance);
+        weth.transfer(treasuryVault, govWethBalance);
+        assertEq(weth.balanceOf(governance), 0);
+        assertEq(weth.balanceOf(treasuryVault), govWethBalance);
     }
 
     function _simulateeKnightingRound() public {
@@ -204,33 +289,23 @@ contract AtomicLaunchTest is BaseFixture {
         vm.warp(knightingRound.saleStart());
 
         knightingRoundBuy(knightingRound, wbtc, btc_user);
-
         knightingRoundBuy(knightingRound_ibBTC, ibBTC, btc_user);
-
         knightingRoundBuy(knightingRound_renBTC, renBTC, btc_user);
-
         knightingRoundBuy(knightingRound_frax, frax, stable_user);
-
         knightingRoundBuy(knightingRound_ust, ust, stable_user);
-
         knightingRoundBuy(knightingRound_usdc, usdc, stable_user);
-
         knightingRoundBuy(knightingRound_cvx, cvx, influence_user);
-
         knightingRoundBuy(knightingRound_bveCVX, bveCVX, influence_user);
-
         knightingRoundBuy(knightingRound_badger, badger, influence_user);
-
-        knightingRoundBuy_ETH(
-            knightingRoundWithEth,
-            eth_user
-        );
+        knightingRoundBuy_ETH(knightingRoundWithEth, eth_user);
 
         vm.stopPrank();
+
         // Knighting round concludes...
         uint256 timeTillEnd = knightingRoundParams.start +
             knightingRoundParams.duration -
             block.timestamp;
+
         vm.warp(timeTillEnd);
     }
 
