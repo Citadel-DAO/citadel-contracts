@@ -27,7 +27,7 @@ interface ICurvePoolFactory {
         uint256 mid_fee,
         uint256 out_fee,
         uint256 allowed_extra_profit,
-        uint256 fee_gamma,      
+        uint256 fee_gamma,
         uint256 adjustment_step,
         uint256 admin_fee,
         uint256 ma_half_time,
@@ -59,7 +59,8 @@ contract AtomicLaunchTest is BaseFixture {
         0xD0A7A8B98957b9CD3cFB9c0425AbE44551158e9e;
 
     // Involved addresses
-    address constant curvePoolFactory = 0xF18056Bbd320E96A48e3Fbf8bC061322531aac99;
+    address constant curvePoolFactory =
+        0xF18056Bbd320E96A48e3Fbf8bC061322531aac99;
 
     // NOTE: wBTC and wETH are handled on fixture
     KnightingRound knightingRound_cvx = new KnightingRound();
@@ -237,30 +238,28 @@ contract AtomicLaunchTest is BaseFixture {
 
         // Get all the Citadel bought from all KRs
         uint256 totalCitadelBought;
-        uint256[] memory citdatelBoughtPerRound =
-            new uint256[](roundsArray.length);
-        for (uint i; i < roundsArray.length; i++) {
+        uint256[] memory citdatelBoughtPerRound = new uint256[](
+            roundsArray.length
+        );
+        for (uint256 i; i < roundsArray.length; i++) {
             totalCitadelBought += roundsArray[i].totalTokenOutBought();
             citdatelBoughtPerRound[i] = roundsArray[i].totalTokenOutBought();
         }
-        uint256 citadelBoughtEthRound = knightingRoundWithEth.totalTokenOutBought();
+        uint256 citadelBoughtEthRound = knightingRoundWithEth
+            .totalTokenOutBought();
         totalCitadelBought += citadelBoughtEthRound;
 
-
         // Mint the required TotalSupply of CTDL
-        uint256 initialSupply = (totalCitadelBought * 1666666666666666667) / 1e18; // Amount bought = 60% of initial supply, therefore total citadel ~= 1.67 amount bought.
+        uint256 initialSupply = (totalCitadelBought * 1666666666666666667) /
+            1e18; // Amount bought = 60% of initial supply, therefore total citadel ~= 1.67 amount bought.
 
         citadel.mint(governance, initialSupply);
         assertEq(citadel.balanceOf(governance), initialSupply);
 
-
         // Distribute bought amounts of xCTDL to each round
-        citadel.approve(
-            address(xCitadel),
-            totalCitadelBought
-        );
+        citadel.approve(address(xCitadel), totalCitadelBought);
 
-        for (uint i; i < roundsArray.length; i++) {
+        for (uint256 i; i < roundsArray.length; i++) {
             xCitadel.depositFor(
                 address(roundsArray[i]),
                 citdatelBoughtPerRound[i]
@@ -280,7 +279,6 @@ contract AtomicLaunchTest is BaseFixture {
         );
         assertEq(xCitadel.balanceOf(governance), 0);
 
-
         // Seed xCTDL
         uint256 remainingSupply = initialSupply - totalCitadelBought - 1e18; // one coin for seeding xCitadel
 
@@ -288,20 +286,16 @@ contract AtomicLaunchTest is BaseFixture {
         xCitadel.deposit(1e18);
         assertEq(xCitadel.balanceOf(governance), 1e18);
 
-
         // Transfer 25% of total CTDL and acquired sale assets to Treasury
         uint256 toTreasury = (remainingSupply * 6e17) / 1e18; // 25% of total, or 60% of remaining 40%
 
         citadel.transfer(treasuryVault, toTreasury);
         assertEq(citadel.balanceOf(treasuryVault), toTreasury);
 
-        for (uint i; i < roundsArray.length; i++) {
+        for (uint256 i; i < roundsArray.length; i++) {
             IERC20 tokenIn = IERC20(address(roundsArray[i].tokenIn()));
             uint256 govTokenInBalance = tokenIn.balanceOf(governance);
-            tokenIn.transfer(
-                treasuryVault,
-                govTokenInBalance
-            );
+            tokenIn.transfer(treasuryVault, govTokenInBalance);
             assertEq(tokenIn.balanceOf(governance), 0);
             assertEq(tokenIn.balanceOf(treasuryVault), govTokenInBalance);
         }
@@ -310,29 +304,28 @@ contract AtomicLaunchTest is BaseFixture {
         assertEq(weth.balanceOf(governance), 0);
         assertEq(weth.balanceOf(treasuryVault), govWethBalance);
 
-
         // Use 15% of total CTDL to deploy and seed liquidity pool on Curve
         uint256 toLiquidity = (remainingSupply * 4e17) / 1e18; // 15% of total, or 40% of remaining 40%
         address[] memory coins = new address[](2);
         coins[0] = address(citadel);
         coins[1] = address(wbtc);
 
-        // NOTE: Parameters acquired from test deployment: 
+        // NOTE: Parameters acquired from test deployment:
         // https://etherscan.io/tx/0x20a9182e7644e216d7a26785223fb2947a3ba70998eac4da98a63ec4652b1821
         // address pool = ICurvePoolFactory(curvePoolFactory).deploy_pool(
-            // "CTDL/wBTC",
-            // "CTDL",
-            // coins,
-            // 400000,
-            // 145000000000000,
-            // 26000000,
-            // 45000000,
-            // 2000000000000,
-            // 230000000000000,      
-            // 146000000000000,
-            // 5000000000,
-            // 600,
-            // 47619047619047620 // $21/~$30k = 0.0007 (Current external rate for CTDL/WBTC) 
+        // "CTDL/wBTC",
+        // "CTDL",
+        // coins,
+        // 400000,
+        // 145000000000000,
+        // 26000000,
+        // 45000000,
+        // 2000000000000,
+        // 230000000000000,
+        // 146000000000000,
+        // 5000000000,
+        // 600,
+        // 47619047619047620 // $21/~$30k = 0.0007 (Current external rate for CTDL/WBTC)
         // );
 
         // curvePoolFactory.call(
@@ -346,7 +339,7 @@ contract AtomicLaunchTest is BaseFixture {
         //         26000000,
         //         45000000,
         //         2000000000000,
-        //         230000000000000,      
+        //         230000000000000,
         //         146000000000000,
         //         5000000000,
         //         600,
@@ -354,7 +347,9 @@ contract AtomicLaunchTest is BaseFixture {
         //     )
         // );
 
-        curvePoolFactory.call(hex"c955fa0400000000000000000000000000000000000000000000000000000000000001c00000000000000000000000000000000000000000000000000000000000000200000000000000000000000000af0b1fdf9c6bfec7b3512f207553c0ba00d7f1a20000000000000000000000002260fac5e5542a773aa44fbcfedf7c193bc2c5990000000000000000000000000000000000000000000000000000000000061a80000000000000000000000000000000000000000000000000000083e0717e100000000000000000000000000000000000000000000000000000000000018cba800000000000000000000000000000000000000000000000000000000002aea540000000000000000000000000000000000000000000000000000001d1a94a20000000000000000000000000000000000000000000000000000000d12f0c4c6000000000000000000000000000000000000000000000000000000084c946232000000000000000000000000000000000000000000000000000000000012a05f200000000000000000000000000000000000000000000000000000000000000025800000000000000000000000000000000000000000000000000a92d4581e030c400000000000000000000000000000000000000000000000000000000000000155b546573745d2054657374204354444c2f7742544300000000000000000000000000000000000000000000000000000000000000000000000000000000000008746573744354444c000000000000000000000000000000000000000000000000");
+        curvePoolFactory.call(
+            hex"c955fa0400000000000000000000000000000000000000000000000000000000000001c00000000000000000000000000000000000000000000000000000000000000200000000000000000000000000af0b1fdf9c6bfec7b3512f207553c0ba00d7f1a20000000000000000000000002260fac5e5542a773aa44fbcfedf7c193bc2c5990000000000000000000000000000000000000000000000000000000000061a80000000000000000000000000000000000000000000000000000083e0717e100000000000000000000000000000000000000000000000000000000000018cba800000000000000000000000000000000000000000000000000000000002aea540000000000000000000000000000000000000000000000000000001d1a94a20000000000000000000000000000000000000000000000000000000d12f0c4c6000000000000000000000000000000000000000000000000000000084c946232000000000000000000000000000000000000000000000000000000000012a05f200000000000000000000000000000000000000000000000000000000000000025800000000000000000000000000000000000000000000000000a92d4581e030c400000000000000000000000000000000000000000000000000000000000000155b546573745d2054657374204354444c2f7742544300000000000000000000000000000000000000000000000000000000000000000000000000000000000008746573744354444c000000000000000000000000000000000000000000000000"
+        );
     }
 
     function _simulateeKnightingRound() public {
