@@ -3,11 +3,10 @@ pragma solidity 0.8.12;
 
 import {Initializable} from "openzeppelin-contracts-upgradeable/proxy/utils/Initializable.sol";
 import "openzeppelin-contracts/utils/structs/EnumerableSet.sol";
-import "openzeppelin-contracts/proxy/beacon/BeaconProxy.sol";
+import {TransparentUpgradeableProxy} from "openzeppelin-contracts/proxy/transparent/TransparentUpgradeableProxy.sol";
 
 import "./KnightingRound.sol";
 import "./KnightingRoundWithEth.sol";
-import "./GACUpgradableBeacon.sol";
 import "./GACProxyAdmin.sol";
 
 /**
@@ -20,8 +19,6 @@ contract KnightingRoundRegistry is Initializable {
     bytes32 public constant CONTRACT_GOVERNANCE_ROLE =
         keccak256("CONTRACT_GOVERNANCE_ROLE");
 
-    GACUpgradableBeacon public knightingRoundBeacon;
-    GACUpgradableBeacon public knightingRoundWithEthBeacon;
 
     GACProxyAdmin public gacProxyAdmin;
 
@@ -81,7 +78,7 @@ contract KnightingRoundRegistry is Initializable {
         saleRecipient = _saleRecipient;
         guestlist = _guestlist;
 
-        gacProxyAdmin = new GacProxyAdmin();
+        gacProxyAdmin = new GACProxyAdmin();
         gacProxyAdmin.initialize(_governance);
 
         knightingRoundImplementation = address(new KnightingRound());
@@ -89,18 +86,7 @@ contract KnightingRoundRegistry is Initializable {
             new KnightingRoundWithEth()
         );
 
-        knightingRoundBeacon = new GACUpgradableBeacon();
-        knightingRoundWithEthBeacon = new GACUpgradableBeacon();
 
-        knightingRoundBeacon.initialize(
-            _governance,
-            knightingRoundImplementation
-        );
-
-        knightingRoundWithEthBeacon.initialize(
-            _governance,
-            knightingRoundWithEthImplementation
-        );
 
         /// for weth
         initializeRound(_wethParams);
@@ -112,40 +98,42 @@ contract KnightingRoundRegistry is Initializable {
     }
 
     function initializeRound(InitParam calldata _roundParams) private {
-        BeaconProxy currKnightingRound = new BeaconProxy(
-            address(knightingRoundBeacon),
-            abi.encodeWithSelector(
-                KnightingRound(address(0)).initialize.selector,
-                governance,
-                tokenOut,
-                _roundParams._tokenIn,
-                roundStart,
-                roundDuration,
-                _roundParams._tokenOutPerTokenIn,
-                saleRecipient,
-                guestlist,
-                _roundParams._tokenInLimit
-            )
-        );
+        TransparentUpgradeableProxy currKnightingRound = new TransparentUpgradeableProxy(
+                address(knightingRoundImplementation),
+                address(gacProxyAdmin),
+                abi.encodeWithSelector(
+                    KnightingRound(address(0)).initialize.selector,
+                    governance,
+                    tokenOut,
+                    _roundParams._tokenIn,
+                    roundStart,
+                    roundDuration,
+                    _roundParams._tokenOutPerTokenIn,
+                    saleRecipient,
+                    guestlist,
+                    _roundParams._tokenInLimit
+                )
+            );
         knightingRounds.add(address(currKnightingRound));
     }
 
     function initializeEthRound(InitParam calldata _roundParams) private {
-        BeaconProxy knightinRoundWEth = new BeaconProxy(
-            address(knightingRoundWithEthBeacon),
-            abi.encodeWithSelector(
-                KnightingRoundWithEth(address(0)).initialize.selector,
-                governance,
-                tokenOut,
-                _roundParams._tokenIn,
-                roundStart,
-                roundDuration,
-                _roundParams._tokenOutPerTokenIn,
-                saleRecipient,
-                guestlist,
-                _roundParams._tokenInLimit
-            )
-        );
+        TransparentUpgradeableProxy knightinRoundWEth = new TransparentUpgradeableProxy(
+                address(knightingRoundWithEthImplementation),
+                address(gacProxyAdmin),
+                abi.encodeWithSelector(
+                    KnightingRoundWithEth(address(0)).initialize.selector,
+                    governance,
+                    tokenOut,
+                    _roundParams._tokenIn,
+                    roundStart,
+                    roundDuration,
+                    _roundParams._tokenOutPerTokenIn,
+                    saleRecipient,
+                    guestlist,
+                    _roundParams._tokenInLimit
+                )
+            );
         knightingRoundsWithEth = address(knightinRoundWEth);
     }
 
