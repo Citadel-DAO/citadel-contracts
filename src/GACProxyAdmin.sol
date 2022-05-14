@@ -10,7 +10,7 @@ import "./lib/GlobalAccessControlManaged.sol";
  * @dev This is a version of OZ ProxyAdmin that will use GAC instead of ownable
  * explanation of why you would want to use this see the documentation for {TransparentUpgradeableProxy}.
  */
-contract ProxyAdmin is GlobalAccessControlManaged {
+contract GACProxyAdmin is GlobalAccessControlManaged {
     bytes32 public constant CONTRACT_GOVERNANCE_ROLE =
         keccak256("CONTRACT_GOVERNANCE_ROLE");
 
