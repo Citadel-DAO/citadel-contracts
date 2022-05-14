@@ -8,6 +8,7 @@ import "openzeppelin-contracts/proxy/beacon/BeaconProxy.sol";
 import "./KnightingRound.sol";
 import "./KnightingRoundWithEth.sol";
 import "./GACUpgradableBeacon.sol";
+import "./GACProxyAdmin.sol";
 
 /**
 A simple registry contract that help to register different knighting round
@@ -21,6 +22,8 @@ contract KnightingRoundRegistry is Initializable {
 
     GACUpgradableBeacon public knightingRoundBeacon;
     GACUpgradableBeacon public knightingRoundWithEthBeacon;
+
+    GACProxyAdmin public gacProxyAdmin;
 
     address public governance;
     address public tokenOut;
@@ -77,6 +80,10 @@ contract KnightingRoundRegistry is Initializable {
         tokenOut = _tokenOut;
         saleRecipient = _saleRecipient;
         guestlist = _guestlist;
+
+        gacProxyAdmin = new GacProxyAdmin();
+        gacProxyAdmin.initialize(_governance);
+
         knightingRoundImplementation = address(new KnightingRound());
         knightingRoundWithEthImplementation = address(
             new KnightingRoundWithEth()
@@ -179,9 +186,7 @@ contract KnightingRoundRegistry is Initializable {
         for (uint256 i = 0; i < knightingRounds.length(); i++) {
             knightingRoundsList[i] = knightingRounds.at(i);
         }
-        knightingRoundsList[
-            knightingRounds.length()
-        ] = knightingRoundsWithEth;
+        knightingRoundsList[knightingRounds.length()] = knightingRoundsWithEth;
         return knightingRoundsList;
     }
 
