@@ -4,6 +4,7 @@ import {BaseFixture} from "./BaseFixture.sol";
 import {KnightingRound} from "../KnightingRound.sol";
 import {KnightingRoundWithEth} from "../KnightingRoundWithEth.sol";
 import {FixedPointMathLib} from "solmate/utils/FixedPointMathLib.sol";
+import {Funding} from "../Funding.sol";
 
 import "../interfaces/erc20/IERC20.sol";
 
@@ -82,6 +83,14 @@ contract AtomicLaunchTest is BaseFixture {
     KnightingRound knightingRound_bveCVX = new KnightingRound();
 
     KnightingRound[] roundsArray;
+
+    // Re-deploying Funding contracts for the sake of maintianing actions atomically
+    Funding fundingWbtc_launch = new Funding();
+    Funding fundingCvx_launch = new Funding();
+    Funding fundingBadger_launch = new Funding();
+
+    // Using a temporary mock address for the DiscountManager until developed
+    address immutable discountManager = getAddress("discountManager");
 
     address btc_user = address(1);
     address stable_user = address(2);
@@ -343,7 +352,7 @@ contract AtomicLaunchTest is BaseFixture {
         ICurvePool pool = ICurvePool(poolAddress);
 
         // Calculate wBTC amount as: $21/~$30k = 0.0007 (Divide by 1e10 to normalize to wBTC decimals)
-        uint256 wbtcToLiquidity = ((toLiquidity * 7e14) / 1e18) / 1e10; 
+        uint256 wbtcToLiquidity = ((toLiquidity * 7e14) / 1e18) / 1e10;
         emit log_named_uint("CTDL Liquidity", toLiquidity);
         emit log_named_uint("wBTC Liquidity", wbtcToLiquidity);
         erc20utils.forceMintTo(governance, wbtc_address, wbtcToLiquidity);
@@ -362,7 +371,6 @@ contract AtomicLaunchTest is BaseFixture {
         // Remove ADMIN Minting role
         gac.revokeRole(CITADEL_MINTER_ROLE, governance); // Remove admin mint, only CitadelMinter rules can mint now
 
-
         // Finilize KRs
         for (uint256 i; i < roundsArray.length; i++) {
             roundsArray[i].finalize();
@@ -371,6 +379,50 @@ contract AtomicLaunchTest is BaseFixture {
         knightingRoundWithEth.finalize();
         require(knightingRoundWithEth.finalized(), "ETH KR not finalized");
 
+        // Launch initial Funding contracts (This may happen through a Factory contract)
+        // Reference: https://thecitadeldao.medium.com/citadel-funding-mechanics-4851147e31f3
+        fundingWbtc_launch.initialize(
+            address(gac),
+            address(citadel),
+            address(wbtc),
+            address(xCitadel),
+            treasuryVault,
+            address(medianOracleWbtc),
+            100e8
+        );
+        fundingCvx_launch.initialize(
+            address(gac),
+            address(citadel),
+            address(cvx),
+            address(xCitadel),
+            treasuryVault,
+            address(medianOracleCvx),
+            100000e18
+        );
+        fundingBadger_launch.initialize(
+            address(gac),
+            address(citadel),
+            address(badger),
+            address(xCitadel),
+            treasuryVault,
+            address(medianOracleBadger),
+            100000e18
+        );
+        // Set Discount limits (Arbitrary values for testing)
+        fundingWbtc_launch.setDiscountLimits(1000, 2000); // Min: 10% and max: 20%
+        fundingCvx_launch.setDiscountLimits(1000, 2000); // Min: 10% and max: 20%
+        fundingBadger_launch.setDiscountLimits(1000, 2000); // Min: 10% and max: 20%
+        // Set Discount managers
+        fundingWbtc_launch.setDiscountManager(discountManager);
+        fundingCvx_launch.setDiscountManager(discountManager);
+        fundingBadger_launch.setDiscountManager(discountManager);
+        // Set Pricing bounds (Arbitrary values for testing)
+        fundingWbtc_launch.setCitadelPerAssetBounds(1300e18, 2000e18);
+        fundingCvx_launch.setCitadelPerAssetBounds(8e17, 2e18);
+        fundingBadger_launch.setCitadelPerAssetBounds(8e17, 2e18);
+        // NOTE: Initial Discount to be set by DiscountManager/Policy Ops
+
+        vm.stopPrank();
 
         // END OF ATOMIC LAUNCH
 
@@ -475,7 +527,7 @@ contract AtomicLaunchTest is BaseFixture {
         // - Withdrawing xCTDL/vesting
         // - Swapping through Curve pool
         // - Providing more liquidity
-        // - Collecting Fees
+        // - Collecting rewards
 
         require(true, "placeholder");
     }

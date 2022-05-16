@@ -132,6 +132,10 @@ contract BaseFixture is DSTest, Utils, stdCheats {
         IMedianOracle(
             deployCode(medianOracleArtifact, abi.encode(1 days, 0, 1))
         );
+    IMedianOracle medianOracleBadger =
+        IMedianOracle(
+            deployCode(medianOracleArtifact, abi.encode(1 days, 0, 1))
+        );
 
     Funding fundingWbtc = new Funding();
     Funding fundingCvx = new Funding();
@@ -278,6 +282,7 @@ contract BaseFixture is DSTest, Utils, stdCheats {
         // Oracle
         medianOracleWbtc.addProvider(keeper);
         medianOracleCvx.addProvider(keeper);
+        medianOracleBadger.addProvider(keeper);
 
         // Funding
         fundingWbtc.initialize(
