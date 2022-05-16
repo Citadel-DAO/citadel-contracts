@@ -243,6 +243,8 @@ contract AtomicLaunchTest is BaseFixture {
     function testAtomicLaunch() public {
         _simulateeKnightingRound();
 
+        // BEGINNING OF ATOMIC LAUNCH
+
         vm.startPrank(governance);
 
         // Get all the Citadel bought from all KRs
@@ -355,6 +357,11 @@ contract AtomicLaunchTest is BaseFixture {
 
         assertEq(pool.balances(0), toLiquidity);
         assertEq(pool.balances(1), wbtcToLiquidity);
+
+        // END OF ATOMIC LAUNCH
+
+        // Simulation post launch user actions
+        _simulatePostLaunchActions();
     }
 
     function _simulateeKnightingRound() public {
@@ -446,5 +453,16 @@ contract AtomicLaunchTest is BaseFixture {
         );
 
         vm.stopPrank();
+    }
+
+    function _simulatePostLaunchActions() internal {
+        // TODO: Add user flows to be tested post launch with all test users.
+        // These may include but not be limited to:
+        // - Withdrawing xCTDL/vesting
+        // - Swapping through Curve pool
+        // - Providing more liquidity
+        // - Collecting Fees
+
+        require(true, "placeholder");
     }
 }
