@@ -360,7 +360,7 @@ contract AtomicLaunchTest is BaseFixture {
 
         // END OF ATOMIC LAUNCH
 
-        // Simulation post launch user actions
+        // Simulation of post launch user actions
         _simulatePostLaunchActions();
     }
 
