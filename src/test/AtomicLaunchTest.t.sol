@@ -251,7 +251,6 @@ contract AtomicLaunchTest is BaseFixture {
 
     function testAtomicLaunch() public {
         _simulateeKnightingRound();
-        vm.warp(knightingRound.saleStart() + knightingRound.saleDuration() + 1); // Advance to end of round
 
         // BEGINNING OF ATOMIC LAUNCH
 
@@ -448,11 +447,7 @@ contract AtomicLaunchTest is BaseFixture {
         vm.stopPrank();
 
         // Knighting round concludes...
-        uint256 timeTillEnd = knightingRoundParams.start +
-            knightingRoundParams.duration -
-            block.timestamp;
-
-        vm.warp(timeTillEnd);
+        vm.warp(knightingRoundParams.start + knightingRoundParams.duration);
     }
 
     function knightingRoundBuy(
