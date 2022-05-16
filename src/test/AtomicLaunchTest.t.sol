@@ -242,6 +242,7 @@ contract AtomicLaunchTest is BaseFixture {
 
     function testAtomicLaunch() public {
         _simulateeKnightingRound();
+        vm.warp(knightingRound.saleStart() + knightingRound.saleDuration() + 1); // Advance to end of round
 
         // BEGINNING OF ATOMIC LAUNCH
 
@@ -341,8 +342,8 @@ contract AtomicLaunchTest is BaseFixture {
 
         ICurvePool pool = ICurvePool(poolAddress);
 
-        // Calculate wBTC amount as: $21/~$30k = 0.0007
-        uint256 wbtcToLiquidity = ((toLiquidity * 7e14) / 1e18) / 1e10; // Divide by 1e10 to normalize to wBTC decimals
+        // Calculate wBTC amount as: $21/~$30k = 0.0007 (Divide by 1e10 to normalize to wBTC decimals)
+        uint256 wbtcToLiquidity = ((toLiquidity * 7e14) / 1e18) / 1e10; 
         emit log_named_uint("CTDL Liquidity", toLiquidity);
         emit log_named_uint("wBTC Liquidity", wbtcToLiquidity);
         erc20utils.forceMintTo(governance, wbtc_address, wbtcToLiquidity);
@@ -357,6 +358,19 @@ contract AtomicLaunchTest is BaseFixture {
 
         assertEq(pool.balances(0), toLiquidity);
         assertEq(pool.balances(1), wbtcToLiquidity);
+
+        // Remove ADMIN Minting role
+        gac.revokeRole(CITADEL_MINTER_ROLE, governance); // Remove admin mint, only CitadelMinter rules can mint now
+
+
+        // Finilize KRs
+        for (uint256 i; i < roundsArray.length; i++) {
+            roundsArray[i].finalize();
+            require(roundsArray[i].finalized(), "KR not finalized");
+        }
+        knightingRoundWithEth.finalize();
+        require(knightingRoundWithEth.finalized(), "ETH KR not finalized");
+
 
         // END OF ATOMIC LAUNCH
 
