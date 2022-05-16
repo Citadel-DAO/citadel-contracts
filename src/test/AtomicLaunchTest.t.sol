@@ -36,9 +36,12 @@ interface ICurvePoolFactory {
 }
 
 interface ICurvePool {
-  function token() external view returns (address);
-  function add_liquidity(uint256[2] memory amounts, uint256 min_mint_amount) external;
-  function balances(uint256 arg0) external view returns (uint256);
+    function token() external view returns (address);
+
+    function add_liquidity(uint256[2] memory amounts, uint256 min_mint_amount)
+        external;
+
+    function balances(uint256 arg0) external view returns (uint256);
 }
 
 contract AtomicLaunchTest is BaseFixture {
@@ -337,7 +340,7 @@ contract AtomicLaunchTest is BaseFixture {
         ICurvePool pool = ICurvePool(poolAddress);
 
         // Calculate wBTC amount as: $21/~$30k = 0.0007
-        uint256 wbtcToLiquidity = (toLiquidity * 7e14 / 1e18) / 1e10; // Divide by 1e10 to normalize to wBTC decimals
+        uint256 wbtcToLiquidity = ((toLiquidity * 7e14) / 1e18) / 1e10; // Divide by 1e10 to normalize to wBTC decimals
         emit log_named_uint("CTDL Liquidity", toLiquidity);
         emit log_named_uint("wBTC Liquidity", wbtcToLiquidity);
         erc20utils.forceMintTo(governance, wbtc_address, wbtcToLiquidity);
