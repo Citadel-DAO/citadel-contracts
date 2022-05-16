@@ -35,6 +35,12 @@ interface ICurvePoolFactory {
     ) external returns (address);
 }
 
+interface ICurvePool {
+  function token() external view returns (address);
+  function add_liquidity(uint256[2] memory amounts, uint256 min_mint_amount) external;
+  function balances(uint256 arg0) external view returns (uint256);
+}
+
 contract AtomicLaunchTest is BaseFixture {
     using FixedPointMathLib for uint256;
 
@@ -312,7 +318,7 @@ contract AtomicLaunchTest is BaseFixture {
 
         // NOTE: Parameters acquired from test deployment:
         // https://etherscan.io/tx/0x20a9182e7644e216d7a26785223fb2947a3ba70998eac4da98a63ec4652b1821
-        address pool = ICurvePoolFactory(curvePoolFactory).deploy_pool(
+        address poolAddress = ICurvePoolFactory(curvePoolFactory).deploy_pool(
             "CTDL/wBTC",
             "CTDL",
             coins,
@@ -325,8 +331,27 @@ contract AtomicLaunchTest is BaseFixture {
             146000000000000,
             5000000000,
             600,
-            47619047619047620 // $21/~$30k = 0.0007 (Current external rate for CTDL/WBTC)
+            1428571428570000000000 // ~$30k/$21 = 1428.57142857 (Current external rate for WBTC/CTDL)
         );
+
+        ICurvePool pool = ICurvePool(poolAddress);
+
+        // Calculate wBTC amount as: $21/~$30k = 0.0007
+        uint256 wbtcToLiquidity = (toLiquidity * 7e14 / 1e18) / 1e10; // Divide by 1e10 to normalize to wBTC decimals
+        emit log_named_uint("CTDL Liquidity", toLiquidity);
+        emit log_named_uint("wBTC Liquidity", wbtcToLiquidity);
+        erc20utils.forceMintTo(governance, wbtc_address, wbtcToLiquidity);
+
+        citadel.approve(poolAddress, toLiquidity);
+        wbtc.approve(poolAddress, wbtcToLiquidity);
+
+        uint256[2] memory amounts;
+        amounts[0] = toLiquidity;
+        amounts[1] = wbtcToLiquidity;
+        pool.add_liquidity(amounts, 0);
+
+        assertEq(pool.balances(0), toLiquidity);
+        assertEq(pool.balances(1), wbtcToLiquidity);
     }
 
     function _simulateeKnightingRound() public {
