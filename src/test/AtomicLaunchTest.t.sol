@@ -5,6 +5,7 @@ import {KnightingRound} from "../KnightingRound.sol";
 import {KnightingRoundWithEth} from "../KnightingRoundWithEth.sol";
 import {FixedPointMathLib} from "solmate/utils/FixedPointMathLib.sol";
 import {Funding} from "../Funding.sol";
+import {SupplySchedule} from "../SupplySchedule.sol";
 
 import "../interfaces/erc20/IERC20.sol";
 
@@ -57,6 +58,7 @@ contract AtomicLaunchTest is BaseFixture {
 
     uint256 constant MAX_UINT256 = type(uint256).max;
     uint256 constant MAX_BPS = 10000;
+    uint256 constant epochLength = 21 days;
 
     // Asset minting addresses (Just for testing)
     address constant renBTC_owner = 0xe4b679400F0f267212D5D812B95f58C83243EE71;
@@ -89,6 +91,9 @@ contract AtomicLaunchTest is BaseFixture {
     Funding fundingWbtc_launch = new Funding();
     Funding fundingCvx_launch = new Funding();
     Funding fundingBadger_launch = new Funding();
+
+    // Re-deploying SupplySchedule for the sake of maintaining actions atomically
+    SupplySchedule schedule_launch = new SupplySchedule();
 
     // Using a temporary mock address for the DiscountManager until developed
     address immutable discountManager = getAddress("discountManager");
@@ -217,6 +222,8 @@ contract AtomicLaunchTest is BaseFixture {
             MAX_UINT256
         );
         roundsArray.push(knightingRound_badger);
+
+        schedule_launch.initialize(address(gac));
 
         vm.stopPrank();
 
@@ -472,6 +479,36 @@ contract AtomicLaunchTest is BaseFixture {
             discountManager,
             100000e18
         );
+
+        // Setup SupplySchedule
+
+        // Set first few epoch rates
+        schedule_launch.setEpochRate(
+            0,
+            593962000000000000000000 / schedule_launch.epochLength()
+        );
+        schedule_launch.setEpochRate(
+            1,
+            591445000000000000000000 / schedule_launch.epochLength()
+        );
+        schedule_launch.setEpochRate(
+            2,
+            585021000000000000000000 / schedule_launch.epochLength()
+        );
+        schedule_launch.setEpochRate(
+            3,
+            574138000000000000000000 / schedule_launch.epochLength()
+        );
+        schedule_launch.setEpochRate(
+            4,
+            558275000000000000000000 / schedule_launch.epochLength()
+        );
+        schedule_launch.setEpochRate(
+            5,
+            536986000000000000000000 / schedule_launch.epochLength()
+        );
+        // Set minting start
+        schedule_launch.setMintingStart(block.timestamp);
 
         vm.stopPrank();
 
