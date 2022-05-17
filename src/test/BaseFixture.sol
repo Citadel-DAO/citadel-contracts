@@ -304,8 +304,16 @@ contract BaseFixture is DSTest, Utils, stdCheats {
             100000e18
         );
 
-        // Grant roles
+        // Set test epoch rates
         vm.startPrank(governance);
+        schedule.setEpochRate(0, 593962000000000000000000 / schedule.epochLength());
+        schedule.setEpochRate(1, 591445000000000000000000 / schedule.epochLength());
+        schedule.setEpochRate(2, 585021000000000000000000 / schedule.epochLength());
+        schedule.setEpochRate(3, 574138000000000000000000 / schedule.epochLength());
+        schedule.setEpochRate(4, 558275000000000000000000 / schedule.epochLength());
+        schedule.setEpochRate(5, 536986000000000000000000 / schedule.epochLength());
+
+        // Grant roles
         gac.grantRole(CONTRACT_GOVERNANCE_ROLE, governance);
         gac.grantRole(TREASURY_GOVERNANCE_ROLE, treasuryVault);
 

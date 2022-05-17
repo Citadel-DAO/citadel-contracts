@@ -42,7 +42,6 @@ contract SupplySchedule is GlobalAccessControlManaged, DSTest {
 
     function initialize(address _gac) public initializer {
         __GlobalAccessControlManaged_init(_gac);
-        _setEpochRates();
     }
 
     /// =======================
@@ -169,76 +168,5 @@ contract SupplySchedule is GlobalAccessControlManaged, DSTest {
         // TODO: Require this epoch is in the future. What happens if no data is set? (It just fails to mint until set)
         epochRate[_epoch] = _rate;
         emit EpochSupplyRateSet(_epoch, _rate);
-    }
-
-    /// ========================
-    /// ===== Test actions =====
-    /// ========================
-
-    // @dev Set rates for the initial epochs
-    function _setEpochRates() internal {
-        epochRate[0] = 593962000000000000000000 / epochLength;
-        epochRate[1] = 591445000000000000000000 / epochLength;
-        epochRate[2] = 585021000000000000000000 / epochLength;
-        epochRate[3] = 574138000000000000000000 / epochLength;
-        epochRate[4] = 558275000000000000000000 / epochLength;
-        epochRate[5] = 536986000000000000000000 / epochLength;
-    }
-
-    function getMintableDebug(uint256 lastMintTimestamp) external {
-        require(
-            globalStartTimestamp > 0,
-            "SupplySchedule: minting not started"
-        );
-        require(
-            lastMintTimestamp > globalStartTimestamp,
-            "SupplySchedule: attempting to mint before start block"
-        );
-        require(
-            block.timestamp > lastMintTimestamp,
-            "SupplySchedule: already minted up to current block"
-        );
-
-        uint256 mintable = 0;
-
-        emit log_named_uint("mintable", mintable);
-        emit log_named_uint("block.timestamp", block.timestamp);
-        emit log_named_uint("lastMintTimestamp", lastMintTimestamp);
-        emit log_named_uint("globalStartTimestamp", globalStartTimestamp);
-        emit log_named_uint("epochLength", epochLength);
-
-        uint256 startingEpoch = (lastMintTimestamp - globalStartTimestamp) /
-            epochLength;
-        emit log_named_uint("startingEpoch", startingEpoch);
-
-        uint256 endingEpoch = (block.timestamp - globalStartTimestamp) /
-            epochLength;
-        emit log_named_uint("endingEpoch", endingEpoch);
-
-        for (uint256 i = startingEpoch; i <= endingEpoch; i++) {
-            uint256 rate = epochRate[i];
-
-            uint256 epochStartTime = globalStartTimestamp + i * epochLength;
-            uint256 epochEndTime = globalStartTimestamp + (i + 1) * epochLength;
-
-            emit log_named_uint("epoch iteration", i);
-            emit log_named_uint("epochStartTime", epochStartTime);
-            emit log_named_uint("epochEndTime", epochEndTime);
-
-            uint256 time = MathUpgradeable.min(block.timestamp, epochEndTime) -
-                MathUpgradeable.max(lastMintTimestamp, epochStartTime);
-
-            emit log_named_uint("time to mint over", time);
-
-            mintable += rate * time;
-
-            emit log_named_uint("mintable from this iteration", rate * time);
-            emit log_named_uint(
-                "total mintable after this iteration",
-                mintable
-            );
-        }
-
-        // return mintable;
     }
 }
