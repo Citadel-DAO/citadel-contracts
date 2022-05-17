@@ -419,7 +419,46 @@ contract AtomicLaunchTest is BaseFixture {
         fundingWbtc_launch.setCitadelPerAssetBounds(1300e18, 2000e18);
         fundingCvx_launch.setCitadelPerAssetBounds(8e17, 2e18);
         fundingBadger_launch.setCitadelPerAssetBounds(8e17, 2e18);
-        // NOTE: Initial Discount to be set by DiscountManager/Policy Ops
+        // Set Discounts
+        gac.grantRole(POLICY_OPERATIONS_ROLE, governance); // Grant Role temporarily (Can/should be done upon GAC Setup)
+        fundingWbtc_launch.setDiscount(1050); // 10.5%
+        fundingCvx_launch.setDiscount(1050); // 10.5%
+        fundingBadger_launch.setDiscount(1050); // 10.5%
+        // Unpause funding contracts if paused
+        if (fundingWbtc_launch.paused()) {
+            fundingWbtc_launch.unpause();
+        }
+        if (fundingCvx_launch.paused()) {
+            fundingCvx_launch.unpause();
+        }
+        if (fundingBadger_launch.paused()) {
+            fundingBadger_launch.unpause();
+        }
+        // Confirm funding params
+        confirmFundingParams(
+            fundingWbtc_launch,
+            1050,
+            1000,
+            2000,
+            discountManager,
+            100e8
+        );
+        confirmFundingParams(
+            fundingCvx_launch,
+            1050,
+            1000,
+            2000,
+            discountManager,
+            100000e18
+        );
+        confirmFundingParams(
+            fundingBadger_launch,
+            1050,
+            1000,
+            2000,
+            discountManager,
+            100000e18
+        );
 
         vm.stopPrank();
 
@@ -514,6 +553,32 @@ contract AtomicLaunchTest is BaseFixture {
         );
 
         vm.stopPrank();
+    }
+
+    function confirmFundingParams(
+        Funding _funding,
+        uint256 _discount,
+        uint256 _minDiscount,
+        uint256 _maxDiscount,
+        address _discountManager,
+        uint256 _assetCap
+    ) internal {
+        (
+            uint256 discount,
+            uint256 minDiscount,
+            uint256 maxDiscount,
+            address discountManager,
+            ,
+            uint256 assetCap
+        ) = _funding.funding();
+        require(_discount == discount, "Wrong discount set");
+        require(_minDiscount == minDiscount, "Wrong minDiscount set");
+        require(_maxDiscount == maxDiscount, "Wrong maxDiscount set");
+        require(
+            _discountManager == discountManager,
+            "Wrong discountManager set"
+        );
+        require(_assetCap == assetCap, "Wrong assetCap set");
     }
 
     function _simulatePostLaunchActions() internal {
