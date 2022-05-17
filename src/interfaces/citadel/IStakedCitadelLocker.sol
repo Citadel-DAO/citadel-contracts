@@ -54,4 +54,28 @@ interface IStakedCitadelLocker {
         address _distributor,
         bool _approved
     ) external;
+
+    function getRewardTokens() external view returns (address[] memory);
+
+    function lastTimeRewardApplicable(address _rewardsToken)
+        external
+        view
+        returns (uint256);
+
+    function getRewardForDuration(address _rewardsToken)
+        external
+        view
+        returns (uint256);
+
+    function rewardWeightOf(address _user)
+        external
+        view
+        returns (uint256 amount);
+
+    function lockedBalanceOf(address _user)
+        external
+        view
+        returns (uint256 amount);
+
+    function boostedSupply() external returns (uint256);
 }
