@@ -56,6 +56,7 @@ contract AtomicLaunchTest is BaseFixture {
     );
 
     uint256 constant MAX_UINT256 = type(uint256).max;
+    uint256 constant MAX_BPS = 10000;
 
     // Asset minting addresses (Just for testing)
     address constant renBTC_owner = 0xe4b679400F0f267212D5D812B95f58C83243EE71;
@@ -299,16 +300,23 @@ contract AtomicLaunchTest is BaseFixture {
         );
         assertEq(xCitadel.balanceOf(governance), 0);
 
-        // Seed xCTDL
         uint256 remainingSupply = initialSupply - totalCitadelBought - 1e18; // one coin for seeding xCitadel
+        uint256 toLiquidity = (remainingSupply * 4e17) / 1e18; // 15% of total, or 40% of remaining 40%
+        uint256 toTreasury = (remainingSupply * 6e17) / 1e18; // 25% of total, or 60% of remaining 40%
+        // 3 wei tolerance for rounding errors (In practice it is 1 wei different)
+        require(
+            initialSupply -
+                (totalCitadelBought + toTreasury + toLiquidity + 1e18) <
+                3,
+            "Bad distribution calc"
+        );
 
+        // Seed xCTDL
         citadel.approve(address(xCitadel), 1e18);
         xCitadel.deposit(1e18);
         assertEq(xCitadel.balanceOf(governance), 1e18);
 
         // Transfer 25% of total CTDL and acquired sale assets to Treasury
-        uint256 toTreasury = (remainingSupply * 6e17) / 1e18; // 25% of total, or 60% of remaining 40%
-
         citadel.transfer(treasuryVault, toTreasury);
         assertEq(citadel.balanceOf(treasuryVault), toTreasury);
 
@@ -325,7 +333,6 @@ contract AtomicLaunchTest is BaseFixture {
         assertEq(weth.balanceOf(treasuryVault), govWethBalance);
 
         // Use 15% of total CTDL to deploy and seed liquidity pool on Curve
-        uint256 toLiquidity = (remainingSupply * 4e17) / 1e18; // 15% of total, or 40% of remaining 40%
         address[2] memory coins;
         coins[0] = address(citadel);
         coins[1] = address(wbtc);
@@ -366,6 +373,12 @@ contract AtomicLaunchTest is BaseFixture {
 
         assertEq(pool.balances(0), toLiquidity);
         assertEq(pool.balances(1), wbtcToLiquidity);
+
+        // Check tat CTDL amounts add up
+        require(
+            citadel.balanceOf(governance) < 3,
+            "Not all CTDL was distributed"
+        ); // 3 wei tolerance for rounding errors
 
         // Remove ADMIN Minting role
         gac.revokeRole(CITADEL_MINTER_ROLE, governance); // Remove admin mint, only CitadelMinter rules can mint now
