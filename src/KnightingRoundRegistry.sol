@@ -19,7 +19,6 @@ contract KnightingRoundRegistry is Initializable {
     bytes32 public constant CONTRACT_GOVERNANCE_ROLE =
         keccak256("CONTRACT_GOVERNANCE_ROLE");
 
-
     GACProxyAdmin public gacProxyAdmin;
 
     address public governance;
@@ -85,8 +84,6 @@ contract KnightingRoundRegistry is Initializable {
         knightingRoundWithEthImplementation = address(
             new KnightingRoundWithEth()
         );
-
-
 
         /// for weth
         initializeRound(_wethParams);
