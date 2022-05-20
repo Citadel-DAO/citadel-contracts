@@ -44,6 +44,10 @@ interface ICurvePool {
         external;
 
     function balances(uint256 arg0) external view returns (uint256);
+
+    function exchange(int128 i, int128 j, uint256 _dx, uint256 _min_dy) external;
+
+    function get_dy(int128 i, int128 j, uint256 _dx) external returns (uint256);
 }
 
 contract AtomicLaunchTest is BaseFixture {
@@ -515,7 +519,7 @@ contract AtomicLaunchTest is BaseFixture {
         // END OF ATOMIC LAUNCH
 
         // Simulation of post launch user actions
-        _simulatePostLaunchActions();
+        _simulatePostLaunchActions(pool);
     }
 
     function _simulateeKnightingRound() public {
@@ -631,7 +635,7 @@ contract AtomicLaunchTest is BaseFixture {
         require(_assetCap == assetCap, "Wrong assetCap set");
     }
 
-    function _simulatePostLaunchActions() internal {
+    function _simulatePostLaunchActions(ICurvePool pool) internal {
         // TODO: Add user flows to be tested post launch with all test users.
         // These may include but not be limited to:
         // - Withdrawing xCTDL/vesting
@@ -639,6 +643,92 @@ contract AtomicLaunchTest is BaseFixture {
         // - Providing more liquidity
         // - Collecting rewards
 
-        require(true, "placeholder");
+        // withdraw xCTDL as the knighting Rounds are finalized
+        knightingRoundClaim(knightingRound, btc_user);
+        knightingRoundClaim(knightingRound_ibBTC, btc_user);
+        knightingRoundClaim(knightingRound_renBTC, btc_user);
+        knightingRoundClaim(knightingRound_frax, stable_user);
+        knightingRoundClaim(knightingRound_ust, stable_user);
+        knightingRoundClaim(knightingRound_usdc, stable_user);
+        knightingRoundClaim(knightingRound_cvx, influence_user);
+        knightingRoundClaim(knightingRound_bveCVX, influence_user);
+        knightingRoundClaim(knightingRound_badger, influence_user);
+        knightingRoundClaim(knightingRoundWithEth, eth_user);
+
+        // user wants to stake citadel 
+        vm.prank(address(citadelMinter));
+        citadel.mint(btc_user, 100e18);
+
+        vm.startPrank(btc_user);
+        // approve staking amount
+        citadel.approve(address(xCitadel), 10e18);
+        // deposit
+        xCitadel.deposit(10e18);
+        uint userxCitadelBalance = xCitadel.balanceOf(btc_user);
+        uint256 expectedClaimableBalance = (xCitadel.balance() *
+            userxCitadelBalance) / xCitadel.totalSupply();
+        xCitadel.withdrawAll();
+        vm.warp(block.timestamp + xCitadelVester.INITIAL_VESTING_DURATION());
+        
+        uint userCitadelBefore = citadel.balanceOf(btc_user);
+        xCitadelVester.claim(btc_user, expectedClaimableBalance);
+        uint userCitadelAfter = citadel.balanceOf(btc_user);
+
+        assertEq(userCitadelAfter-userCitadelBefore, expectedClaimableBalance);
+
+        uint citadelPoolBalanceBefore = pool.balances(0);
+        uint wbtcPoolBalanceBefore = pool.balances(1);
+
+        // provide liquidity to pool
+
+        uint256[2] memory amounts;
+        amounts[0] = 10e18;
+        amounts[1] = 0;
+        citadel.approve(address(pool), 10e18);
+        pool.add_liquidity(amounts, 0);
+
+        uint citadelPoolBalanceAfter = pool.balances(0);
+        uint wbtcPoolBalanceAfter = pool.balances(1);
+
+        assertEq(citadelPoolBalanceAfter-citadelPoolBalanceBefore, 10e18);
+        assertEq(wbtcPoolBalanceAfter, wbtcPoolBalanceBefore) ;
+
+        // swap tokens
+        uint wbtcUserBalanceBefore = wbtc.balanceOf(btc_user);
+        uint userCitadelBalanceBefore = citadel.balanceOf(btc_user);
+        citadelPoolBalanceBefore = pool.balances(0);
+        wbtcPoolBalanceBefore = pool.balances(1);
+        citadel.approve(address(pool), 20e18);
+
+        // uint min_dy = pool.get_dy(0, 1, 20e18);
+        pool.exchange(0, 1, 20e18, 0);
+        citadelPoolBalanceAfter = pool.balances(0);
+        wbtcPoolBalanceAfter = pool.balances(1);
+        uint userCitadelBalanceAfter = citadel.balanceOf(btc_user);
+
+        uint wbtcUserBalanceAfter = wbtc.balanceOf(btc_user);
+        emit log_named_uint("citadelPoolBalanceAfter" , citadelPoolBalanceAfter);
+        emit log_named_uint("citadelPoolBalanceBefore", citadelPoolBalanceBefore);
+        emit log_named_uint("userCitadelBalanceBefore" , userCitadelBalanceBefore);
+        emit log_named_uint("userCitadelBalanceAfter", userCitadelBalanceAfter);
+        emit log_named_uint("wbtcUserBalanceAfter" , wbtcUserBalanceAfter);
+        emit log_named_uint("wbtcUserBalanceBefore", wbtcUserBalanceBefore);
+        emit log_named_uint("wbtcPoolBalanceBefore" , wbtcPoolBalanceBefore);
+        emit log_named_uint("wbtcPoolBalanceAfter", wbtcPoolBalanceAfter);
+        // assertEq(citadelPoolBalanceAfter-citadelPoolBalanceBefore, 20e18);
+
+        assertEq(wbtcUserBalanceAfter-wbtcUserBalanceBefore, wbtcPoolBalanceBefore-wbtcPoolBalanceAfter);
+    }
+
+    function knightingRoundClaim(
+        KnightingRound round,
+        address user) internal{
+            uint userBalanceBefore = xCitadel.balanceOf(user);
+            vm.prank(user);
+            uint tokenOutAmount = round.claim();
+
+            uint userBalanceAfter = xCitadel.balanceOf(user);
+            // check if user has received xCitadel
+            assertEq(tokenOutAmount, userBalanceAfter- userBalanceBefore);
     }
 }
