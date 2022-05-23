@@ -114,8 +114,6 @@ contract Funding is GlobalAccessControlManaged, ReentrancyGuardUpgradeable {
         require(_citadel != address(0), "address 0 invalid");
         require(_asset != address(0), "address 0 invalid");
         require(_xCitadel != address(0), "address 0 invalid");
-        require(_saleRecipient != address(0), "address 0 invalid");
-        require(_citadelPerAssetOracle != address(0), "address 0 invalid");
         require(_saleRecipient != address(0), "Funding: 0 sale");
         require(_citadelPerAssetOracle != address(0), "Funding: 0 oracle");
 
