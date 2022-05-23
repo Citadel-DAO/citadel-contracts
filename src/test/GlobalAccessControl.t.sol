@@ -347,6 +347,9 @@ contract GlobalAccessControlTest is BaseFixture {
         fundingCvx.setDiscount(20);
         vm.prank(address(policyOps)); // calling from correct account
         fundingCvx.setDiscount(20);
+        (, , , address discountManager, , ) = fundingCvx.funding();
+        vm.prank(discountManager);
+        fundingCvx.setDiscount(30);
 
         vm.expectRevert("GAC: invalid-caller-role");
         fundingCvx.setAssetCap(10e18);
@@ -482,10 +485,133 @@ contract GlobalAccessControlTest is BaseFixture {
         knightingRound.finalize();
     }
 
-    function testStakingCallerRoles() public {
+    function testVestingCallerRoles() public {
         vm.expectRevert("GAC: invalid-caller-role");
         xCitadelVester.setVestingDuration(8 days);
         vm.prank(governance);
         xCitadelVester.setVestingDuration(8 days);
+    }
+
+    function testStakingCallerRoles() public {
+        vm.expectRevert("onlyPausers"); // nly guardian and governance can pause
+        xCitadel.pauseDeposits();
+
+        vm.prank(governance);
+        xCitadel.pauseDeposits();
+
+        vm.prank(guardian); // guardian is also pauser
+        xCitadel.pauseDeposits();
+
+        vm.expectRevert("onlyGovernance");
+        xCitadel.unpauseDeposits();
+
+        vm.prank(governance); // only governance can unpause deposits
+        xCitadel.unpauseDeposits();
+
+        vm.expectRevert("onlyPausers"); // only guardian and governance can pause
+        xCitadel.pause();
+
+        vm.prank(governance);
+        xCitadel.pause();
+
+        vm.prank(governance);
+        xCitadel.unpause();
+
+        vm.prank(guardian); // guardian is also pauser
+        xCitadel.pause();
+
+        vm.expectRevert("onlyGovernance");
+        xCitadel.unpause();
+
+        vm.prank(governance);
+        xCitadel.unpause();
+
+        vm.expectRevert("onlyStrategy");
+        xCitadel.reportHarvest(0);
+
+        vm.prank(address(xCitadel_strategy));
+        xCitadel.reportHarvest(0);
+
+        vm.expectRevert("onlyStrategy");
+        xCitadel.reportAdditionalToken(address(citadel));
+
+        vm.prank(address(xCitadel_strategy));
+        xCitadel.reportAdditionalToken(address(wbtc));
+
+        vm.expectRevert("onlyAuthorizedActors"); // authorized actors are keeper and governance
+        xCitadel.earn();
+
+        vm.prank(keeper); // keeper can call earn
+        xCitadel.earn();
+
+        vm.prank(governance); // governance can call earn
+        xCitadel.earn();
+
+        vm.expectRevert("onlyGovernanceOrStrategist");
+        xCitadel.setToEarnBps(0);
+        vm.expectRevert("onlyGovernanceOrStrategist");
+        xCitadel.setGuestList(address(0));
+        vm.expectRevert("onlyGovernanceOrStrategist");
+        xCitadel.setWithdrawalFee(0);
+        vm.expectRevert("onlyGovernanceOrStrategist");
+        xCitadel.setPerformanceFeeStrategist(0);
+        vm.expectRevert("onlyGovernanceOrStrategist");
+        xCitadel.setPerformanceFeeGovernance(0);
+        vm.expectRevert("onlyGovernanceOrStrategist");
+        xCitadel.setManagementFee(0);
+        vm.expectRevert("onlyGovernanceOrStrategist");
+        xCitadel.withdrawToVault();
+        vm.expectRevert("onlyGovernanceOrStrategist");
+        xCitadel.emitNonProtectedToken(address(citadel));
+        vm.expectRevert("onlyGovernanceOrStrategist");
+        xCitadel.sweepExtraToken(address(wbtc));
+
+        vm.startPrank(governance); // governance can call all these functions
+        xCitadel.setToEarnBps(0);
+        xCitadel.setGuestList(address(0));
+        xCitadel.setWithdrawalFee(0);
+        xCitadel.setPerformanceFeeStrategist(0);
+        xCitadel.setPerformanceFeeGovernance(0);
+        xCitadel.setManagementFee(0);
+        xCitadel.withdrawToVault();
+        xCitadel.sweepExtraToken(address(wbtc));
+        vm.stopPrank();
+
+        address strategist = xCitadel_strategy.strategist();
+        vm.startPrank(strategist); // strategist can call all these functions
+        xCitadel.setToEarnBps(0);
+        xCitadel.setGuestList(address(0));
+        xCitadel.setWithdrawalFee(0);
+        xCitadel.setPerformanceFeeStrategist(0);
+        xCitadel.setPerformanceFeeGovernance(0);
+        xCitadel.setManagementFee(0);
+        xCitadel.withdrawToVault();
+        xCitadel.sweepExtraToken(address(wbtc));
+        vm.stopPrank();
+
+        vm.expectRevert("onlyGovernance");
+        xCitadel.setTreasury(address(treasuryVault));
+        vm.expectRevert("onlyGovernance");
+        xCitadel.setStrategy(address(xCitadel_strategy));
+        vm.expectRevert("onlyGovernance");
+        xCitadel.setMaxWithdrawalFee(0);
+        vm.expectRevert("onlyGovernance");
+        xCitadel.setMaxPerformanceFee(0);
+        vm.expectRevert("onlyGovernance");
+        xCitadel.setMaxManagementFee(0);
+        vm.expectRevert("onlyGovernance");
+        xCitadel.setGuardian(guardian);
+        vm.expectRevert("onlyGovernance");
+        xCitadel.setVesting(address(xCitadelVester));
+
+        vm.startPrank(governance); // governance can call all these functions
+        xCitadel.setTreasury(address(treasuryVault));
+        xCitadel.setStrategy(address(xCitadel_strategy));
+        xCitadel.setMaxWithdrawalFee(0);
+        xCitadel.setMaxPerformanceFee(0);
+        xCitadel.setMaxManagementFee(0);
+        xCitadel.setGuardian(guardian);
+        xCitadel.setVesting(address(xCitadelVester));
+        vm.stopPrank();
     }
 }
