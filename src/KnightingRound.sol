@@ -120,6 +120,7 @@ contract KnightingRound is
         address _guestlist,
         uint256 _tokenInLimit
     ) external initializer {
+        require(_globalAccessControl != address(0), "address 0 invalid");
         require(
             _saleStart >= block.timestamp,
             "KnightingRound: start date may not be in the past"

@@ -35,6 +35,7 @@ contract KnightingRoundGuestlist is GlobalAccessControlManaged {
      * `owner`.
      */
     function initialize(address _globalAccessControl) public initializer {
+        require(_globalAccessControl != address(0), "address 0 invalid");
         __GlobalAccessControlManaged_init(_globalAccessControl);
     }
 
