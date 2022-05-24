@@ -58,7 +58,7 @@ contract CtdlWibbtcLpVaultProvider is ChainlinkUtils, MedianOracleProvider {
         // 8 decimals
         uint256 wbtcPriceInBtc = safeLatestAnswer(wbtcBtcPriceFeed);
         // 18 decimals
-        uint256 wibbtcLpVaultPriceInWbtc = (wibbtcLpVault
+        uint256 wibbtcLpVaultPriceInBtc = (wibbtcLpVault
             .getPricePerFullShare() * wibbtcCrvPool.get_virtual_price()) /
             PRECISION;
 
@@ -67,7 +67,7 @@ contract CtdlWibbtcLpVaultProvider is ChainlinkUtils, MedianOracleProvider {
 
         // 18 decimals
         wibbtcLpVaultPriceInCtdl_ =
-            (wibbtcLpVaultPriceInWbtc *
+            (wibbtcLpVaultPriceInBtc *
                 wbtcPriceInCtdl *
                 10**wbtcBtcPriceFeed.decimals()) /
             wbtcPriceInBtc /
