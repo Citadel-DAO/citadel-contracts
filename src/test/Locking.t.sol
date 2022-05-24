@@ -41,7 +41,7 @@ contract LockingTest is BaseFixture {
     function testGetReward() public {
         address user = address(1);
 
-        uint256 xCitadelLocked = lockAmount();
+        lockAmount();
 
         mintAndDistribute();
 
@@ -277,6 +277,49 @@ contract LockingTest is BaseFixture {
         uint256 xCitadelUserBalanceAfter = xCitadel.balanceOf(rando);
 
         assertEq(xCitadelUserBalanceAfter, xCitadelUserBalanceBefore);
+    }
+
+    function testLockedBalances() public {
+        // address user = address(1);
+        // uint256 xCitadelLocked = lockAmount();
+        // (uint locked, uint unlockable, xCitadelLocker.lockedBalances(user);
+    }
+
+    function testViewFunctions() public {
+        address user = address(1);
+        lockAmount();
+
+        address[] memory tokens = xCitadelLocker.getRewardTokens();
+        assertEq(tokens.length, 1); // only citadel rewards
+        assertEq(tokens[0], address(xCitadel));
+
+        uint256 timestamp = block.timestamp; // the moment rewards are distributed
+        treasuryReward();
+
+        tokens = xCitadelLocker.getRewardTokens();
+        assertEq(tokens.length, 2); // citadel and wbtc rewards
+        assertEq(tokens[1], address(wbtc));
+
+        uint256 lastUpdatedRewardTime = xCitadelLocker.lastTimeRewardApplicable(
+            address(wbtc)
+        );
+
+        assertEq(lastUpdatedRewardTime, block.timestamp);
+
+        vm.warp(block.timestamp + 2 days);
+
+        lastUpdatedRewardTime = xCitadelLocker.lastTimeRewardApplicable(
+            address(wbtc)
+        );
+
+        assertEq(lastUpdatedRewardTime, timestamp + 1 days); // block.timestamp + rewardsDuration
+
+        uint256 reward = xCitadelLocker.getRewardForDuration(address(wbtc));
+
+        uint256 rewardsDuration = xCitadelLocker.rewardsDuration();
+        assertEq(reward, (10e8 / rewardsDuration) * rewardsDuration); // rewardRate*rewardsDuration
+
+        emit log_named_uint("boosted Supply", xCitadelLocker.boostedSupply());
     }
 
     function lockAmount() public returns (uint256) {

@@ -55,6 +55,18 @@ interface IStakedCitadelLocker {
         bool _approved
     ) external;
 
+    function getRewardTokens() external view returns (address[] memory);
+
+    function lastTimeRewardApplicable(address _rewardsToken)
+        external
+        view
+        returns (uint256);
+
+    function getRewardForDuration(address _rewardsToken)
+        external
+        view
+        returns (uint256);
+
     function getCumulativeClaimedRewards(
         address _account,
         address _rewardsToken
@@ -64,6 +76,8 @@ interface IStakedCitadelLocker {
         external
         view
         returns (uint256 amount);
+
+    function boostedSupply() external returns (uint256);
 
     function cumulativeDistributed(address _token)
         external
