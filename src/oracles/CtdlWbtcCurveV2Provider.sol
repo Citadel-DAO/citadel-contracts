@@ -3,7 +3,6 @@ pragma solidity ^0.8.0;
 
 import {MedianOracleProvider} from "./MedianOracleProvider.sol";
 import {ICurveCryptoSwap} from "../interfaces/curve/ICurveCryptoSwap.sol";
-import {IMedianOracle} from "../interfaces/citadel/IMedianOracle.sol";
 
 contract CtdlWbtcCurveV2Provider is MedianOracleProvider {
     /// =================
