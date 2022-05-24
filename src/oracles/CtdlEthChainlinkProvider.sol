@@ -3,24 +3,20 @@ pragma solidity ^0.8.0;
 
 import {ChainlinkUtils} from "./ChainlinkUtils.sol";
 import {MedianOracleProvider} from "./MedianOracleProvider.sol";
-import {ICurvePool} from "../interfaces/curve/ICurvePool.sol";
 import {ICurveCryptoSwap} from "../interfaces/curve/ICurveCryptoSwap.sol";
 import {IMedianOracle} from "../interfaces/citadel/IMedianOracle.sol";
 import {IAggregatorV3Interface} from "../interfaces/chainlink/IAggregatorV3Interface.sol";
-import {IVault} from "../interfaces/badger/IVault.sol";
 
-contract CtdlWibbtcLpVaultProvider is ChainlinkUtils, MedianOracleProvider {
+contract CtdlEthChainlinkProvider is ChainlinkUtils, MedianOracleProvider {
     /// =================
     /// ===== State =====
     /// =================
 
     ICurveCryptoSwap public immutable ctdlWbtcCurvePool;
 
-    IVault public immutable wibbtcLpVault;
-    ICurvePool public immutable wibbtcCrvPool;
-
     // Price feeds
     IAggregatorV3Interface public immutable wbtcBtcPriceFeed;
+    IAggregatorV3Interface public immutable btcEthPriceFeed;
 
     /// =====================
     /// ===== Constants =====
@@ -36,13 +32,12 @@ contract CtdlWibbtcLpVaultProvider is ChainlinkUtils, MedianOracleProvider {
         address _medianOracle,
         address _ctdlWbtcCurvePool,
         address _wbtcBtcPriceFeed,
-        address _wibbtcLpVault
+        address _btcEthPriceFeed
     ) MedianOracleProvider(_medianOracle) {
         ctdlWbtcCurvePool = ICurveCryptoSwap(_ctdlWbtcCurvePool);
-        wbtcBtcPriceFeed = IAggregatorV3Interface(_wbtcBtcPriceFeed);
 
-        wibbtcLpVault = IVault(_wibbtcLpVault);
-        wibbtcCrvPool = ICurvePool(wibbtcLpVault.token());
+        wbtcBtcPriceFeed = IAggregatorV3Interface(_wbtcBtcPriceFeed);
+        btcEthPriceFeed = IAggregatorV3Interface(_btcEthPriceFeed);
     }
 
     /// =======================
@@ -53,24 +48,18 @@ contract CtdlWibbtcLpVaultProvider is ChainlinkUtils, MedianOracleProvider {
         public
         view
         override
-        returns (uint256 wibbtcLpVaultPriceInCtdl_)
+        returns (uint256 ethPriceInCtdl_)
     {
-        // 8 decimals
         uint256 wbtcPriceInBtc = safeLatestAnswer(wbtcBtcPriceFeed);
-        // 18 decimals
-        uint256 wibbtcLpVaultPriceInWbtc = (wibbtcLpVault
-            .getPricePerFullShare() * wibbtcCrvPool.get_virtual_price()) /
-            PRECISION;
+        uint256 btcPriceInEth = safeLatestAnswer(btcEthPriceFeed);
 
+        // (10^8) * (10^8) * (10^18) = (10^34) + price value - Shouldn't overflow
+        uint256 wbtcPriceInEth = (wbtcPriceInBtc * btcPriceInEth * PRECISION) /
+            (10**wbtcBtcPriceFeed.decimals()) /
+            (10**btcEthPriceFeed.decimals());
         // 18 decimals
         uint256 wbtcPriceInCtdl = ctdlWbtcCurvePool.price_oracle();
 
-        // 18 decimals
-        wibbtcLpVaultPriceInCtdl_ =
-            (wibbtcLpVaultPriceInWbtc *
-                wbtcPriceInCtdl *
-                10**wbtcBtcPriceFeed.decimals()) /
-            wbtcPriceInBtc /
-            PRECISION;
+        ethPriceInCtdl_ = (wbtcPriceInCtdl * PRECISION) / wbtcPriceInEth;
     }
 }
