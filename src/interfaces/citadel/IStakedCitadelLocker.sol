@@ -54,4 +54,19 @@ interface IStakedCitadelLocker {
         address _distributor,
         bool _approved
     ) external;
+
+    function getCumulativeClaimedRewards(
+        address _account,
+        address _rewardsToken
+    ) external view returns (uint256);
+
+    function lockedBalanceOf(address _user)
+        external
+        view
+        returns (uint256 amount);
+
+    function cumulativeDistributed(address _token)
+        external
+        view
+        returns (uint256);
 }

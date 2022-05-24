@@ -9,7 +9,36 @@ contract LockingTest is BaseFixture {
         BaseFixture.setUp();
     }
 
-    function testUnlockAndReward() public {
+    function testLockAndUnlock() public {
+        address user = address(1);
+
+        uint256 xCitadelLocked = lockAmount();
+
+        vm.startPrank(user);
+        assertEq(xCitadelLocked, 10e18);
+        assertEq(xCitadelLocker.lockedBalanceOf(user), xCitadelLocked);
+
+        // try to withdraw before the lock duration ends
+        vm.expectRevert("no exp locks");
+        xCitadelLocker.withdrawExpiredLocksTo(user); // withdraw
+
+        vm.warp(block.timestamp + 148 days); // lock period = 147 days + 1 day(rewards_duration cause 1st time lock)
+
+        uint256 xCitadelUserBalanceBefore = xCitadel.balanceOf(user);
+        xCitadelLocker.withdrawExpiredLocksTo(user); // withdraw
+        uint256 xCitadelUserBalanceAfter = xCitadel.balanceOf(user);
+        uint256 xCitadelUnlocked = xCitadelUserBalanceAfter -
+            xCitadelUserBalanceBefore;
+
+        // user gets unlocked amount
+        assertEq(xCitadelUnlocked, xCitadelLocked);
+        // locked balance should be zero
+        assertEq(xCitadelLocker.lockedBalanceOf(user), 0);
+
+        vm.stopPrank();
+    }
+
+    function testGetReward() public {
         address user = address(1);
 
         uint256 xCitadelLocked = lockAmount();
@@ -20,13 +49,14 @@ contract LockingTest is BaseFixture {
 
         vm.startPrank(user);
 
-        // try to withdraw before the lock duration ends
-        vm.expectRevert("no exp locks");
-        xCitadelLocker.withdrawExpiredLocksTo(user); // withdraw
+        uint256 wbtcCumulatedClaimedBefore = xCitadelLocker
+            .getCumulativeClaimedRewards(user, wbtc_address);
+        uint256 xCitadelCumulatedClaimedBefore = xCitadelLocker
+            .getCumulativeClaimedRewards(user, address(xCitadel));
 
         uint256 xCitadelUserBalanceBefore = xCitadel.balanceOf(user);
         uint256 wbtcUserBalanceBefore = wbtc.balanceOf(user);
-        vm.warp(block.timestamp + 148 days); // lock period = 147 days + 1 day(rewards_duration cause 1st time lock)
+        vm.warp(block.timestamp + 1); // move sometime forward to receive some rewards
 
         xCitadelLocker.getReward(user); // user collects rewards
 
@@ -34,50 +64,50 @@ contract LockingTest is BaseFixture {
 
         uint256 wbtcUserBalanceAfter = wbtc.balanceOf(user);
 
-        emit log_named_uint(
-            "reward per token xCitadel",
-            xCitadelLocker.rewardPerToken(address(xCitadel))
+        // check if cumulativeClaimed is updated correctly
+        assertEq(
+            xCitadelLocker.getCumulativeClaimedRewards(user, wbtc_address),
+            wbtcCumulatedClaimedBefore +
+                wbtcUserBalanceAfter -
+                wbtcUserBalanceBefore
         );
-        emit log_named_uint(
-            "reward per token wbtc",
-            xCitadelLocker.rewardPerToken(wbtc_address)
-        );
-
-        // the awards received from minting process
-        emit log_named_uint(
-            "Reward received xCitadel",
-            xCitadelUserBalanceAfter - xCitadelUserBalanceBefore
-        );
-        // the awards received from treasury funds
-        emit log_named_uint(
-            "Reward received Wbtc",
-            wbtcUserBalanceAfter - wbtcUserBalanceBefore
+        assertEq(
+            xCitadelLocker.getCumulativeClaimedRewards(user, address(xCitadel)),
+            xCitadelCumulatedClaimedBefore +
+                xCitadelUserBalanceAfter -
+                xCitadelUserBalanceBefore
         );
 
-        assertTrue(xCitadelUserBalanceAfter - xCitadelUserBalanceBefore > 0);
-        assertTrue(wbtcUserBalanceAfter - wbtcUserBalanceBefore > 0);
-
-        xCitadelUserBalanceBefore = xCitadel.balanceOf(user);
-        xCitadelLocker.withdrawExpiredLocksTo(user); // withdraw
-        xCitadelUserBalanceAfter = xCitadel.balanceOf(user);
-        uint256 xCitadelUnlocked = xCitadelUserBalanceAfter -
-            xCitadelUserBalanceBefore;
-
-        // user gets unlocked amount
-        assertEq(xCitadelUnlocked, xCitadelLocked);
+        wbtcCumulatedClaimedBefore = xCitadelLocker.getCumulativeClaimedRewards(
+                user,
+                wbtc_address
+            );
+        xCitadelCumulatedClaimedBefore = xCitadelLocker
+            .getCumulativeClaimedRewards(user, address(xCitadel));
 
         xCitadelUserBalanceBefore = xCitadel.balanceOf(user);
         wbtcUserBalanceBefore = wbtc.balanceOf(user);
-        // user try to claim rewards again
-        xCitadelLocker.getReward(user);
+        vm.warp(block.timestamp + 2); // move sometime forward to receive more rewards
+
+        xCitadelLocker.getReward(user); // user collects rewards
 
         xCitadelUserBalanceAfter = xCitadel.balanceOf(user);
+
         wbtcUserBalanceAfter = wbtc.balanceOf(user);
 
-        assertEq(xCitadelUserBalanceBefore, xCitadelUserBalanceAfter); // user's balance should not change
-        assertEq(wbtcUserBalanceBefore, wbtcUserBalanceAfter);
-
-        vm.stopPrank();
+        // check if cumulativeClaimed is updated correctly
+        assertEq(
+            xCitadelLocker.getCumulativeClaimedRewards(user, wbtc_address),
+            wbtcCumulatedClaimedBefore +
+                wbtcUserBalanceAfter -
+                wbtcUserBalanceBefore
+        );
+        assertEq(
+            xCitadelLocker.getCumulativeClaimedRewards(user, address(xCitadel)),
+            xCitadelCumulatedClaimedBefore +
+                xCitadelUserBalanceAfter -
+                xCitadelUserBalanceBefore
+        );
     }
 
     function testRelocking() public {
@@ -155,33 +185,40 @@ contract LockingTest is BaseFixture {
     }
 
     function testNotifyReward() public {
+        // to add wbtc rewards
         treasuryReward();
+
+        assertEq(xCitadelLocker.cumulativeDistributed(wbtc_address), 10e8);
 
         uint256 balanceBefore = wbtc.balanceOf(address(2));
         vm.prank(address(2));
         vm.expectRevert();
-        xCitadelLocker.notifyRewardAmount(wbtc_address, 10e8); // share of treasury yield
-        uint256 balanceAfter = wbtc.balanceOf(address(2));
+        xCitadelLocker.notifyRewardAmount(wbtc_address, 10e8); // address(2) try to give rewards
 
+        uint256 balanceAfter = wbtc.balanceOf(address(2));
         assertEq(balanceBefore, balanceAfter);
 
         vm.expectRevert("GAC: invalid-caller-role");
         xCitadelLocker.approveRewardDistributor(wbtc_address, address(2), true);
 
         vm.startPrank(governance);
+        erc20utils.forceMintTo(address(2), wbtc_address, 100e8); // so that address(2) can reward lockers
         xCitadelLocker.approveRewardDistributor(wbtc_address, address(2), true);
-        erc20utils.forceMintTo(address(2), wbtc_address, 100e8); // so that treasury can reward lockers
         vm.stopPrank();
 
         vm.startPrank(address(2));
         wbtc.approve(address(xCitadelLocker), 100e8);
         balanceBefore = wbtc.balanceOf(address(2));
 
-        xCitadelLocker.notifyRewardAmount(wbtc_address, 10e8); // share of treasury yield
+        xCitadelLocker.notifyRewardAmount(wbtc_address, 10e8); // give some rewards
 
         balanceAfter = wbtc.balanceOf(address(2));
 
         assertEq(balanceBefore - balanceAfter, 10e8);
+
+        // cumulativeDistributed should be incremented to 20e8
+        assertEq(xCitadelLocker.cumulativeDistributed(wbtc_address), 20e8);
+
         vm.stopPrank();
     }
 
@@ -289,6 +326,8 @@ contract LockingTest is BaseFixture {
         vm.startPrank(treasuryVault);
         wbtc.approve(address(xCitadelLocker), 100e8);
         xCitadelLocker.notifyRewardAmount(wbtc_address, 10e8); // share of treasury yield
+        assertEq(xCitadelLocker.cumulativeDistributed(wbtc_address), 10e8);
+
         vm.stopPrank();
     }
 }
