@@ -10,6 +10,8 @@ contract BrickedStrategy is BaseStrategy {
     /// @notice Proxies will set any non constant variable you declare as default value
     /// @dev add any extra changeable variable at end of initializer as shown
     function initialize(address _vault, address _want) public initializer {
+        require(_vault != address(0), "address 0 invalid");
+        require(_want != address(0), "address 0 invalid");
         __BaseStrategy_init(_vault);
         want = _want;
     }

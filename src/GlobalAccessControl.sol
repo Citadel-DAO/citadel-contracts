@@ -58,6 +58,7 @@ contract GlobalAccessControl is
         external
         initializer
     {
+        require(_initialContractGovernance != address(0), "address 0 invalid");
         __AccessControlEnumerable_init();
         __Pausable_init();
 

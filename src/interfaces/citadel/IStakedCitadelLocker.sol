@@ -67,10 +67,10 @@ interface IStakedCitadelLocker {
         view
         returns (uint256);
 
-    function rewardWeightOf(address _user)
-        external
-        view
-        returns (uint256 amount);
+    function getCumulativeClaimedRewards(
+        address _account,
+        address _rewardsToken
+    ) external view returns (uint256);
 
     function lockedBalanceOf(address _user)
         external
@@ -78,4 +78,8 @@ interface IStakedCitadelLocker {
         returns (uint256 amount);
 
     function boostedSupply() external returns (uint256);
+    function cumulativeDistributed(address _token)
+        external
+        view
+        returns (uint256);
 }

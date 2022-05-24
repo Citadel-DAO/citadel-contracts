@@ -24,6 +24,7 @@ contract CitadelToken is GlobalAccessControlManaged, ERC20Upgradeable {
         string memory _symbol,
         address _gac
     ) public initializer {
+        require(_gac != address(0), "address 0 invalid");
         __ERC20_init(_name, _symbol);
         __GlobalAccessControlManaged_init(_gac);
     }

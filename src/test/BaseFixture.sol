@@ -86,10 +86,27 @@ contract BaseFixture is DSTest, Utils, stdCheats {
     address constant wbtc_address = 0x2260FAC5E5542a773Aa44fBCfeDf7C193bc2C599;
     address constant weth_address = 0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2;
     address constant cvx_address = 0x4e3FBD56CD56c3e72c1403e103b45Db9da5B9D2B;
+    address constant renBTC_address =
+        0xEB4C2781e4ebA804CE9a9803C67d0893436bB27D;
+    address constant ibBTC_address = 0xc4E15973E6fF2A35cC804c2CF9D2a1b817a8b40F;
+    address constant frax_address = 0x853d955aCEf822Db058eb8505911ED77F175b99e;
+    address constant ust_address = 0xa693B19d2931d498c5B318dF961919BB4aee87a5; // UST(Wormhole)
+    address constant usdc_address = 0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48;
+    address constant badger_address =
+        0x3472A5A71965499acd81997a54BBA8D852C6E53d;
+    address constant bveCVX_address =
+        0xfd05D3C7fe2924020620A8bE4961bBaA747e6305;
 
     IERC20 wbtc = IERC20(wbtc_address);
-    IERC20 cvx = IERC20(cvx_address);
     IERC20 weth = IERC20(weth_address);
+    IERC20 cvx = IERC20(cvx_address);
+    IERC20 renBTC = IERC20(renBTC_address);
+    IERC20 ibBTC = IERC20(ibBTC_address);
+    IERC20 frax = IERC20(frax_address);
+    IERC20 ust = IERC20(ust_address);
+    IERC20 usdc = IERC20(usdc_address);
+    IERC20 badger = IERC20(badger_address);
+    IERC20 bveCVX = IERC20(bveCVX_address);
 
     GlobalAccessControl gac = new GlobalAccessControl();
 
@@ -112,6 +129,10 @@ contract BaseFixture is DSTest, Utils, stdCheats {
             deployCode(medianOracleArtifact, abi.encode(1 days, 0, 1))
         );
     IMedianOracle medianOracleCvx =
+        IMedianOracle(
+            deployCode(medianOracleArtifact, abi.encode(1 days, 0, 1))
+        );
+    IMedianOracle medianOracleBadger =
         IMedianOracle(
             deployCode(medianOracleArtifact, abi.encode(1 days, 0, 1))
         );
@@ -261,6 +282,7 @@ contract BaseFixture is DSTest, Utils, stdCheats {
         // Oracle
         medianOracleWbtc.addProvider(keeper);
         medianOracleCvx.addProvider(keeper);
+        medianOracleBadger.addProvider(keeper);
 
         // Funding
         fundingWbtc.initialize(
@@ -282,8 +304,34 @@ contract BaseFixture is DSTest, Utils, stdCheats {
             100000e18
         );
 
-        // Grant roles
+        // Set test epoch rates
         vm.startPrank(governance);
+        schedule.setEpochRate(
+            0,
+            593962000000000000000000 / schedule.epochLength()
+        );
+        schedule.setEpochRate(
+            1,
+            591445000000000000000000 / schedule.epochLength()
+        );
+        schedule.setEpochRate(
+            2,
+            585021000000000000000000 / schedule.epochLength()
+        );
+        schedule.setEpochRate(
+            3,
+            574138000000000000000000 / schedule.epochLength()
+        );
+        schedule.setEpochRate(
+            4,
+            558275000000000000000000 / schedule.epochLength()
+        );
+        schedule.setEpochRate(
+            5,
+            536986000000000000000000 / schedule.epochLength()
+        );
+
+        // Grant roles
         gac.grantRole(CONTRACT_GOVERNANCE_ROLE, governance);
         gac.grantRole(TREASURY_GOVERNANCE_ROLE, treasuryVault);
 

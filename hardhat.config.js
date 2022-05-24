@@ -114,6 +114,7 @@ module.exports = {
   },
   networks: {
     hardhat: {
+      chainId: 1337,
       mining: {
         auto: true,
         interval: [3000, 4000],
