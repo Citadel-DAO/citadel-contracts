@@ -1,13 +1,17 @@
-const deployContracts = async (contractFactories, instances = []) => {
+const deployContracts = (deployer) => async (contractFactories, instances = []) => {
   if (contractFactories.length == 0) {
     return instances;
   }
-  const deployedInstance = await contractFactories[0].factory.deploy();
+  const factory = contractFactories[0].factory.connect(deployer)
+  console.log(factory)
+
+  const deployedInstance = await factory.deploy();
+
   instances[contractFactories[0].instance] = deployedInstance;
   console.log(
     `${contractFactories[0].instance} address is: ${deployedInstance.address}`
   );
-  return await deployContracts(
+  return await deployContracts(deployer)(
     contractFactories.slice(1, contractFactories.length),
     instances
   );
