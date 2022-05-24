@@ -16,6 +16,7 @@ const bondTokenForXCTDL = async ({
 
   await fundingWbtc.connect(user).deposit(parseUnits("1", 8), 0); // max slippage as there's no competition
   await fundingCvx.connect(user).deposit(apeCvxAmount, 0); // max slippage as there's no competition
+
   // user should be getting ~200 xCTDL
   console.log(
     `balance of xCTDL after two deposits: ${formatUnits(

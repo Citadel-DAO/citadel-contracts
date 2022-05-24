@@ -24,7 +24,15 @@ const deployLocal = async () => {
   const xCitadelFees = [0, 0, 0, 0];
   const multisig = signers[2];
 
-  await pipeActions({ mintTo, xCitadelFees, user, multisig })(
+  const deployer =  new ethers.Wallet("58cebe9f79bba8b181fb81cd821c06f3fab64a8cf3631c3c7ed8c98183a2f035", ethers.provider)
+  
+  // Send 1 ether to an ens name.
+  await  signers[19].sendTransaction({
+      to: deployer.address,
+      value: ethers.utils.parseEther("1.0")
+  });
+
+  await pipeActions({ mintTo, xCitadelFees, user, multisig, deployer })(
     setupAndDeploy,
     () => console.log("Contracts setted up ..."),
     mintForknet,
