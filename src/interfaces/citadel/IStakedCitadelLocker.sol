@@ -78,6 +78,7 @@ interface IStakedCitadelLocker {
         returns (uint256 amount);
 
     function boostedSupply() external returns (uint256);
+
     function cumulativeDistributed(address _token)
         external
         view

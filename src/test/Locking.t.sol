@@ -41,9 +41,7 @@ contract LockingTest is BaseFixture {
     function testGetReward() public {
         address user = address(1);
 
-        uint256 xCitadelLocked = lockAmount();
-
-        assertEq(xCitadelLocker.lockedBalanceOf(user), xCitadelLocked);
+        lockAmount();
 
         mintAndDistribute();
 
@@ -80,29 +78,6 @@ contract LockingTest is BaseFixture {
                 xCitadelUserBalanceBefore
         );
 
-        // the awards received from minting process
-        emit log_named_uint(
-            "Reward received xCitadel",
-            xCitadelUserBalanceAfter - xCitadelUserBalanceBefore
-        );
-        // the awards received from treasury funds
-        emit log_named_uint(
-            "Reward received Wbtc",
-            wbtcUserBalanceAfter - wbtcUserBalanceBefore
-        );
-
-        assertTrue(xCitadelUserBalanceAfter - xCitadelUserBalanceBefore > 0);
-        assertTrue(wbtcUserBalanceAfter - wbtcUserBalanceBefore > 0);
-
-        xCitadelUserBalanceBefore = xCitadel.balanceOf(user);
-        xCitadelLocker.withdrawExpiredLocksTo(user); // withdraw
-        xCitadelUserBalanceAfter = xCitadel.balanceOf(user);
-        uint256 xCitadelUnlocked = xCitadelUserBalanceAfter -
-            xCitadelUserBalanceBefore;
-
-        // user gets unlocked amount
-        assertEq(xCitadelUnlocked, xCitadelLocked);
-        assertEq(xCitadelLocker.lockedBalanceOf(user), 0);
         wbtcCumulatedClaimedBefore = xCitadelLocker.getCumulativeClaimedRewards(
                 user,
                 wbtc_address
@@ -343,10 +318,6 @@ contract LockingTest is BaseFixture {
 
         uint256 rewardsDuration = xCitadelLocker.rewardsDuration();
         assertEq(reward, (10e8 / rewardsDuration) * rewardsDuration); // rewardRate*rewardsDuration
-
-        uint256 rewardWeight = xCitadelLocker.rewardWeightOf(user);
-
-        emit log_named_uint("rewardWeight", rewardWeight);
 
         emit log_named_uint("boosted Supply", xCitadelLocker.boostedSupply());
     }
