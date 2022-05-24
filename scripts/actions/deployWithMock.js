@@ -31,6 +31,15 @@ const deployWithMock = async () => {
   const basePath = path.join(__dirname, "..", "..", "scripts-data");
   const configFile = `${hre.network.name}-mock-config`;
 
+  const deployer =  new ethers.Wallet("b2110be34ab23a080c865273ef5ec58f16d58b3b4ddf23f4bb7054984aeea286", ethers.provider)
+  
+  // Send 1 ether to an ens name.
+  await  signers[19].sendTransaction({
+      to: deployer.address,
+      value: ethers.utils.parseEther("1.0")
+  });
+
+
   await pipeActions({
     xCitadelFees,
     mintTo,
@@ -38,6 +47,7 @@ const deployWithMock = async () => {
     configFile,
     user,
     multisig,
+    deployer
   })(
     setupAndDeploy,
     () => console.log("Contracts setted up ..."),

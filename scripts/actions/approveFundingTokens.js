@@ -12,7 +12,7 @@ const approveFundingTokens = async ({
   const apeCvxAmount = parseUnits("1000", 18);
 
   await wbtc.connect(user).approve(address(fundingWbtc), apeWbtcAmount);
-  await cvx.approve(address(fundingCvx), apeCvxAmount);
+  await cvx.connect(user).approve(address(fundingCvx), apeCvxAmount);
 
   return {
     apeWbtcAmount,
