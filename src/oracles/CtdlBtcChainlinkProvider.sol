@@ -17,12 +17,6 @@ contract CtdlBtcChainlinkProvider is ChainlinkUtils, MedianOracleProvider {
     IAggregatorV3Interface public immutable wbtcBtcPriceFeed;
 
     /// =====================
-    /// ===== Constants =====
-    /// =====================
-
-    uint256 constant PRECISION = 10**18;
-
-    /// =====================
     /// ===== Functions =====
     /// =====================
 
