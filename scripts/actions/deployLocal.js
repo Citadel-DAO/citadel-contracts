@@ -15,6 +15,7 @@ const setDiscount = require("./setDiscount");
 const bondTokenForXCTDL = require("./bondTokenForXCTDL");
 const xCTDLVesting = require("./xCTDLVesting");
 const setupKnightingRound = require("./setupKnightingRound");
+const setupSchedule = require('./setupSchedule')
 
 const deployLocal = async () => {
   const signers = await ethers.getSigners();
@@ -45,6 +46,8 @@ const deployLocal = async () => {
     () => console.log("Setted xCitadel strategy  ..."),
     grantRoles,
     () => console.log("Roles Granted ..."),
+    setupSchedule,
+    () => console.log("Schedule setted up ..."),
     citadelMinterSetup,
     () => console.log("Citadel minter setup ..."),
     approveFundingTokens,
