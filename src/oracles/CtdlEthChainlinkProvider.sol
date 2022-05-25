@@ -6,7 +6,7 @@ import {MedianOracleProvider} from "./MedianOracleProvider.sol";
 import {ICurveCryptoSwap} from "../interfaces/curve/ICurveCryptoSwap.sol";
 import {IAggregatorV3Interface} from "../interfaces/chainlink/IAggregatorV3Interface.sol";
 
-contract CtdlAssetChainlinkProvider is ChainlinkUtils, MedianOracleProvider {
+contract CtdlEthChainlinkProvider is ChainlinkUtils, MedianOracleProvider {
     /// =================
     /// ===== State =====
     /// =================
@@ -15,8 +15,7 @@ contract CtdlAssetChainlinkProvider is ChainlinkUtils, MedianOracleProvider {
 
     // Price feeds
     IAggregatorV3Interface public immutable wbtcBtcPriceFeed;
-    IAggregatorV3Interface public immutable btcBasePriceFeed;
-    IAggregatorV3Interface public immutable assetBasePriceFeed;
+    IAggregatorV3Interface public immutable btcEthPriceFeed;
 
     /// =====================
     /// ===== Constants =====
@@ -32,14 +31,12 @@ contract CtdlAssetChainlinkProvider is ChainlinkUtils, MedianOracleProvider {
         address _medianOracle,
         address _ctdlWbtcCurvePool,
         address _wbtcBtcPriceFeed,
-        address _btcBasePriceFeed,
-        address _assetBasePriceFeed
+        address _btcEthPriceFeed
     ) MedianOracleProvider(_medianOracle) {
         ctdlWbtcCurvePool = ICurveCryptoSwap(_ctdlWbtcCurvePool);
 
         wbtcBtcPriceFeed = IAggregatorV3Interface(_wbtcBtcPriceFeed);
-        btcBasePriceFeed = IAggregatorV3Interface(_btcBasePriceFeed);
-        assetBasePriceFeed = IAggregatorV3Interface(_assetBasePriceFeed);
+        btcEthPriceFeed = IAggregatorV3Interface(_btcEthPriceFeed);
     }
 
     /// =======================
@@ -50,23 +47,18 @@ contract CtdlAssetChainlinkProvider is ChainlinkUtils, MedianOracleProvider {
         public
         view
         override
-        returns (uint256 assetPriceInCtdl_)
+        returns (uint256 ethPriceInCtdl_)
     {
         uint256 wbtcPriceInBtc = safeLatestAnswer(wbtcBtcPriceFeed);
-        uint256 btcPriceInBase = safeLatestAnswer(btcBasePriceFeed);
-        uint256 assetPriceInBase = safeLatestAnswer(assetBasePriceFeed);
+        uint256 btcPriceInEth = safeLatestAnswer(btcEthPriceFeed);
 
-        // (10^8) * (10^8) * (10^18) * (10^18) = (10^52) + price value - Shouldn't overflow
-        uint256 wbtcPriceInAsset = (wbtcPriceInBtc *
-            btcPriceInBase *
-            (10**assetBasePriceFeed.decimals()) *
-            PRECISION) /
-            assetPriceInBase /
+        // (10^8) * (10^8) * (10^18) = (10^34) + price value - Shouldn't overflow
+        uint256 wbtcPriceInEth = (wbtcPriceInBtc * btcPriceInEth * PRECISION) /
             (10**wbtcBtcPriceFeed.decimals()) /
-            (10**btcBasePriceFeed.decimals());
+            (10**btcEthPriceFeed.decimals());
         // 18 decimals
         uint256 wbtcPriceInCtdl = ctdlWbtcCurvePool.price_oracle();
 
-        assetPriceInCtdl_ = (wbtcPriceInCtdl * PRECISION) / wbtcPriceInAsset;
+        ethPriceInCtdl_ = (wbtcPriceInCtdl * PRECISION) / wbtcPriceInEth;
     }
 }

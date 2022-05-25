@@ -5,7 +5,6 @@ import {ChainlinkUtils} from "./ChainlinkUtils.sol";
 import {MedianOracleProvider} from "./MedianOracleProvider.sol";
 import {ICurvePool} from "../interfaces/curve/ICurvePool.sol";
 import {ICurveCryptoSwap} from "../interfaces/curve/ICurveCryptoSwap.sol";
-import {IMedianOracle} from "../interfaces/citadel/IMedianOracle.sol";
 import {IAggregatorV3Interface} from "../interfaces/chainlink/IAggregatorV3Interface.sol";
 import {IVault} from "../interfaces/badger/IVault.sol";
 
@@ -55,8 +54,9 @@ contract CtdlWibbtcLpVaultProvider is ChainlinkUtils, MedianOracleProvider {
         override
         returns (uint256 wibbtcLpVaultPriceInCtdl_)
     {
+        // 8 decimals
         uint256 wbtcPriceInBtc = safeLatestAnswer(wbtcBtcPriceFeed);
-        // TODO: Take this as btc or wbtc?
+        // 18 decimals
         uint256 wibbtcLpVaultPriceInBtc = (wibbtcLpVault
             .getPricePerFullShare() * wibbtcCrvPool.get_virtual_price()) /
             PRECISION;
@@ -64,6 +64,7 @@ contract CtdlWibbtcLpVaultProvider is ChainlinkUtils, MedianOracleProvider {
         // 18 decimals
         uint256 wbtcPriceInCtdl = ctdlWbtcCurvePool.price_oracle();
 
+        // 18 decimals
         wibbtcLpVaultPriceInCtdl_ =
             (wibbtcLpVaultPriceInBtc *
                 wbtcPriceInCtdl *
