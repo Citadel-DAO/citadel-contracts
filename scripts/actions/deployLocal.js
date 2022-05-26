@@ -50,8 +50,6 @@ const deployLocal = async () => {
     () => console.log("Schedule setted up ..."),
     citadelMinterSetup,
     () => console.log("Citadel minter setup ..."),
-    approveFundingTokens,
-    () => console.log("Funding tokens approved ..."),
     medianOracleUpdatePrice,
     () => console.log("Median oracle update the price ..."),
     setDiscount,
