@@ -4,18 +4,33 @@ const { address } = require("../utils/helpers");
 
 const { formatUnits, parseUnits } = ethers.utils;
 
+const FundingBonder = require("./FundingBonder");
+
 const bondTokenForXCTDL = async ({
   fundingWbtc,
   fundingCvx,
-  apeWbtcAmount,
-  apeCvxAmount,
   user,
   xCitadel,
+  wbtc,
+  cvx,
 }) => {
   // bond some WBTC and CVX to get xCTDL
+  const apeWbtcAmount = parseUnits("1", 8);
+  const apeCvxAmount = parseUnits("1000", 18);
 
-  await fundingWbtc.connect(user).deposit(parseUnits("1", 8), 0); // max slippage as there's no competition
-  await fundingCvx.connect(user).deposit(apeCvxAmount, 0); // max slippage as there's no competition
+  const fundingBonder = FundingBonder({ user, slippage: 0 });
+
+  await fundingBonder({
+    funding: fundingWbtc,
+    amount: apeWbtcAmount,
+    token: wbtc,
+  });
+
+  await fundingBonder({
+    funding: fundingCvx,
+    amount: apeCvxAmount,
+    token: cvx,
+  });
 
   // user should be getting ~200 xCTDL
   console.log(
@@ -24,6 +39,11 @@ const bondTokenForXCTDL = async ({
       18
     )}`
   );
+
+  return {
+    apeWbtcAmount,
+    apeCvxAmount,
+  };
 };
 
 module.exports = bondTokenForXCTDL;
