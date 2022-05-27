@@ -28,10 +28,31 @@ contract FundingOraclesTest is BaseFixture {
 
     address constant WBTC_BTC_PRICE_FEED =
         0xfdFD9C85aD200c506Cf9e21F1FD8dd01932FBB23;
+
+    address constant BTC_ETH_PRICE_FEED =
+        0xdeb288F737066589598e9214E782fa5A8eD689e8;
     address constant BTC_USD_PRICE_FEED =
         0xF4030086522a5bEEa4988F8cA5B36dbC97BeE88c;
+
+    address constant FRAX_ETH_PRICE_FEED =
+        0x14d04Fff8D21bd62987a5cE9ce543d2F1edF5D3E;
+    address constant FRAX_USD_PRICE_FEED =
+        0xB9E1E3A9feFf48998E45Fa90847ed4D467E8BcfD;
+
+    address constant USDC_ETH_PRICE_FEED =
+        0x986b5E1e1755e3C2440e960477f25201B0a8bbD4;
+    address constant USDC_USD_PRICE_FEED =
+        0x8fFfFfd4AfB6115b954Bd326cbe7B4BA576818f6;
+
+    address constant CVX_ETH_PRICE_FEED =
+        0xC9CbF687f43176B302F03f5e58470b77D07c61c6;
     address constant CVX_USD_PRICE_FEED =
         0xd962fC30A72A84cE50161031391756Bf2876Af5D;
+
+    address constant BADGER_ETH_PRICE_FEED =
+        0x58921Ac140522867bf50b9E009599Da0CA4A2379;
+    address constant BADGER_USD_PRICE_FEED =
+        0x66a47b7206130e6FF64854EF0E1EDfa237E65339;
 
     /// =================
     /// ===== Tests =====
