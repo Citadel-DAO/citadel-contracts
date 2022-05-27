@@ -5,9 +5,9 @@ import {BaseFixture} from "./BaseFixture.sol";
 import {GlobalAccessControl} from "../GlobalAccessControl.sol";
 import "ds-test/test.sol";
 
-import {FundingRegistry} from "../KnightingRoundRegistry.sol";
+import {FundingRegistry} from "../FundingRegistry.sol";
 
-contract FundingRegistry is BaseFixture {
+contract FundingRegistryTest is BaseFixture {
     function setUp() public override {
         BaseFixture.setUp();
     }
