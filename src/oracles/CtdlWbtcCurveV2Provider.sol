@@ -15,9 +15,7 @@ contract CtdlWbtcCurveV2Provider is MedianOracleProvider {
     /// ===== Functions =====
     /// =====================
 
-    constructor(address _medianOracle, address _curvePool)
-        MedianOracleProvider(_medianOracle)
-    {
+    constructor(address _curvePool) {
         curvePool = ICurveCryptoSwap(_curvePool);
     }
 
@@ -25,12 +23,18 @@ contract CtdlWbtcCurveV2Provider is MedianOracleProvider {
     /// ===== Public view =====
     /// =======================
 
-    function latestAnswer()
+    function latestData()
         public
         view
         override
-        returns (uint256 wbtcPriceInCtdl_)
+        returns (
+            uint256 wbtcPriceInCtdl_,
+            uint256 updateTime_,
+            bool valid_
+        )
     {
         wbtcPriceInCtdl_ = curvePool.price_oracle();
+        updateTime_ = block.timestamp;
+        valid_ = true;
     }
 }

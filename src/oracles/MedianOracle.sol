@@ -1,9 +1,11 @@
-pragma solidity 0.4.24;
+// SPDX-License-Identifier: GPL-3.0
+pragma solidity ^0.8.0;
 
-import "openzeppelin-solidity/contracts/math/SafeMath.sol";
-import "openzeppelin-solidity/contracts/ownership/Ownable.sol";
+import {Ownable} from "openzeppelin-contracts/access/Ownable.sol";
 
-import "./lib/Select.sol";
+import {Select} from "./lib/Select.sol";
+
+import {IMedianOracleProvider} from "../interfaces/citadel/IMedianOracleProvider.sol";
 
 interface IOracle {
     function getData() external returns (uint256, bool);
@@ -16,9 +18,8 @@ interface IOracle {
  *         providers.
  */
 contract MedianOracle is Ownable, IOracle {
-    using SafeMath for uint256;
-
     struct Report {
+        // TODO: Clarify that this is the update timestamp. See if a better way to do this
         uint256 timestamp;
         uint256 payload;
     }
@@ -33,7 +34,7 @@ contract MedianOracle is Ownable, IOracle {
     event ProviderAdded(address provider);
     event ProviderRemoved(address provider);
     event ReportTimestampOutOfRange(address provider);
-    event ProviderReportPushed(
+    event ProviderReportUpdated(
         address indexed provider,
         uint256 payload,
         uint256 timestamp
@@ -66,7 +67,7 @@ contract MedianOracle is Ownable, IOracle {
         uint256 reportExpirationTimeSec_,
         uint256 reportDelaySec_,
         uint256 minimumProviders_
-    ) public {
+    ) {
         require(reportExpirationTimeSec_ <= MAX_REPORT_EXPIRATION_TIME);
         require(minimumProviders_ > 0);
         reportExpirationTimeSec = reportExpirationTimeSec_;
@@ -109,8 +110,9 @@ contract MedianOracle is Ownable, IOracle {
     /**
      * @notice Pushes a report for the calling provider.
      * @param payload is expected to be 18 decimal fixed point number.
+     * @param timestamp The timestamp at which the report was updated.
      */
-    function pushReport(uint256 payload) external {
+    function pushReport(uint256 payload, uint256 timestamp) public {
         address providerAddress = msg.sender;
         Report[2] storage reports = providerReports[providerAddress];
         uint256[2] memory timestamps = [
@@ -124,12 +126,95 @@ contract MedianOracle is Ownable, IOracle {
         uint8 index_past = 1 - index_recent;
 
         // Check that the push is not too soon after the last one.
-        require(timestamps[index_recent].add(reportDelaySec) <= now);
+        require(timestamps[index_recent] + reportDelaySec <= timestamp);
 
-        reports[index_past].timestamp = now;
+        reports[index_past].timestamp = timestamp;
         reports[index_past].payload = payload;
 
-        emit ProviderReportPushed(providerAddress, payload, now);
+        emit ProviderReportUpdated(providerAddress, payload, timestamp);
+    }
+
+    /**
+     * @notice Pushes a report for the calling provider.
+     * @param payload is expected to be 18 decimal fixed point number.
+     */
+    function pushReport(uint256 payload) external {
+        pushReport(payload, block.timestamp);
+    }
+
+    /**
+     * @notice Pulls a report for the given provider.
+     * @param providerAddress The address of the provider to pull data from.
+     */
+    function pullReport(address providerAddress) external {
+        (
+            uint256 payload,
+            uint256 updateTime,
+            bool valid
+        ) = IMedianOracleProvider(providerAddress).latestData();
+
+        require(valid);
+
+        Report[2] storage reports = providerReports[providerAddress];
+        uint256[2] memory timestamps = [
+            reports[0].timestamp,
+            reports[1].timestamp
+        ];
+
+        require(timestamps[0] > 0);
+
+        uint8 index_recent = timestamps[0] >= timestamps[1] ? 0 : 1;
+        uint8 index_past = 1 - index_recent;
+
+        // Check that the pull is not too soon after the last one.
+        require(timestamps[index_recent] + reportDelaySec <= updateTime);
+
+        reports[index_past].timestamp = updateTime;
+        reports[index_past].payload = payload;
+
+        emit ProviderReportUpdated(providerAddress, payload, updateTime);
+    }
+
+    /**
+     * @notice Pulls reports from all providers.
+     */
+    function pullAllReports() external {
+        uint256 reportsCount = providers.length;
+        for (uint256 i; i < reportsCount; ++i) {
+            address providerAddress = providers[i];
+            (
+                uint256 payload,
+                uint256 updateTime,
+                bool valid
+            ) = IMedianOracleProvider(providerAddress).latestData();
+
+            if (valid) {
+                Report[2] storage reports = providerReports[providerAddress];
+                uint256[2] memory timestamps = [
+                    reports[0].timestamp,
+                    reports[1].timestamp
+                ];
+
+                require(timestamps[0] > 0);
+
+                uint8 index_recent = timestamps[0] >= timestamps[1] ? 0 : 1;
+                uint8 index_past = 1 - index_recent;
+
+                // Check that the pull is not too soon after the last one.
+                require(
+                    timestamps[index_recent] + reportDelaySec <= updateTime
+                );
+
+                reports[index_past].timestamp = updateTime;
+                reports[index_past].payload = payload;
+
+                emit ProviderReportUpdated(
+                    providerAddress,
+                    payload,
+                    updateTime
+                );
+            }
+        }
     }
 
     /**
@@ -152,8 +237,8 @@ contract MedianOracle is Ownable, IOracle {
         uint256 reportsCount = providers.length;
         uint256[] memory validReports = new uint256[](reportsCount);
         uint256 size = 0;
-        uint256 minValidTimestamp = now.sub(reportExpirationTimeSec);
-        uint256 maxValidTimestamp = now.sub(reportDelaySec);
+        uint256 minValidTimestamp = block.timestamp - reportExpirationTimeSec;
+        uint256 maxValidTimestamp = block.timestamp - reportDelaySec;
 
         for (uint256 i = 0; i < reportsCount; i++) {
             address providerAddress = providers[i];
@@ -218,13 +303,12 @@ contract MedianOracle is Ownable, IOracle {
      * @param provider Address of the provider.
      */
     function removeProvider(address provider) external onlyOwner {
-        delete providerReports[provider];
         for (uint256 i = 0; i < providers.length; i++) {
             if (providers[i] == provider) {
                 if (i + 1 != providers.length) {
                     providers[i] = providers[providers.length - 1];
                 }
-                providers.length--;
+                providers.pop();
                 emit ProviderRemoved(provider);
                 break;
             }

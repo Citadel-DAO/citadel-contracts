@@ -1,6 +1,8 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
+import {MathUpgradeable} from "openzeppelin-contracts-upgradeable/utils/math/MathUpgradeable.sol";
+
 import {ChainlinkUtils} from "./ChainlinkUtils.sol";
 import {MedianOracleProvider} from "./MedianOracleProvider.sol";
 import {ICurveCryptoSwap} from "../interfaces/curve/ICurveCryptoSwap.sol";
@@ -29,12 +31,11 @@ contract CtdlAssetChainlinkProvider is ChainlinkUtils, MedianOracleProvider {
     /// =====================
 
     constructor(
-        address _medianOracle,
         address _ctdlWbtcCurvePool,
         address _wbtcBtcPriceFeed,
         address _btcBasePriceFeed,
         address _assetBasePriceFeed
-    ) MedianOracleProvider(_medianOracle) {
+    ) {
         ctdlWbtcCurvePool = ICurveCryptoSwap(_ctdlWbtcCurvePool);
 
         wbtcBtcPriceFeed = IAggregatorV3Interface(_wbtcBtcPriceFeed);
@@ -46,15 +47,37 @@ contract CtdlAssetChainlinkProvider is ChainlinkUtils, MedianOracleProvider {
     /// ===== Public view =====
     /// =======================
 
-    function latestAnswer()
+    function latestData()
         public
         view
         override
-        returns (uint256 assetPriceInCtdl_)
+        returns (
+            uint256 assetPriceInCtdl_,
+            uint256 updateTime_,
+            bool valid_
+        )
     {
-        uint256 wbtcPriceInBtc = safeLatestAnswer(wbtcBtcPriceFeed);
-        uint256 btcPriceInBase = safeLatestAnswer(btcBasePriceFeed);
-        uint256 assetPriceInBase = safeLatestAnswer(assetBasePriceFeed);
+        (
+            uint256 wbtcPriceInBtc,
+            uint256 updateTime1,
+            bool valid1
+        ) = safeLatestAnswer(wbtcBtcPriceFeed);
+        (
+            uint256 btcPriceInBase,
+            uint256 updateTime2,
+            bool valid2
+        ) = safeLatestAnswer(btcBasePriceFeed);
+        (
+            uint256 assetPriceInBase,
+            uint256 updateTime3,
+            bool valid3
+        ) = safeLatestAnswer(assetBasePriceFeed);
+
+        updateTime_ = MathUpgradeable.min(
+            updateTime1,
+            MathUpgradeable.min(updateTime2, updateTime3)
+        );
+        valid_ = valid1 && valid2 && valid3;
 
         // (10^8) * (10^8) * (10^18) * (10^18) = (10^52) + price value - Shouldn't overflow
         uint256 wbtcPriceInAsset = (wbtcPriceInBtc *

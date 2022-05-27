@@ -1,23 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
-import {IMedianOracle} from "../interfaces/citadel/IMedianOracle.sol";
-
 abstract contract MedianOracleProvider {
-    /// =================
-    /// ===== State =====
-    /// =================
-
-    IMedianOracle public immutable medianOracle;
-
-    /// =====================
-    /// ===== Functions =====
-    /// =====================
-
-    constructor(address _medianOracle) {
-        medianOracle = IMedianOracle(_medianOracle);
-    }
-
     /// =======================
     /// ===== Public view =====
     /// =======================
@@ -26,13 +10,21 @@ abstract contract MedianOracleProvider {
         return 18;
     }
 
-    function latestAnswer() public view virtual returns (uint256);
+    function latestData()
+        public
+        view
+        virtual
+        returns (
+            uint256,
+            uint256,
+            bool
+        );
 
-    /// ==========================
-    /// ===== Public actions =====
-    /// ==========================
+    function latestAnswer() public view virtual returns (uint256 price_) {
+        (uint256 answer, , bool valid) = latestData();
 
-    function pushReport() external {
-        medianOracle.pushReport(latestAnswer());
+        require(valid);
+
+        price_ = answer;
     }
 }

@@ -40,13 +40,9 @@ contract FundingOraclesTest is BaseFixture {
     function setUp() public override {
         BaseFixture.setUp();
 
-        ctdlWbtcProvider = new CtdlWbtcCurveV2Provider(
-            address(medianOracleWbtc),
-            CTDL_WBTC_CURVE_POOL
-        );
+        ctdlWbtcProvider = new CtdlWbtcCurveV2Provider(CTDL_WBTC_CURVE_POOL);
 
         ctdlCvxProvider = new CtdlAssetChainlinkProvider(
-            address(medianOracleCvx),
             CTDL_WBTC_CURVE_POOL,
             WBTC_BTC_PRICE_FEED,
             BTC_USD_PRICE_FEED,
@@ -61,19 +57,19 @@ contract FundingOraclesTest is BaseFixture {
         vm.startPrank(address(1));
         // Revert message for new versions of Ownable.sol is: "Ownable: caller is not the owner".
         // Version used by MedianOracle might differ or not include a message at all.
-        vm.expectRevert();
+        vm.expectRevert("Ownable: caller is not the owner");
         medianOracleCvx.addProvider(address(1));
 
-        vm.expectRevert();
+        vm.expectRevert("Ownable: caller is not the owner");
         medianOracleCvx.removeProvider(address(1));
 
-        vm.expectRevert();
+        vm.expectRevert("Ownable: caller is not the owner");
         medianOracleCvx.setReportExpirationTimeSec(0);
 
-        vm.expectRevert();
+        vm.expectRevert("Ownable: caller is not the owner");
         medianOracleCvx.setReportDelaySec(0);
 
-        vm.expectRevert();
+        vm.expectRevert("Ownable: caller is not the owner");
         medianOracleCvx.setMinimumProviders(0);
         vm.stopPrank();
     }
@@ -86,7 +82,7 @@ contract FundingOraclesTest is BaseFixture {
         emit log_uint(ctdlPriceInWbtc);
 
         // Permissionless
-        ctdlWbtcProvider.pushReport();
+        medianOracleWbtc.pullReport(address(ctdlWbtcProvider));
 
         vm.prank(keeper);
         fundingWbtc.updateCitadelPerAsset();
@@ -102,7 +98,7 @@ contract FundingOraclesTest is BaseFixture {
         emit log_uint(ctdlPriceInCvx);
 
         // Permissionless
-        ctdlCvxProvider.pushReport();
+        medianOracleCvx.pullReport(address(ctdlCvxProvider));
 
         vm.prank(keeper);
         fundingCvx.updateCitadelPerAsset();
@@ -115,7 +111,7 @@ contract FundingOraclesTest is BaseFixture {
         emit log_uint(ctdlPriceInWbtc);
 
         // Permissionless
-        ctdlWbtcProvider.pushReport();
+        medianOracleWbtc.pullReport(address(ctdlWbtcProvider));
 
         vm.startPrank(keeper);
         medianOracleWbtc.pushReport(ctdlPriceInWbtc + 200);
@@ -131,7 +127,7 @@ contract FundingOraclesTest is BaseFixture {
         emit log_uint(ctdlPriceInCvx);
 
         // Permissionless
-        ctdlCvxProvider.pushReport();
+        medianOracleCvx.pullReport(address(ctdlCvxProvider));
 
         vm.startPrank(keeper);
         medianOracleCvx.pushReport(ctdlPriceInCvx + 200);
@@ -165,7 +161,7 @@ contract FundingOraclesTest is BaseFixture {
         emit log_uint(ctdlPriceInWbtc);
 
         // Permissionless
-        ctdlWbtcProvider.pushReport();
+        medianOracleWbtc.pullReport(address(ctdlWbtcProvider));
 
         vm.startPrank(keeper);
         medianOracleWbtc.pushReport(1000);
@@ -195,7 +191,7 @@ contract FundingOraclesTest is BaseFixture {
         uint256 _citadelPerAsset;
         bool _valid;
 
-        (_citadelPerAsset, _valid) = IMedianOracle(medianOracleWbtc).getData();
+        (_citadelPerAsset, _valid) = medianOracleWbtc.getData();
 
         assertEq(_citadelPerAsset, 0);
         require(_valid, "Price is not valid");
