@@ -18,16 +18,38 @@ contract FundingRegistry is Initializable, GlobalAccessControlManaged {
 
     GACProxyAdmin public gacProxyAdmin;
 
+    struct FundingParams {
+        uint256 discount;
+        uint256 minDiscount;
+        uint256 maxDiscount;
+        address discountManager;
+        uint256 assetCumulativeFunded;
+        uint256 assetCap;
+    }
+
     struct FundingAsset {
         address asset;
         address citadelPerAssetOracle;
         uint256 assetCap;
     }
 
-    address gacAddress;
-    address citadel;
-    address xCitadel;
-    address saleRecipient;
+    struct FundingData {
+        address fundingAddress;
+        uint256 citadelPerAsset;
+        uint256 minCitadelPerAsset;
+        uint256 maxCitadelPerAsset;
+        bool citadelPriceFlag;
+        uint256 assetDecimalsNormalizationValue;
+        address citadelPerAssetOracle;
+        address saleRecipient;
+        FundingParams funding;
+        uint256 remainingFundable;
+    }
+
+    address public gacAddress;
+    address public citadel;
+    address public xCitadel;
+    address public saleRecipient;
 
     address public fundingImplementation;
 
@@ -78,5 +100,46 @@ contract FundingRegistry is Initializable, GlobalAccessControlManaged {
             );
 
         fundings.add(address(currFunding));
+    }
+
+    function getFundingData(address _fundingAddress)
+        public
+        view
+        returns (FundingData memory fundingData)
+    {
+        Funding funding = Funding(_fundingAddress);
+        fundingData.fundingAddress = address(funding);
+        fundingData.citadelPerAsset = funding.citadelPerAsset();
+        fundingData.minCitadelPerAsset = funding.minCitadelPerAsset();
+        fundingData.maxCitadelPerAsset = funding.maxCitadelPerAsset();
+        fundingData.citadelPriceFlag = funding.citadelPriceFlag();
+        fundingData.assetDecimalsNormalizationValue = funding
+            .assetDecimalsNormalizationValue();
+        fundingData.citadelPerAssetOracle = funding.citadelPerAssetOracle();
+        fundingData.saleRecipient = funding.saleRecipient();
+        fundingData.funding = FundingParams(
+            funding.getFundingParams().discount,
+            funding.getFundingParams().minDiscount,
+            funding.getFundingParams().maxDiscount,
+            funding.getFundingParams().discountManager,
+            funding.getFundingParams().assetCumulativeFunded,
+            funding.getFundingParams().assetCap
+        );
+        fundingData.remainingFundable = funding.getRemainingFundable();
+    }
+
+    function getAllFundings() public view returns (address[] memory) {
+        address[] memory fundingsList = new address[](fundings.length());
+        return fundingsList;
+    }
+
+    function getAllFundingsData() public view returns (FundingData[] memory) {
+        FundingData[] memory fundingsData = new FundingData[](
+            fundings.length()
+        );
+        for (uint256 i = 0; i < fundings.length(); i++) {
+            fundingsData[i] = getFundingData(fundings.at(i));
+        }
+        return fundingsData;
     }
 }
