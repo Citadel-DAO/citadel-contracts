@@ -7,7 +7,6 @@ import {GlobalAccessControl} from "../GlobalAccessControl.sol";
 import {KnightingRound} from "../KnightingRound.sol";
 import "../interfaces/badger/IBadgerVipGuestlist.sol";
 import "../interfaces/erc20/IERC20.sol";
-import {SnapshotResolver} from "./SnapshotResolver.sol";
 
 contract KnightingRoundTest is BaseFixture {
     event Sale(
@@ -23,8 +22,6 @@ contract KnightingRoundTest is BaseFixture {
     function setUp() public override {
         BaseFixture.setUp();
     }
-
-    SnapshotResolver resolver = new SnapshotResolver();
 
     function testKnightingRoundIntegration() public {
         bytes32[] memory emptyProof = new bytes32[](0);
@@ -530,7 +527,7 @@ contract KnightingRoundTest is BaseFixture {
         );
     }
 
-    function postKnightingRound(uint256 amountIn, string memory tokenIn)
+    function postKnightingRoundBuy(uint256 amountIn, string memory tokenIn)
         public
     {
         uint256 tokenOutAmountExpected = (amountIn *
@@ -562,6 +559,6 @@ contract KnightingRoundTest is BaseFixture {
         knightingRound.buy(1e8, 0, emptyProof);
         comparator.snapCurr();
         // run checks after buy
-        postKnightingRound(1e8, "wbtc");
+        postKnightingRoundBuy(1e8, "wbtc");
     }
 }
