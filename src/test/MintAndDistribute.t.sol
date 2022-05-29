@@ -113,6 +113,8 @@ contract MintAndDistributeTest is BaseFixture {
 
         comparator.snapCurr();
 
+        comparator.log();
+
         // funding pools should recieve based on funding bps and pool weights
         uint256 expectedToFunding = (expectedMint * fundingBps) / MAX_BPS;
 
