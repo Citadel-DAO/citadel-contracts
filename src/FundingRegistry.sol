@@ -18,15 +18,6 @@ contract FundingRegistry is Initializable, GlobalAccessControlManaged {
 
     GACProxyAdmin public gacProxyAdmin;
 
-    struct FundingParams {
-        uint256 discount;
-        uint256 minDiscount;
-        uint256 maxDiscount;
-        address discountManager;
-        uint256 assetCumulativeFunded;
-        uint256 assetCap;
-    }
-
     struct FundingAsset {
         address asset;
         address citadelPerAssetOracle;
@@ -42,7 +33,7 @@ contract FundingRegistry is Initializable, GlobalAccessControlManaged {
         uint256 assetDecimalsNormalizationValue;
         address citadelPerAssetOracle;
         address saleRecipient;
-        FundingParams funding;
+        Funding.FundingParams funding;
         uint256 remainingFundable;
     }
 
@@ -55,7 +46,7 @@ contract FundingRegistry is Initializable, GlobalAccessControlManaged {
 
     EnumerableSet.AddressSet private fundings;
 
-    function intialize(
+    function initialize(
         address _gac,
         address _citadel,
         address _xCitadel,
@@ -117,7 +108,7 @@ contract FundingRegistry is Initializable, GlobalAccessControlManaged {
             .assetDecimalsNormalizationValue();
         fundingData.citadelPerAssetOracle = funding.citadelPerAssetOracle();
         fundingData.saleRecipient = funding.saleRecipient();
-        fundingData.funding = FundingParams(
+        fundingData.funding = Funding.FundingParams(
             funding.getFundingParams().discount,
             funding.getFundingParams().minDiscount,
             funding.getFundingParams().maxDiscount,
