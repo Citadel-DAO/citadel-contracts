@@ -26,14 +26,12 @@ contract Snapshot {
     }
 
     function valOf(string calldata _key) public view returns (uint256 val_) {
-        if(exists[_key]){
+        if (exists[_key]) {
             val_ = values[_key];
-        }
-        else{
+        } else {
             revert InvalidKey(_key);
         }
     }
-
 }
 
 contract SnapshotManager {
@@ -122,9 +120,9 @@ contract SnapshotComparator is SnapshotManager {
     uint256 constant NUM_LOG_COLS = 4;
 
     function log() external view {
-        uint256 maxRows = keys.length ;
+        uint256 maxRows = keys.length;
 
-        string[][] memory table = new string[][](maxRows+1);
+        string[][] memory table = new string[][](maxRows + 1);
         table[0] = new string[](NUM_LOG_COLS);
 
         string[] memory cols = table[0];
@@ -160,5 +158,3 @@ contract SnapshotComparator is SnapshotManager {
         Tabulate.log(table);
     }
 }
-
-
