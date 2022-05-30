@@ -14,7 +14,7 @@ contract GACProxyAdminTest is BaseFixture {
         BaseFixture.setUp();
     }
 
-    function test() public {
+    function testGacProxyAdmin() public {
         vm.startPrank(governance);
 
         GACProxyAdmin gacProxyAdmin = new GACProxyAdmin();
