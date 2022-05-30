@@ -16,9 +16,6 @@ contract KnightingRoundRegistry is Initializable {
     // ===== Libraries  ====
     using EnumerableSet for EnumerableSet.AddressSet;
 
-    bytes32 public constant CONTRACT_globalAccessControl_ROLE =
-        keccak256("CONTRACT_globalAccessControl_ROLE");
-
     GACProxyAdmin public gacProxyAdmin;
 
     address public globalAccessControl;
