@@ -21,7 +21,8 @@ const setupKnightingRound = async ({
   wETH,
   frax,
   badger,
-  bveCVX
+  bveCVX,
+  deployer,
 }) => {
   const blockNumBefore = await ethers.provider.getBlockNumber();
   const blockBefore = await ethers.provider.getBlock(blockNumBefore);
@@ -125,7 +126,7 @@ const setupKnightingRound = async ({
     const currentToken = readyTokensList[i];
     if (!currentToken) return;
     console.log(currentToken);
-    const knightingRound = await KnightingRound.deploy();
+    const knightingRound = await KnightingRound.connect(deployer).deploy();
 
     console.log(
       `${currentToken.name} knighting round addres: `,
