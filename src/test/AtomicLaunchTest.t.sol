@@ -6,7 +6,6 @@ import {KnightingRoundWithEth} from "../KnightingRoundWithEth.sol";
 import {FixedPointMathLib} from "solmate/utils/FixedPointMathLib.sol";
 import {Funding} from "../Funding.sol";
 import {SupplySchedule} from "../SupplySchedule.sol";
-
 import "../interfaces/erc20/IERC20.sol";
 
 // General interfaces for special non-ERC20 tokens' mint function
@@ -97,7 +96,6 @@ contract AtomicLaunchTest is BaseFixture {
     KnightingRound knightingRound_usdc = new KnightingRound();
     KnightingRound knightingRound_badger = new KnightingRound();
     KnightingRound knightingRound_bveCVX = new KnightingRound();
-
     KnightingRound[] roundsArray;
 
     // Re-deploying Funding contracts for the sake of maintianing actions atomically
@@ -733,12 +731,36 @@ contract AtomicLaunchTest is BaseFixture {
         emit log_named_uint("wbtcUserBalanceBefore", wbtcUserBalanceBefore);
         emit log_named_uint("wbtcPoolBalanceBefore", wbtcPoolBalanceBefore);
         emit log_named_uint("wbtcPoolBalanceAfter", wbtcPoolBalanceAfter);
-        // assertEq(citadelPoolBalanceAfter-citadelPoolBalanceBefore, 20e18);
 
         assertEq(
             wbtcUserBalanceAfter - wbtcUserBalanceBefore,
             wbtcPoolBalanceBefore - wbtcPoolBalanceAfter
         );
+
+        // approve staking amount
+        citadel.approve(address(xCitadel), 10e18);
+        // deposit
+        xCitadel.deposit(10e18);
+        uint256 xCitadelUserBalanceBefore = xCitadel.balanceOf(btc_user);
+        uint256 lockedAmount = xCitadelUserBalanceBefore;
+        xCitadel.approve(address(xCitadelLocker), xCitadelUserBalanceBefore);
+
+        xCitadelLocker.lock(btc_user, xCitadelUserBalanceBefore, 0); // lock xCitadel
+        uint256 xCitadelUserBalanceAfter = xCitadel.balanceOf(btc_user);
+
+        // try to withdraw before the lock duration ends
+        vm.expectRevert("no exp locks");
+        xCitadelLocker.withdrawExpiredLocksTo(btc_user); // withdraw
+
+        vm.warp(block.timestamp + 148 days); // lock period = 147 days + 1 day(rewards_duration cause 1st time lock)
+        xCitadelUserBalanceBefore = xCitadel.balanceOf(btc_user);
+        xCitadelLocker.withdrawExpiredLocksTo(btc_user); // withdraw
+        xCitadelUserBalanceAfter = xCitadel.balanceOf(btc_user);
+        uint256 xCitadelUnlocked = xCitadelUserBalanceAfter -
+            xCitadelUserBalanceBefore;
+
+        // user gets unlocked amount
+        assertEq(xCitadelUnlocked, lockedAmount);
     }
 
     function knightingRoundClaim(KnightingRound round, address user) internal {
