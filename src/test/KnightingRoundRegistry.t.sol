@@ -20,7 +20,7 @@ contract KnightingRoundRegistryTest is BaseFixture {
 
         knightinRoundRegistry = new KnightingRoundRegistry();
 
-        assertEq(address(0), knightinRoundRegistry.governance());
+        assertEq(address(0), knightinRoundRegistry.globalAccessControl());
         assertEq(address(0), knightinRoundRegistry.tokenOut());
         assertEq(address(0), knightinRoundRegistry.saleRecipient());
         assertEq(address(0), knightinRoundRegistry.guestlist());

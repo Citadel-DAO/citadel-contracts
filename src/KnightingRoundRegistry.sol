@@ -16,12 +16,9 @@ contract KnightingRoundRegistry is Initializable {
     // ===== Libraries  ====
     using EnumerableSet for EnumerableSet.AddressSet;
 
-    bytes32 public constant CONTRACT_GOVERNANCE_ROLE =
-        keccak256("CONTRACT_GOVERNANCE_ROLE");
-
     GACProxyAdmin public gacProxyAdmin;
 
-    address public governance;
+    address public globalAccessControl;
     address public tokenOut;
     address public saleRecipient;
     address public guestlist;
@@ -60,7 +57,7 @@ contract KnightingRoundRegistry is Initializable {
 
     /// initialize
     function initialize(
-        address _governance,
+        address _globalAccessControl,
         uint256 _roundStart,
         uint256 _roundDuration,
         address _tokenOut,
@@ -69,7 +66,7 @@ contract KnightingRoundRegistry is Initializable {
         InitParam calldata _wethParams,
         InitParam[] calldata _roundParams
     ) public initializer {
-        governance = _governance;
+        globalAccessControl = _globalAccessControl;
         roundStart = _roundStart;
         roundDuration = _roundDuration;
 
@@ -78,7 +75,7 @@ contract KnightingRoundRegistry is Initializable {
         guestlist = _guestlist;
 
         gacProxyAdmin = new GACProxyAdmin();
-        gacProxyAdmin.initialize(_governance);
+        gacProxyAdmin.initialize(_globalAccessControl);
 
         knightingRoundImplementation = address(new KnightingRound());
         knightingRoundWithEthImplementation = address(
@@ -100,7 +97,7 @@ contract KnightingRoundRegistry is Initializable {
                 address(gacProxyAdmin),
                 abi.encodeWithSelector(
                     KnightingRound(address(0)).initialize.selector,
-                    governance,
+                    globalAccessControl,
                     tokenOut,
                     _roundParams._tokenIn,
                     roundStart,
@@ -120,7 +117,7 @@ contract KnightingRoundRegistry is Initializable {
                 address(gacProxyAdmin),
                 abi.encodeWithSelector(
                     KnightingRoundWithEth(address(0)).initialize.selector,
-                    governance,
+                    globalAccessControl,
                     tokenOut,
                     _roundParams._tokenIn,
                     roundStart,

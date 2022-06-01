@@ -11,8 +11,8 @@ import "./lib/GlobalAccessControlManaged.sol";
  * explanation of why you would want to use this see the documentation for {TransparentUpgradeableProxy}.
  */
 contract GACProxyAdmin is GlobalAccessControlManaged {
-    bytes32 public constant CONTRACT_GOVERNANCE_ROLE =
-        keccak256("CONTRACT_GOVERNANCE_ROLE");
+    bytes32 public constant PROXYADMIN_OWNER_ROLE =
+        keccak256("PROXYADMIN_OWNER_ROLE");
 
     /**
      * @dev Sets the address of the initial implementation, and the deployer account as the owner who can upgrade the
@@ -76,7 +76,7 @@ contract GACProxyAdmin is GlobalAccessControlManaged {
     function changeProxyAdmin(
         TransparentUpgradeableProxy proxy,
         address newAdmin
-    ) public virtual onlyRole(CONTRACT_GOVERNANCE_ROLE) {
+    ) public virtual onlyRole(PROXYADMIN_OWNER_ROLE) {
         proxy.changeAdmin(newAdmin);
     }
 
@@ -90,7 +90,7 @@ contract GACProxyAdmin is GlobalAccessControlManaged {
     function upgrade(TransparentUpgradeableProxy proxy, address implementation)
         public
         virtual
-        onlyRole(CONTRACT_GOVERNANCE_ROLE)
+        onlyRole(PROXYADMIN_OWNER_ROLE)
     {
         proxy.upgradeTo(implementation);
     }
@@ -107,7 +107,7 @@ contract GACProxyAdmin is GlobalAccessControlManaged {
         TransparentUpgradeableProxy proxy,
         address implementation,
         bytes memory data
-    ) public payable virtual onlyRole(CONTRACT_GOVERNANCE_ROLE) {
+    ) public payable virtual onlyRole(PROXYADMIN_OWNER_ROLE) {
         proxy.upgradeToAndCall{value: msg.value}(implementation, data);
     }
 }

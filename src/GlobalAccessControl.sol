@@ -46,6 +46,9 @@ contract GlobalAccessControl is
     bytes32 public constant CITADEL_MINTER_ROLE =
         keccak256("CITADEL_MINTER_ROLE");
 
+    bytes32 public constant PROXYADMIN_OWNER_ROLE =
+        keccak256("PROXYADMIN_OWNER_ROLE");
+
     /// =======================
     /// ===== Initializer =====
     /// =======================
@@ -78,6 +81,7 @@ contract GlobalAccessControl is
         _setRoleAdmin(UNPAUSER_ROLE, CONTRACT_GOVERNANCE_ROLE);
         _setRoleAdmin(BLOCKLIST_MANAGER_ROLE, CONTRACT_GOVERNANCE_ROLE);
         _setRoleAdmin(CITADEL_MINTER_ROLE, CONTRACT_GOVERNANCE_ROLE);
+        _setRoleAdmin(PROXYADMIN_OWNER_ROLE, CONTRACT_GOVERNANCE_ROLE);
 
         // Add default admin role here to avoid governance mistakes
         _setRoleAdmin(DEFAULT_ADMIN_ROLE, CONTRACT_GOVERNANCE_ROLE);

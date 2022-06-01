@@ -59,6 +59,9 @@ contract BaseFixture is DSTest, Utils, stdCheats {
     bytes32 public constant CITADEL_MINTER_ROLE =
         keccak256("CITADEL_MINTER_ROLE");
 
+    bytes32 public constant PROXYADMIN_OWNER_ROLE =
+        keccak256("PROXYADMIN_OWNER_ROLE");
+
     uint256 public constant ONE = 1 ether;
 
     // ==================
@@ -341,6 +344,8 @@ contract BaseFixture is DSTest, Utils, stdCheats {
 
         gac.grantRole(CITADEL_MINTER_ROLE, address(citadelMinter));
         gac.grantRole(CITADEL_MINTER_ROLE, governance); // To handle initial supply, remove atomically.
+
+        gac.grantRole(PROXYADMIN_OWNER_ROLE, governance);
 
         gac.grantRole(PAUSER_ROLE, guardian);
         gac.grantRole(UNPAUSER_ROLE, techOps);
