@@ -332,6 +332,7 @@ contract MedianOracle is Ownable, IOracle {
      * @param provider Address of the provider.
      */
     function removeProvider(address provider) external onlyOwner {
+        delete providerReports[provider];
         for (uint256 i = 0; i < providers.length; i++) {
             if (providers[i] == provider) {
                 if (i + 1 != providers.length) {
