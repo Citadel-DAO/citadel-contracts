@@ -16,7 +16,8 @@ contract FundingOraclesTest is BaseFixture {
     /// =================
 
     CtdlWbtcCurveV2Provider ctdlWbtcProvider;
-    CtdlAssetChainlinkProvider ctdlCvxProvider;
+    CtdlAssetChainlinkProvider ctdlCvxProvider1;
+    CtdlAssetChainlinkProvider ctdlCvxProvider2;
 
     /// =====================
     /// ===== Constants =====
@@ -63,15 +64,22 @@ contract FundingOraclesTest is BaseFixture {
 
         ctdlWbtcProvider = new CtdlWbtcCurveV2Provider(CTDL_WBTC_CURVE_POOL);
 
-        ctdlCvxProvider = new CtdlAssetChainlinkProvider(
+        ctdlCvxProvider1 = new CtdlAssetChainlinkProvider(
             CTDL_WBTC_CURVE_POOL,
             WBTC_BTC_PRICE_FEED,
             BTC_USD_PRICE_FEED,
             CVX_USD_PRICE_FEED
         );
+        ctdlCvxProvider2 = new CtdlAssetChainlinkProvider(
+            CTDL_WBTC_CURVE_POOL,
+            WBTC_BTC_PRICE_FEED,
+            BTC_ETH_PRICE_FEED,
+            CVX_ETH_PRICE_FEED
+        );
 
         medianOracleWbtc.addProvider(address(ctdlWbtcProvider));
-        medianOracleCvx.addProvider(address(ctdlCvxProvider));
+        medianOracleCvx.addProvider(address(ctdlCvxProvider1));
+        medianOracleCvx.addProvider(address(ctdlCvxProvider2));
     }
 
     function testMedianOracleAccessControl() public {
@@ -111,15 +119,16 @@ contract FundingOraclesTest is BaseFixture {
         assertEq(fundingWbtc.citadelPerAsset(), ctdlPriceInWbtc);
     }
 
-    function testCvxProviderCanBePulled() public {
-        // Remove keeper provider
+    function testCvxProvider1CanBePulled() public {
+        // Remove other provider
         medianOracleCvx.removeProvider(keeper);
+        medianOracleCvx.removeProvider(address(ctdlCvxProvider2));
 
-        uint256 ctdlPriceInCvx = ctdlCvxProvider.latestAnswer();
+        uint256 ctdlPriceInCvx = ctdlCvxProvider1.latestAnswer();
         emit log_uint(ctdlPriceInCvx);
 
         // Permissionless
-        medianOracleCvx.pullReport(address(ctdlCvxProvider));
+        medianOracleCvx.pullReport(address(ctdlCvxProvider1));
 
         vm.prank(keeper);
         fundingCvx.updateCitadelPerAsset();
@@ -127,7 +136,28 @@ contract FundingOraclesTest is BaseFixture {
         assertEq(fundingCvx.citadelPerAsset(), ctdlPriceInCvx);
     }
 
-    function testWbtcOracleCanCombineTwoProviders() public {
+    function testMultipleCvxProviderCanBePulled() public {
+        // Remove keeper provider
+        medianOracleCvx.removeProvider(keeper);
+
+        uint256 ctdlPriceInCvx1 = ctdlCvxProvider1.latestAnswer();
+        uint256 ctdlPriceInCvx2 = ctdlCvxProvider2.latestAnswer();
+        emit log_uint(ctdlPriceInCvx1);
+        emit log_uint(ctdlPriceInCvx2);
+
+        // Permissionless
+        medianOracleCvx.pullAllReports();
+
+        vm.prank(keeper);
+        fundingCvx.updateCitadelPerAsset();
+
+        assertEq(
+            fundingCvx.citadelPerAsset(),
+            (ctdlPriceInCvx1 + ctdlPriceInCvx2) / 2
+        );
+    }
+
+    function testWbtcOracleCanCombinePushPullProviders() public {
         uint256 ctdlPriceInWbtc = ctdlWbtcProvider.latestAnswer();
         emit log_uint(ctdlPriceInWbtc);
 
@@ -143,12 +173,12 @@ contract FundingOraclesTest is BaseFixture {
         assertEq(fundingWbtc.citadelPerAsset(), ctdlPriceInWbtc + 100);
     }
 
-    function testCvxOracleCanCombineTwoProviders() public {
-        uint256 ctdlPriceInCvx = ctdlCvxProvider.latestAnswer();
+    function testCvxOracleCanCombinePushPullProviders() public {
+        uint256 ctdlPriceInCvx = ctdlCvxProvider1.latestAnswer();
         emit log_uint(ctdlPriceInCvx);
 
         // Permissionless
-        medianOracleCvx.pullReport(address(ctdlCvxProvider));
+        medianOracleCvx.pullReport(address(ctdlCvxProvider1));
 
         vm.startPrank(keeper);
         medianOracleCvx.pushReport(ctdlPriceInCvx + 200);

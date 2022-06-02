@@ -122,6 +122,9 @@ contract FundingRegistryTest is BaseFixture {
             .getAllFundingsData();
 
         assertEq(address(fundingsData[0].fundingAddress), address(fundingTest));
-        assertEq(address(fundingsData[0].saleRecipient), address(treasuryVault));
+        assertEq(
+            address(fundingsData[0].saleRecipient),
+            address(treasuryVault)
+        );
     }
 }
