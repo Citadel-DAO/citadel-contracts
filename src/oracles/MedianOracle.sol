@@ -55,6 +55,9 @@ contract MedianOracle is Ownable, IOracle {
     // This is needed so that timestamp of 1 is always considered expired.
     uint256 private constant MAX_REPORT_EXPIRATION_TIME = 520 weeks;
 
+    uint256 public minData;
+    uint256 public maxData;
+
     /**
      * @param reportExpirationTimeSec_ The number of seconds after which the
      *                                 report is deemed expired.
@@ -62,17 +65,24 @@ contract MedianOracle is Ownable, IOracle {
      *                        pass before a report is usable
      * @param minimumProviders_ The minimum number of providers with valid
      *                          reports to consider the aggregate report valid.
+     * @param dataRange_ The range of a valid aggregate report.
      */
     constructor(
         uint256 reportExpirationTimeSec_,
         uint256 reportDelaySec_,
-        uint256 minimumProviders_
+        uint256 minimumProviders_,
+        uint256[2] memory dataRange_
     ) {
         require(reportExpirationTimeSec_ <= MAX_REPORT_EXPIRATION_TIME);
         require(minimumProviders_ > 0);
+        require(dataRange_[0] <= dataRange_[1]);
+
         reportExpirationTimeSec = reportExpirationTimeSec_;
         reportDelaySec = reportDelaySec_;
         minimumProviders = minimumProviders_;
+
+        minData = dataRange_[0];
+        maxData = dataRange_[1];
     }
 
     /**
@@ -105,6 +115,18 @@ contract MedianOracle is Ownable, IOracle {
     function setMinimumProviders(uint256 minimumProviders_) external onlyOwner {
         require(minimumProviders_ > 0);
         minimumProviders = minimumProviders_;
+    }
+
+    /**
+     * @notice Sets the range within which an aggregated report is
+     *         considered valid.
+     * @param dataRange_ The new valid aggregate report range.
+     */
+    function setDataRange(uint256[2] calldata dataRange_) external onlyOwner {
+        require(dataRange_[0] <= dataRange_[1]);
+
+        minData = dataRange_[0];
+        maxData = dataRange_[1];
     }
 
     /**
@@ -284,7 +306,14 @@ contract MedianOracle is Ownable, IOracle {
             return (0, false);
         }
 
-        return (Select.computeMedian(validReports, size), true);
+        uint256 median = Select.computeMedian(validReports, size);
+
+        if (median < minData || median > maxData) {
+            // TODO: Report median or zero?
+            return (0, false);
+        }
+
+        return (median, true);
     }
 
     /**

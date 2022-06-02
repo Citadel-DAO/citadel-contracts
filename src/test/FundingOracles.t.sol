@@ -95,7 +95,7 @@ contract FundingOraclesTest is BaseFixture {
         vm.stopPrank();
     }
 
-    function testWbtcProviderCanUpdatePrice() public {
+    function testWbtcProviderCanBePulled() public {
         // Remove keeper provider
         medianOracleWbtc.removeProvider(keeper);
 
@@ -111,7 +111,7 @@ contract FundingOraclesTest is BaseFixture {
         assertEq(fundingWbtc.citadelPerAsset(), ctdlPriceInWbtc);
     }
 
-    function testCvxProviderCanUpdatePrice() public {
+    function testCvxProviderCanBePulled() public {
         // Remove keeper provider
         medianOracleCvx.removeProvider(keeper);
 

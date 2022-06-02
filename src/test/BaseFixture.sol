@@ -126,9 +126,12 @@ contract BaseFixture is DSTest, Utils, stdCheats {
     KnightingRoundWithEth knightingRoundWithEth = new KnightingRoundWithEth();
     KnightingRoundGuestlist guestList = new KnightingRoundGuestlist();
 
-    MedianOracle medianOracleWbtc = new MedianOracle(1 days, 0, 1);
-    MedianOracle medianOracleCvx = new MedianOracle(1 days, 0, 1);
-    MedianOracle medianOracleBadger = new MedianOracle(1 days, 0, 1);
+    MedianOracle medianOracleWbtc =
+        new MedianOracle(1 days, 0, 1, [0, type(uint256).max]);
+    MedianOracle medianOracleCvx =
+        new MedianOracle(1 days, 0, 1, [0, type(uint256).max]);
+    MedianOracle medianOracleBadger =
+        new MedianOracle(1 days, 0, 1, [0, type(uint256).max]);
 
     Funding fundingWbtc = new Funding();
     Funding fundingCvx = new Funding();
