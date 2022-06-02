@@ -121,6 +121,9 @@ contract FundingRegistry is Initializable, GlobalAccessControlManaged {
 
     function getAllFundings() public view returns (address[] memory) {
         address[] memory fundingsList = new address[](fundings.length());
+        for (uint256 i = 0; i < fundings.length(); i++) {
+            fundingsList[i] = fundings.at(i);
+        }
         return fundingsList;
     }
 
