@@ -211,6 +211,18 @@ contract FundingOraclesTest is BaseFixture {
         vm.stopPrank();
     }
 
+    function testMedianOracleFailsWhenNotEnoughProviders() public {
+        medianOracleWbtc.removeProvider(address(ctdlWbtcProvider));
+        medianOracleWbtc.setMinimumProviders(2);
+        assertEq(medianOracleWbtc.minimumProviders(), 2);
+
+        vm.startPrank(keeper);
+        medianOracleWbtc.pushReport(1000);
+        vm.expectRevert("price must not be zero");
+        fundingWbtc.updateCitadelPerAsset();
+        vm.stopPrank();
+    }
+
     function testMedianOracleWithMinimumProvidersMoreThan1() public {
         medianOracleWbtc.setMinimumProviders(2);
         assertEq(medianOracleWbtc.minimumProviders(), 2);
@@ -227,17 +239,31 @@ contract FundingOraclesTest is BaseFixture {
         vm.stopPrank();
     }
 
-    function testMedianOracleFailsWhenNotEnoughProviders() public {
-        medianOracleWbtc.setMinimumProviders(2);
-        assertEq(medianOracleWbtc.minimumProviders(), 2);
+    function testMedianOracleFailsWhenMedianBelowRange() public {
+        medianOracleWbtc.removeProvider(address(ctdlWbtcProvider));
+        medianOracleWbtc.setDataRange([uint256(2000), uint256(3000)]);
 
         vm.startPrank(keeper);
         medianOracleWbtc.pushReport(1000);
-        // TODO: For some reason, the revert string is not being thrown and the trace is wrong.
-        //       Maybe a bug in forge?
-        vm.expectRevert();
+        vm.expectRevert("price must not be zero");
         fundingWbtc.updateCitadelPerAsset();
         vm.stopPrank();
+    }
+
+    function testMedianOracleFailsWhenMedianAboveRange() public {
+        medianOracleWbtc.removeProvider(address(ctdlWbtcProvider));
+        medianOracleWbtc.setDataRange([uint256(0), uint256(100)]);
+
+        vm.startPrank(keeper);
+        medianOracleWbtc.pushReport(1000);
+        vm.expectRevert("price must not be zero");
+        fundingWbtc.updateCitadelPerAsset();
+        vm.stopPrank();
+    }
+
+    function testSetMedianOracleDataRangeFailsWhenLowMoreThanHigh() public {
+        vm.expectRevert();
+        medianOracleWbtc.setDataRange([uint256(1), uint256(0)]);
     }
 
     function testValidReportWithZeroPrice() public {
