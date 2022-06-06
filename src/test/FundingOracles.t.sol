@@ -8,8 +8,12 @@ import {console} from "forge-std/console.sol";
 
 import {CtdlWbtcCurveV2Provider} from "../oracles/CtdlWbtcCurveV2Provider.sol";
 import {CtdlAssetChainlinkProvider} from "../oracles/CtdlAssetChainlinkProvider.sol";
+import {CtdlBtcChainlinkProvider} from "../oracles/CtdlBtcChainlinkProvider.sol";
+import {CtdlEthChainlinkProvider} from "../oracles/CtdlEthChainlinkProvider.sol";
+import {CtdlWibbtcLpVaultProvider} from "../oracles/CtdlWibbtcLpVaultProvider.sol";
 
-import "../interfaces/citadel/IMedianOracle.sol";
+import {IMedianOracle} from "../interfaces/citadel/IMedianOracle.sol";
+import {IMedianOracleProvider} from "../interfaces/citadel/IMedianOracleProvider.sol";
 
 contract FundingOraclesTest is BaseFixture {
     /// =================
@@ -35,6 +39,12 @@ contract FundingOraclesTest is BaseFixture {
         0xdeb288F737066589598e9214E782fa5A8eD689e8;
     address constant BTC_USD_PRICE_FEED =
         0xF4030086522a5bEEa4988F8cA5B36dbC97BeE88c;
+
+    address constant ETH_USD_PRICE_FEED =
+        0x5f4eC3Df9cbd43714FE2740f5E3616155c5b8419;
+
+    address constant WIBBTC_LP_VAULT =
+        0xaE96fF08771a109dc6650a1BdCa62F2d558E40af;
 
     address constant FRAX_ETH_PRICE_FEED =
         0x14d04Fff8D21bd62987a5cE9ce543d2F1edF5D3E;
@@ -68,19 +78,84 @@ contract FundingOraclesTest is BaseFixture {
         ctdlCvxProvider1 = new CtdlAssetChainlinkProvider(
             CTDL_WBTC_CURVE_POOL,
             WBTC_BTC_PRICE_FEED,
-            BTC_USD_PRICE_FEED,
-            CVX_USD_PRICE_FEED
+            BTC_ETH_PRICE_FEED,
+            CVX_ETH_PRICE_FEED
         );
         ctdlCvxProvider2 = new CtdlAssetChainlinkProvider(
             CTDL_WBTC_CURVE_POOL,
             WBTC_BTC_PRICE_FEED,
-            BTC_ETH_PRICE_FEED,
-            CVX_ETH_PRICE_FEED
+            BTC_USD_PRICE_FEED,
+            CVX_USD_PRICE_FEED
         );
 
         medianOracleWbtc.addProvider(address(ctdlWbtcProvider));
         medianOracleCvx.addProvider(address(ctdlCvxProvider1));
         medianOracleCvx.addProvider(address(ctdlCvxProvider2));
+    }
+
+    function testDeployAllOracleProviders() public {
+        CtdlWbtcCurveV2Provider ctdlWbtcProviderLoc = new CtdlWbtcCurveV2Provider(
+                CTDL_WBTC_CURVE_POOL
+            );
+        _checkedLatestData(address(ctdlWbtcProviderLoc));
+
+        CtdlBtcChainlinkProvider ctdlBtcProvider = new CtdlBtcChainlinkProvider(
+            CTDL_WBTC_CURVE_POOL,
+            WBTC_BTC_PRICE_FEED
+        );
+        _checkedLatestData(address(ctdlBtcProvider));
+
+        CtdlWibbtcLpVaultProvider ctdlWibbtcProvider = new CtdlWibbtcLpVaultProvider(
+                CTDL_WBTC_CURVE_POOL,
+                WBTC_BTC_PRICE_FEED,
+                WIBBTC_LP_VAULT
+            );
+        _checkedLatestData(address(ctdlWibbtcProvider));
+
+        CtdlEthChainlinkProvider ctdlEthProvider1 = new CtdlEthChainlinkProvider(
+                CTDL_WBTC_CURVE_POOL,
+                WBTC_BTC_PRICE_FEED,
+                BTC_ETH_PRICE_FEED
+            );
+        _checkedLatestData(address(ctdlEthProvider1));
+
+        CtdlAssetChainlinkProvider ctdlEthProvider2 = new CtdlAssetChainlinkProvider(
+                CTDL_WBTC_CURVE_POOL,
+                WBTC_BTC_PRICE_FEED,
+                BTC_USD_PRICE_FEED,
+                ETH_USD_PRICE_FEED
+            );
+        _checkedLatestData(address(ctdlEthProvider2));
+
+        address[4] memory assetEthFeeds = [
+            FRAX_ETH_PRICE_FEED,
+            USDC_ETH_PRICE_FEED,
+            CVX_ETH_PRICE_FEED,
+            BADGER_ETH_PRICE_FEED
+        ];
+        address[4] memory assetUsdFeeds = [
+            FRAX_USD_PRICE_FEED,
+            USDC_USD_PRICE_FEED,
+            CVX_USD_PRICE_FEED,
+            BADGER_USD_PRICE_FEED
+        ];
+
+        for (uint256 i; i < 4; ++i) {
+            CtdlAssetChainlinkProvider ctdlAssetProvider1 = new CtdlAssetChainlinkProvider(
+                    CTDL_WBTC_CURVE_POOL,
+                    WBTC_BTC_PRICE_FEED,
+                    BTC_ETH_PRICE_FEED,
+                    assetUsdFeeds[i]
+                );
+            _checkedLatestData(address(ctdlAssetProvider1));
+            CtdlAssetChainlinkProvider ctdlAssetProvider2 = new CtdlAssetChainlinkProvider(
+                    CTDL_WBTC_CURVE_POOL,
+                    WBTC_BTC_PRICE_FEED,
+                    BTC_USD_PRICE_FEED,
+                    assetEthFeeds[i]
+                );
+            _checkedLatestData(address(ctdlAssetProvider2));
+        }
     }
 
     function testMedianOracleAccessControl() public {
@@ -283,5 +358,17 @@ contract FundingOraclesTest is BaseFixture {
         vm.expectRevert("price must not be zero"); // Only price feed provided 0
         fundingWbtc.updateCitadelPerAsset();
         vm.stopPrank();
+    }
+
+    /// ============================
+    /// ===== Internal helpers =====
+    /// ============================
+
+    function _checkedLatestData(address _provider) public {
+        (uint256 price, , bool valid) = IMedianOracleProvider(_provider)
+            .latestData();
+
+        assertTrue(valid);
+        assertGt(price, 0);
     }
 }
