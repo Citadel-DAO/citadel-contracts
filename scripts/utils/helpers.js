@@ -6,4 +6,8 @@ const address = (entity) =>
 
 const hashIt = (str) => ethers.utils.keccak256(ethers.utils.toUtf8Bytes(str));
 
-module.exports = { address, hashIt };
+const sleep = (ms) => {
+  return new Promise(resolve => setTimeout(resolve, ms));
+}
+
+module.exports = { address, hashIt, sleep };
