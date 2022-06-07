@@ -139,11 +139,23 @@ contract SupplySchedule is GlobalAccessControlManaged, DSTest {
     /// ===== Governance actions =====
     /// ==============================
 
+    function setMintingStartNow()
+        external
+        onlyRole(CONTRACT_GOVERNANCE_ROLE)
+        gacPausable
+    {
+        _setMintingStart(block.timestamp);
+    }
+
     function setMintingStart(uint256 _globalStartTimestamp)
         external
         onlyRole(CONTRACT_GOVERNANCE_ROLE)
         gacPausable
     {
+        _setMintingStart(_globalStartTimestamp);
+    }
+
+    function _setMintingStart(uint256 _globalStartTimestamp) internal {
         require(
             globalStartTimestamp == 0,
             "SupplySchedule: minting already started"
