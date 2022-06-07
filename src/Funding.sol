@@ -70,6 +70,8 @@ contract Funding is GlobalAccessControlManaged, ReentrancyGuardUpgradeable {
     event CitadelPriceBoundsSet(uint256 minPrice, uint256 maxPrice);
     event CitadelPriceFlag(uint256 price, uint256 minPrice, uint256 maxPrice);
 
+    event CitadelPerAssetOracleUpdated(address citadelPerAssetOracle);
+
     event SaleRecipientUpdated(address indexed recipient);
     event AssetCapUpdated(uint256 assetCap);
 
@@ -398,6 +400,20 @@ contract Funding is GlobalAccessControlManaged, ReentrancyGuardUpgradeable {
 
         saleRecipient = _saleRecipient;
         emit SaleRecipientUpdated(_saleRecipient);
+    }
+
+    function setCitadelPerAssetOracle(address _citadelPerAssetOracle)
+        external
+        gacPausable
+        onlyRole(CONTRACT_GOVERNANCE_ROLE)
+    {
+        require(
+            _citadelPerAssetOracle != address(0),
+            "Funding: citadel per asset oracle should not be 0"
+        );
+
+        citadelPerAssetOracle = _citadelPerAssetOracle;
+        emit CitadelPerAssetOracleUpdated(_citadelPerAssetOracle);
     }
 
     function setCitadelPerAssetBounds(uint256 _minPrice, uint256 _maxPrice)
