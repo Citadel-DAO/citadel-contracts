@@ -319,6 +319,9 @@ contract GlobalAccessControlTest is BaseFixture {
         schedule.setMintingStart(block.timestamp + 1000);
 
         vm.expectRevert(bytes("local-paused"));
+        schedule.setMintingStartNow();
+
+        vm.expectRevert(bytes("local-paused"));
         schedule.setEpochRate(8, 10);
 
         vm.stopPrank();
@@ -328,6 +331,9 @@ contract GlobalAccessControlTest is BaseFixture {
         vm.startPrank(governance);
         vm.expectRevert(bytes("global-paused"));
         schedule.setMintingStart(block.timestamp + 1000);
+
+        vm.expectRevert(bytes("global-paused"));
+        schedule.setMintingStartNow();
 
         vm.expectRevert(bytes("global-paused"));
         schedule.setEpochRate(8, 10);
@@ -420,6 +426,11 @@ contract GlobalAccessControlTest is BaseFixture {
         schedule.setMintingStart(1000);
         vm.prank(governance);
         schedule.setMintingStart(block.timestamp);
+
+        vm.expectRevert("GAC: invalid-caller-role");
+        schedule.setMintingStartNow();
+        // Not attempting a positive test because minting is already started
+        // above - The feature is tested on integration already.
 
         vm.expectRevert("GAC: invalid-caller-role");
         citadelMinter.initializeLastMintTimestamp();
