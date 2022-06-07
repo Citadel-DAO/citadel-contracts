@@ -6,9 +6,9 @@ import {SupplySchedule} from "../SupplySchedule.sol";
 import {GlobalAccessControl} from "../GlobalAccessControl.sol";
 import {Funding} from "../Funding.sol";
 import {FixedPointMathLib} from "solmate/utils/FixedPointMathLib.sol";
+import {MedianOracle} from "../oracles/MedianOracle.sol";
 
 import {IERC20} from "../interfaces/erc20/IERC20.sol";
-import {IMedianOracle} from "../interfaces/citadel/IMedianOracle.sol";
 
 contract FundingTest is BaseFixture {
     using FixedPointMathLib for uint256;
@@ -297,7 +297,7 @@ contract FundingTest is BaseFixture {
 
     function _testDiscountRateBuys(
         Funding fundingContract,
-        IMedianOracle medianOracleContract,
+        MedianOracle medianOracleContract,
         IERC20 token,
         uint256 _assetAmountIn,
         uint32 _discount,
@@ -412,7 +412,7 @@ contract FundingTest is BaseFixture {
 
     function _testBuy(
         Funding fundingContract,
-        IMedianOracle medianOracleContract,
+        MedianOracle medianOracleContract,
         uint256 assetIn,
         uint256 citadelPrice
     ) internal {

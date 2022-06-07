@@ -11,7 +11,11 @@ abstract contract ChainlinkUtils {
     function safeLatestAnswer(IAggregatorV3Interface _priceFeed)
         internal
         view
-        returns (uint256 answer_)
+        returns (
+            uint256 answer_,
+            uint256 updateTime_,
+            bool valid_
+        )
     {
         (
             uint256 roundId,
@@ -21,9 +25,10 @@ abstract contract ChainlinkUtils {
             uint256 answeredInRound
         ) = _priceFeed.latestRoundData();
 
-        require(price > 0, "Chainlink price <= 0");
-        require(updateTime != 0, "Incomplete round");
-        require(answeredInRound >= roundId, "Stale price");
+        updateTime_ = updateTime;
+
+        // TODO: Check if this is the correct way to check if the price is valid
+        valid_ = price > 0 && updateTime_ > 0 && answeredInRound >= roundId;
 
         answer_ = uint256(price);
     }

@@ -1,6 +1,8 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
+import {MathUpgradeable} from "openzeppelin-contracts-upgradeable/utils/math/MathUpgradeable.sol";
+
 import {ChainlinkUtils} from "./ChainlinkUtils.sol";
 import {MedianOracleProvider} from "./MedianOracleProvider.sol";
 import {ICurveCryptoSwap} from "../interfaces/curve/ICurveCryptoSwap.sol";
@@ -28,11 +30,10 @@ contract CtdlEthChainlinkProvider is ChainlinkUtils, MedianOracleProvider {
     /// =====================
 
     constructor(
-        address _medianOracle,
         address _ctdlWbtcCurvePool,
         address _wbtcBtcPriceFeed,
         address _btcEthPriceFeed
-    ) MedianOracleProvider(_medianOracle) {
+    ) {
         ctdlWbtcCurvePool = ICurveCryptoSwap(_ctdlWbtcCurvePool);
 
         wbtcBtcPriceFeed = IAggregatorV3Interface(_wbtcBtcPriceFeed);
@@ -43,14 +44,29 @@ contract CtdlEthChainlinkProvider is ChainlinkUtils, MedianOracleProvider {
     /// ===== Public view =====
     /// =======================
 
-    function latestAnswer()
+    function latestData()
         public
         view
         override
-        returns (uint256 ethPriceInCtdl_)
+        returns (
+            uint256 ethPriceInCtdl_,
+            uint256 updateTime_,
+            bool valid_
+        )
     {
-        uint256 wbtcPriceInBtc = safeLatestAnswer(wbtcBtcPriceFeed);
-        uint256 btcPriceInEth = safeLatestAnswer(btcEthPriceFeed);
+        (
+            uint256 wbtcPriceInBtc,
+            uint256 updateTime1,
+            bool valid1
+        ) = safeLatestAnswer(wbtcBtcPriceFeed);
+        (
+            uint256 btcPriceInEth,
+            uint256 updateTime2,
+            bool valid2
+        ) = safeLatestAnswer(btcEthPriceFeed);
+
+        updateTime_ = MathUpgradeable.min(updateTime1, updateTime2);
+        valid_ = valid1 && valid2;
 
         // (10^8) * (10^8) * (10^18) = (10^34) + price value - Shouldn't overflow
         uint256 wbtcPriceInEth = (wbtcPriceInBtc * btcPriceInEth * PRECISION) /

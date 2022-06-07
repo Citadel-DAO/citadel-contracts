@@ -32,11 +32,10 @@ contract CtdlWibbtcLpVaultProvider is ChainlinkUtils, MedianOracleProvider {
     /// =====================
 
     constructor(
-        address _medianOracle,
         address _ctdlWbtcCurvePool,
         address _wbtcBtcPriceFeed,
         address _wibbtcLpVault
-    ) MedianOracleProvider(_medianOracle) {
+    ) {
         ctdlWbtcCurvePool = ICurveCryptoSwap(_ctdlWbtcCurvePool);
         wbtcBtcPriceFeed = IAggregatorV3Interface(_wbtcBtcPriceFeed);
 
@@ -48,14 +47,26 @@ contract CtdlWibbtcLpVaultProvider is ChainlinkUtils, MedianOracleProvider {
     /// ===== Public view =====
     /// =======================
 
-    function latestAnswer()
+    function latestData()
         public
         view
         override
-        returns (uint256 wibbtcLpVaultPriceInCtdl_)
+        returns (
+            uint256 wibbtcLpVaultPriceInCtdl_,
+            uint256 updateTime_,
+            bool valid_
+        )
     {
         // 8 decimals
-        uint256 wbtcPriceInBtc = safeLatestAnswer(wbtcBtcPriceFeed);
+        (
+            uint256 wbtcPriceInBtc,
+            uint256 updateTime,
+            bool valid
+        ) = safeLatestAnswer(wbtcBtcPriceFeed);
+
+        updateTime_ = updateTime;
+        valid_ = valid;
+
         // 18 decimals
         uint256 wibbtcLpVaultPriceInBtc = (wibbtcLpVault
             .getPricePerFullShare() * wibbtcCrvPool.get_virtual_price()) /
