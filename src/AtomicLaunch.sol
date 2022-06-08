@@ -15,11 +15,12 @@ import "./interfaces/chainlink/IAggregatorV3Interface.sol";
 contract AtomicLaunch is ChainlinkUtils {
     using EnumerableSet for EnumerableSet.AddressSet;
 
-    address constant CITADEL = 0x353a38c269A24aafb78Cd214c6E0668847Bb58FD;
-    address constant WBTC = 0x2260FAC5E5542a773Aa44fBCfeDf7C193bc2C599;
-    address constant CURVE_POOL_FACTORY =
+    address public constant CITADEL =
+        0x353a38c269A24aafb78Cd214c6E0668847Bb58FD;
+    address public constant WBTC = 0x2260FAC5E5542a773Aa44fBCfeDf7C193bc2C599;
+    address public constant CURVE_POOL_FACTORY =
         0xF18056Bbd320E96A48e3Fbf8bC061322531aac99;
-    uint256 constant CITADEL_PRICE = 21;
+    uint256 public constant CITADEL_PRICE = 21;
 
     IAggregatorV3Interface public wbtcBtcPriceFeed =
         IAggregatorV3Interface(0xF4030086522a5bEEa4988F8cA5B36dbC97BeE88c);
