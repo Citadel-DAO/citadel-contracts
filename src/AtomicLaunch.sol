@@ -10,7 +10,7 @@ import "./interfaces/erc20/IERC20.sol";
 import "./interfaces/curve/ICurvePoolFactory.sol";
 import "./interfaces/curve/ICurvePool.sol";
 import "./interfaces/citadel/IMedianOracleProvider.sol";
-import "../interfaces/chainlink/IAggregatorV3Interface.sol";
+import "./interfaces/chainlink/IAggregatorV3Interface.sol";
 
 contract AtomicLaunch is ChainlinkUtils {
     address constant CITADEL = 0x353a38c269A24aafb78Cd214c6E0668847Bb58FD;
