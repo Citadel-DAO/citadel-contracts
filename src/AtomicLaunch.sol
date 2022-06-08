@@ -87,7 +87,7 @@ contract AtomicLaunch is ChainlinkUtils {
             "<wbtcToLiquidity!"
         );
 
-        IERC20(CITADEL).approve(poolAddress, toLiquidity);
+        IERC20(CITADEL).approve(poolAddress, citadelToLiquidty);
         IERC20(WBTC).approve(poolAddress, wbtcToLiquidity);
 
         uint256[2] memory amounts;
