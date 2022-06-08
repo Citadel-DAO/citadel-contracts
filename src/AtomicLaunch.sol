@@ -13,6 +13,8 @@ import "./interfaces/citadel/IMedianOracleProvider.sol";
 import "./interfaces/chainlink/IAggregatorV3Interface.sol";
 
 contract AtomicLaunch is ChainlinkUtils {
+    using EnumerableSet for EnumerableSet.AddressSet;
+
     address constant CITADEL = 0x353a38c269A24aafb78Cd214c6E0668847Bb58FD;
     address constant WBTC = 0x2260FAC5E5542a773Aa44fBCfeDf7C193bc2C599;
     address constant CURVE_POOL_FACTORY =
@@ -24,7 +26,7 @@ contract AtomicLaunch is ChainlinkUtils {
 
     /* ========== STATE VARIABLES ========== */
     address public governance;
-    
+
     EnumerableSet.AddressSet internal _oracles;
 
     /* ========== EVENT ========== */
