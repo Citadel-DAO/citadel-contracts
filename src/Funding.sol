@@ -70,6 +70,8 @@ contract Funding is GlobalAccessControlManaged, ReentrancyGuardUpgradeable {
     event CitadelPriceBoundsSet(uint256 minPrice, uint256 maxPrice);
     event CitadelPriceFlag(uint256 price, uint256 minPrice, uint256 maxPrice);
 
+    event CitadelPerAssetOracleUpdated(address citadelPerAssetOracle);
+
     event SaleRecipientUpdated(address indexed recipient);
     event AssetCapUpdated(uint256 assetCap);
 
@@ -386,6 +388,11 @@ contract Funding is GlobalAccessControlManaged, ReentrancyGuardUpgradeable {
         emit DiscountManagerSet(_discountManager);
     }
 
+    /**
+     * @notice Set the sale recipient addresss
+     * @dev The accumulated funding asset will be sent to this address on claimAssetToTreasury()
+     * @param _saleRecipient sale recipient addresss
+     */
     function setSaleRecipient(address _saleRecipient)
         external
         gacPausable
@@ -400,6 +407,33 @@ contract Funding is GlobalAccessControlManaged, ReentrancyGuardUpgradeable {
         emit SaleRecipientUpdated(_saleRecipient);
     }
 
+    /**
+     * @notice Set the citadel price oracle addresss
+     * @dev The address specified should be a contract that reports the CTDL/ASSET price, scaled to 18 decimals, and conforms to the IMedianOracle interface
+     * @param _citadelPerAssetOracle citadel price oracle addresss
+     */
+    function setCitadelPerAssetOracle(address _citadelPerAssetOracle)
+        external
+        gacPausable
+        onlyRole(CONTRACT_GOVERNANCE_ROLE)
+    {
+        require(
+            _citadelPerAssetOracle != address(0),
+            "Funding: citadel per asset oracle should not be 0"
+        );
+
+        citadelPerAssetOracle = _citadelPerAssetOracle;
+        emit CitadelPerAssetOracleUpdated(_citadelPerAssetOracle);
+    }
+
+    /**
+     * @notice Set the minimum and maximum acceptable prices for CTDL/ASSET
+     * @dev When the price reported by the oracle is outside the boundaries, no funding activity can happen, as the citadelPriceFlag is set (which prevents funding)
+     * @dev If the citadel price flag is manually cleared, or the oracle reports a value within the bounds, funding can resume
+     * @dev These values are effectively unbounded when minPrice = 0 and maxPrice = uint256(-1)
+     * @param _minPrice minimum acceptable value for CTDL/ASSET
+     * @param _maxPrice maximum acceptable value for CTDL/ASSET
+     */
     function setCitadelPerAssetBounds(uint256 _minPrice, uint256 _maxPrice)
         external
         gacPausable

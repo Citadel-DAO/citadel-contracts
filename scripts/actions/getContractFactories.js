@@ -45,13 +45,30 @@ const getContractFactories = async () => {
   const CitadelMinter = await ethers.getContractFactory("CitadelMinter");
 
   const KnightingRound = await ethers.getContractFactory("KnightingRound");
+  const KnightingRoundWithEth = await ethers.getContractFactory("KnightingRoundWithEth");
+
+  const KnightingRoundRegistry = await ethers.getContractFactory("KnightingRoundRegistry");
+
+  const KnightingRoundGuestlist = await ethers.getContractFactory("KnightingRoundGuestlist");
 
   const Funding = await ethers.getContractFactory("Funding");
 
   const ERC20Upgradeable = await ethers.getContractFactory("ERC20Upgradeable");
 
-  const KnightingRoundGuestlist = await ethers.getContractFactory(
-    "KnightingRoundGuestlist"
+  const CtdlAssetChainlinkProvider = await ethers.getContractFactory(
+    "CtdlAssetChainlinkProvider"
+  );
+  const CtdlBtcChainlinkProvider = await ethers.getContractFactory(
+    "CtdlBtcChainlinkProvider"
+  );
+  const CtdlEthChainlinkProvider = await ethers.getContractFactory(
+    "CtdlEthChainlinkProvider"
+  );
+  const CtdlWbtcCurveV2Provider = await ethers.getContractFactory(
+    "CtdlWbtcCurveV2Provider"
+  );
+  const CtdlWibbtcLpVaultProvider = await ethers.getContractFactory(
+    "CtdlWibbtcLpVaultProvider"
   );
 
   const wBTC = await ethers.getContractFactory("WrapBitcoin");
@@ -69,6 +86,7 @@ const getContractFactories = async () => {
     StakedCitadelVester,
     StakedCitadel,
     StakedCitadelLocker,
+    KnightingRoundWithEth,
     SupplySchedule,
     CitadelMinter,
     KnightingRound,
@@ -82,7 +100,11 @@ const getContractFactories = async () => {
     MintableToken,
     TransparentUpgradeableProxy,
     MedianOracle,
+    CtdlAssetChainlinkProvider,
+    CtdlBtcChainlinkProvider,
+    CtdlEthChainlinkProvider,
+    CtdlWbtcCurveV2Provider,
+    CtdlWibbtcLpVaultProvider
   };
-};
-
+}
 module.exports = getContractFactories;
