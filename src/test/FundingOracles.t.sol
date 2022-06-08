@@ -73,15 +73,19 @@ contract FundingOraclesTest is BaseFixture {
     function setUp() public override {
         BaseFixture.setUp();
 
-        ctdlWbtcProvider = new CtdlWbtcCurveV2Provider(CTDL_WBTC_CURVE_POOL);
+        ctdlWbtcProvider = new CtdlWbtcCurveV2Provider();
+        ctdlWbtcProvider.initialize(CTDL_WBTC_CURVE_POOL);
 
-        ctdlCvxProvider1 = new CtdlAssetChainlinkProvider(
+        ctdlCvxProvider1 = new CtdlAssetChainlinkProvider();
+        ctdlCvxProvider1.initialize(
             CTDL_WBTC_CURVE_POOL,
             WBTC_BTC_PRICE_FEED,
             BTC_ETH_PRICE_FEED,
             CVX_ETH_PRICE_FEED
         );
-        ctdlCvxProvider2 = new CtdlAssetChainlinkProvider(
+
+        ctdlCvxProvider2 = new CtdlAssetChainlinkProvider();
+        ctdlCvxProvider2.initialize(
             CTDL_WBTC_CURVE_POOL,
             WBTC_BTC_PRICE_FEED,
             BTC_USD_PRICE_FEED,
@@ -94,37 +98,37 @@ contract FundingOraclesTest is BaseFixture {
     }
 
     function testDeployAllOracleProviders() public {
-        CtdlWbtcCurveV2Provider ctdlWbtcProviderLoc = new CtdlWbtcCurveV2Provider(
-                CTDL_WBTC_CURVE_POOL
-            );
+        CtdlWbtcCurveV2Provider ctdlWbtcProviderLoc = new CtdlWbtcCurveV2Provider();
+        ctdlWbtcProviderLoc.initialize(CTDL_WBTC_CURVE_POOL);
         _checkedLatestData(address(ctdlWbtcProviderLoc));
 
-        CtdlBtcChainlinkProvider ctdlBtcProvider = new CtdlBtcChainlinkProvider(
-            CTDL_WBTC_CURVE_POOL,
-            WBTC_BTC_PRICE_FEED
-        );
+        CtdlBtcChainlinkProvider ctdlBtcProvider = new CtdlBtcChainlinkProvider();
+        ctdlBtcProvider.initialize(CTDL_WBTC_CURVE_POOL, WBTC_BTC_PRICE_FEED);
         _checkedLatestData(address(ctdlBtcProvider));
 
-        CtdlWibbtcLpVaultProvider ctdlWibbtcProvider = new CtdlWibbtcLpVaultProvider(
-                CTDL_WBTC_CURVE_POOL,
-                WBTC_BTC_PRICE_FEED,
-                WIBBTC_LP_VAULT
-            );
+        CtdlWibbtcLpVaultProvider ctdlWibbtcProvider = new CtdlWibbtcLpVaultProvider();
+        ctdlWibbtcProvider.initialize(
+            CTDL_WBTC_CURVE_POOL,
+            WBTC_BTC_PRICE_FEED,
+            WIBBTC_LP_VAULT
+        );
         _checkedLatestData(address(ctdlWibbtcProvider));
 
-        CtdlEthChainlinkProvider ctdlEthProvider1 = new CtdlEthChainlinkProvider(
-                CTDL_WBTC_CURVE_POOL,
-                WBTC_BTC_PRICE_FEED,
-                BTC_ETH_PRICE_FEED
-            );
+        CtdlEthChainlinkProvider ctdlEthProvider1 = new CtdlEthChainlinkProvider();
+        ctdlEthProvider1.initialize(
+            CTDL_WBTC_CURVE_POOL,
+            WBTC_BTC_PRICE_FEED,
+            BTC_ETH_PRICE_FEED
+        );
         _checkedLatestData(address(ctdlEthProvider1));
 
-        CtdlAssetChainlinkProvider ctdlEthProvider2 = new CtdlAssetChainlinkProvider(
-                CTDL_WBTC_CURVE_POOL,
-                WBTC_BTC_PRICE_FEED,
-                BTC_USD_PRICE_FEED,
-                ETH_USD_PRICE_FEED
-            );
+        CtdlAssetChainlinkProvider ctdlEthProvider2 = new CtdlAssetChainlinkProvider();
+        ctdlEthProvider2.initialize(
+            CTDL_WBTC_CURVE_POOL,
+            WBTC_BTC_PRICE_FEED,
+            BTC_USD_PRICE_FEED,
+            ETH_USD_PRICE_FEED
+        );
         _checkedLatestData(address(ctdlEthProvider2));
 
         address[4] memory assetEthFeeds = [
@@ -141,19 +145,22 @@ contract FundingOraclesTest is BaseFixture {
         ];
 
         for (uint256 i; i < 4; ++i) {
-            CtdlAssetChainlinkProvider ctdlAssetProvider1 = new CtdlAssetChainlinkProvider(
-                    CTDL_WBTC_CURVE_POOL,
-                    WBTC_BTC_PRICE_FEED,
-                    BTC_ETH_PRICE_FEED,
-                    assetUsdFeeds[i]
-                );
+            CtdlAssetChainlinkProvider ctdlAssetProvider1 = new CtdlAssetChainlinkProvider();
+            ctdlAssetProvider1.initialize(
+                CTDL_WBTC_CURVE_POOL,
+                WBTC_BTC_PRICE_FEED,
+                BTC_ETH_PRICE_FEED,
+                assetUsdFeeds[i]
+            );
             _checkedLatestData(address(ctdlAssetProvider1));
-            CtdlAssetChainlinkProvider ctdlAssetProvider2 = new CtdlAssetChainlinkProvider(
-                    CTDL_WBTC_CURVE_POOL,
-                    WBTC_BTC_PRICE_FEED,
-                    BTC_USD_PRICE_FEED,
-                    assetEthFeeds[i]
-                );
+
+            CtdlAssetChainlinkProvider ctdlAssetProvider2 = new CtdlAssetChainlinkProvider();
+            ctdlAssetProvider2.initialize(
+                CTDL_WBTC_CURVE_POOL,
+                WBTC_BTC_PRICE_FEED,
+                BTC_USD_PRICE_FEED,
+                assetEthFeeds[i]
+            );
             _checkedLatestData(address(ctdlAssetProvider2));
         }
     }

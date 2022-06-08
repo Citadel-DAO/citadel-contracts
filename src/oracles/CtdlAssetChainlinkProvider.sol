@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
+import {Initializable} from "openzeppelin-contracts-upgradeable/proxy/utils/Initializable.sol";
 import {MathUpgradeable} from "openzeppelin-contracts-upgradeable/utils/math/MathUpgradeable.sol";
 
 import {ChainlinkUtils} from "./ChainlinkUtils.sol";
@@ -8,17 +9,17 @@ import {MedianOracleProvider} from "./MedianOracleProvider.sol";
 import {ICurveCryptoSwap} from "../interfaces/curve/ICurveCryptoSwap.sol";
 import {IAggregatorV3Interface} from "../interfaces/chainlink/IAggregatorV3Interface.sol";
 
-contract CtdlAssetChainlinkProvider is ChainlinkUtils, MedianOracleProvider {
+contract CtdlAssetChainlinkProvider is Initializable, ChainlinkUtils, MedianOracleProvider {
     /// =================
     /// ===== State =====
     /// =================
 
-    ICurveCryptoSwap public immutable ctdlWbtcCurvePool;
+    ICurveCryptoSwap public ctdlWbtcCurvePool;
 
     // Price feeds
-    IAggregatorV3Interface public immutable wbtcBtcPriceFeed;
-    IAggregatorV3Interface public immutable btcBasePriceFeed;
-    IAggregatorV3Interface public immutable assetBasePriceFeed;
+    IAggregatorV3Interface public wbtcBtcPriceFeed;
+    IAggregatorV3Interface public btcBasePriceFeed;
+    IAggregatorV3Interface public assetBasePriceFeed;
 
     /// =====================
     /// ===== Constants =====
@@ -30,12 +31,12 @@ contract CtdlAssetChainlinkProvider is ChainlinkUtils, MedianOracleProvider {
     /// ===== Functions =====
     /// =====================
 
-    constructor(
+    function initialize(
         address _ctdlWbtcCurvePool,
         address _wbtcBtcPriceFeed,
         address _btcBasePriceFeed,
         address _assetBasePriceFeed
-    ) {
+    ) public initializer {
         ctdlWbtcCurvePool = ICurveCryptoSwap(_ctdlWbtcCurvePool);
 
         wbtcBtcPriceFeed = IAggregatorV3Interface(_wbtcBtcPriceFeed);
