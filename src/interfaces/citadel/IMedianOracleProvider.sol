@@ -16,5 +16,5 @@ interface IMedianOracleProvider {
 
     function latestAnswer() external view returns (uint256);
 
-    function setCurvePool() external;
+    function setCurvePool(address _pool) external;
 }
