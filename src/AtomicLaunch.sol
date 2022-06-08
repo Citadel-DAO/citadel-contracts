@@ -6,6 +6,7 @@ import "openzeppelin-contracts/utils/structs/EnumerableSet.sol";
 
 import {ChainlinkUtils} from "./oracles/ChainlinkUtils.sol";
 
+import "./interfaces/erc20/IERC20.sol";
 import "./interfaces/curve/ICurvePoolFactory.sol";
 import "./interfaces/curve/ICurvePool.sol";
 import "./interfaces/citadel/IMedianOracleProvider.sol";
@@ -78,16 +79,16 @@ contract AtomicLaunch is ChainlinkUtils {
         ICurvePool pool = ICurvePool(poolAddress);
 
         require(
-            citadel.balanceOf(address(this)) >= citadelToLiquidty,
-            "citadel funds not sent"
+            IERC20(CITADEL).balanceOf(address(this)) >= citadelToLiquidty,
+            "<citadelToLiquidty!"
         );
         require(
-            wbtc.balanceOf(address(this)) >= wbtcToLiquidity,
-            "wbtc funds not sent"
+            IERC20(WBTC).balanceOf(address(this)) >= wbtcToLiquidity,
+            "<wbtcToLiquidity!"
         );
 
-        citadel.approve(poolAddress, toLiquidity);
-        wbtc.approve(poolAddress, wbtcToLiquidity);
+        IERC20(CITADEL).approve(poolAddress, toLiquidity);
+        IERC20(WBTC).approve(poolAddress, wbtcToLiquidity);
 
         uint256[2] memory amounts;
         amounts[0] = citadelToLiquidty;
@@ -97,9 +98,12 @@ contract AtomicLaunch is ChainlinkUtils {
 
         require(
             pool.balances(0) >= citadelToLiquidty,
-            "pool balance incorrect"
+            "<pool-curve-citadelToLiquidty!"
         );
-        require(pool.balances(1) >= wbtcToLiquidity, "pool balance incorrect");
+        require(
+            pool.balances(1) >= wbtcToLiquidity,
+            "<pool-curve-wbtcToLiquidity!"
+        );
 
         _setCurvePoolInOracles(poolAddress);
 
