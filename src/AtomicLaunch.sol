@@ -22,6 +22,9 @@ contract AtomicLaunch is ChainlinkUtils {
     IAggregatorV3Interface public wbtcBtcPriceFeed =
         IAggregatorV3Interface(0xF4030086522a5bEEa4988F8cA5B36dbC97BeE88c);
 
+    /* ========== STATE VARIABLES ========== */
+    address public governance;
+    
     EnumerableSet.AddressSet internal _oracles;
 
     /* ========== EVENT ========== */
