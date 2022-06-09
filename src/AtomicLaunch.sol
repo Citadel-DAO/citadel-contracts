@@ -15,9 +15,8 @@ import "./interfaces/chainlink/IAggregatorV3Interface.sol";
 contract AtomicLaunch is ChainlinkUtils {
     using EnumerableSet for EnumerableSet.AddressSet;
 
-    address public constant CITADEL =
-        0x353a38c269A24aafb78Cd214c6E0668847Bb58FD;
-    address public constant WBTC = 0x2260FAC5E5542a773Aa44fBCfeDf7C193bc2C599;
+    address public citadel;
+    address public wbtc;
     address public constant CURVE_POOL_FACTORY =
         0xF18056Bbd320E96A48e3Fbf8bC061322531aac99;
     uint256 public constant CITADEL_PRICE = 21;
@@ -34,8 +33,14 @@ contract AtomicLaunch is ChainlinkUtils {
     event PoolCreated(address poolAddress);
 
     /// @param _governance Governance allowed to add oracles addresses and trigger launch (governance msig)
-    constructor(address _governance) {
+    constructor(
+        address _governance,
+        address _citadel,
+        address _wbtc
+    ) {
         governance = _governance;
+        citadel = _citadel;
+        wbtc = _wbtc;
     }
 
     /***************************************
@@ -56,15 +61,16 @@ contract AtomicLaunch is ChainlinkUtils {
         _oracles.add(_oracleAddress);
     }
 
-    function launch(uint256 citadelToLiquidty, uint256 wbtcToLiquidity)
+    function launch(uint256 citadelToLiquidity, uint256 wbtcToLiquidity)
         external
         onlyGovernance
+        returns (address poolAddress)
     {
         uint256 initialPoolPrice = _initialPoolPrice();
 
         address[2] memory coins;
-        coins[0] = CITADEL;
-        coins[1] = WBTC;
+        coins[0] = citadel;
+        coins[1] = wbtc;
 
         address poolAddress = ICurvePoolFactory(CURVE_POOL_FACTORY).deploy_pool(
             "CTDL/wBTC",
@@ -85,26 +91,26 @@ contract AtomicLaunch is ChainlinkUtils {
         ICurvePool pool = ICurvePool(poolAddress);
 
         require(
-            IERC20(CITADEL).balanceOf(address(this)) >= citadelToLiquidty,
-            "<citadelToLiquidty!"
+            IERC20(citadel).balanceOf(address(this)) >= citadelToLiquidity,
+            "<citadelToLiquidity!"
         );
         require(
-            IERC20(WBTC).balanceOf(address(this)) >= wbtcToLiquidity,
+            IERC20(wbtc).balanceOf(address(this)) >= wbtcToLiquidity,
             "<wbtcToLiquidity!"
         );
 
-        IERC20(CITADEL).approve(poolAddress, citadelToLiquidty);
-        IERC20(WBTC).approve(poolAddress, wbtcToLiquidity);
+        IERC20(citadel).approve(poolAddress, citadelToLiquidity);
+        IERC20(wbtc).approve(poolAddress, wbtcToLiquidity);
 
         uint256[2] memory amounts;
-        amounts[0] = citadelToLiquidty;
+        amounts[0] = citadelToLiquidity;
         amounts[1] = wbtcToLiquidity;
 
         pool.add_liquidity(amounts, 0);
 
         require(
-            pool.balances(0) >= citadelToLiquidty,
-            "<pool-curve-citadelToLiquidty!"
+            pool.balances(0) >= citadelToLiquidity,
+            "<pool-curve-citadelToLiquidity!"
         );
         require(
             pool.balances(1) >= wbtcToLiquidity,
