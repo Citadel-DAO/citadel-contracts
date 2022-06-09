@@ -2,19 +2,17 @@
 pragma solidity 0.8.12;
 
 import {Initializable} from "openzeppelin-contracts-upgradeable/proxy/utils/Initializable.sol";
-import "openzeppelin-contracts/utils/structs/EnumerableSet.sol";
 import {TransparentUpgradeableProxy} from "openzeppelin-contracts/proxy/transparent/TransparentUpgradeableProxy.sol";
 
-import "./KnightingRound.sol";
-import "./KnightingRoundWithEth.sol";
 import "./GACProxyAdmin.sol";
+import "./lib/KnightingRoundData.sol";
 
 /**
 A simple registry contract that help to register different knighting round
 */
 contract KnightingRoundRegistry is Initializable {
     // ===== Libraries  ====
-    using EnumerableSet for EnumerableSet.AddressSet;
+    using KnightingRoundData for KnightingRoundData.RoundData;
 
     GACProxyAdmin public gacProxyAdmin;
 
@@ -28,8 +26,8 @@ contract KnightingRoundRegistry is Initializable {
     address public knightingRoundImplementation;
     address public knightingRoundWithEthImplementation;
 
-    EnumerableSet.AddressSet private knightingRounds;
-    address private knightingRoundsWithEth;
+    address[] public knightingRounds;
+    address public knightingRoundsWithEth;
 
     struct InitParam {
         address _tokenIn;
@@ -37,26 +35,11 @@ contract KnightingRoundRegistry is Initializable {
         uint256 _tokenOutPerTokenIn;
     }
 
-    struct RoundData {
-        address roundAddress;
-        address tokenOut;
-        address tokenIn;
-        uint256 saleStart;
-        uint256 saleDuration;
-        address saleRecipient;
-        bool finalized;
-        uint256 tokenOutPerTokenIn;
-        uint256 totalTokenIn;
-        uint256 totalTokenOutBought;
-        uint256 totalTokenOutClaimed;
-        uint256 tokenInLimit;
-        uint256 tokenInNormalizationValue;
-        address guestlist;
-        bool isEth;
-    }
-
     /// initialize
     function initialize(
+        address _knightingRoundImplementation,
+        address _knightingRoundWithEthImplementation,
+        bytes4 _selector,
         address _globalAccessControl,
         uint256 _roundStart,
         uint256 _roundDuration,
@@ -77,26 +60,30 @@ contract KnightingRoundRegistry is Initializable {
         gacProxyAdmin = new GACProxyAdmin();
         gacProxyAdmin.initialize(_globalAccessControl);
 
-        knightingRoundImplementation = address(new KnightingRound());
-        knightingRoundWithEthImplementation = address(
-            new KnightingRoundWithEth()
-        );
+        knightingRoundImplementation = _knightingRoundImplementation;
+        knightingRoundWithEthImplementation = _knightingRoundWithEthImplementation;
 
         /// for weth
-        initializeRound(_wethParams);
-        initializeEthRound(_wethParams);
+        initializeRound(_wethParams, true, _selector);
         /// for other
         for (uint256 i = 0; i < _roundParams.length; i++) {
-            initializeRound(_roundParams[i]);
+            initializeRound(_roundParams[i], true, _selector);
         }
+        initializeRound(_wethParams, false, _selector);
     }
 
-    function initializeRound(InitParam calldata _roundParams) private {
+    function initializeRound(
+        InitParam calldata _roundParams,
+        bool _isNotEth,
+        bytes4 _selector
+    ) private {
         TransparentUpgradeableProxy currKnightingRound = new TransparentUpgradeableProxy(
-                address(knightingRoundImplementation),
+                _isNotEth
+                    ? address(knightingRoundImplementation)
+                    : address(knightingRoundWithEthImplementation),
                 address(gacProxyAdmin),
                 abi.encodeWithSelector(
-                    KnightingRound(address(0)).initialize.selector,
+                    _selector,
                     globalAccessControl,
                     tokenOut,
                     _roundParams._tokenIn,
@@ -108,81 +95,32 @@ contract KnightingRoundRegistry is Initializable {
                     _roundParams._tokenInLimit
                 )
             );
-        knightingRounds.add(address(currKnightingRound));
-    }
-
-    function initializeEthRound(InitParam calldata _roundParams) private {
-        TransparentUpgradeableProxy knightinRoundWEth = new TransparentUpgradeableProxy(
-                address(knightingRoundWithEthImplementation),
-                address(gacProxyAdmin),
-                abi.encodeWithSelector(
-                    KnightingRoundWithEth(address(0)).initialize.selector,
-                    globalAccessControl,
-                    tokenOut,
-                    _roundParams._tokenIn,
-                    roundStart,
-                    roundDuration,
-                    _roundParams._tokenOutPerTokenIn,
-                    saleRecipient,
-                    guestlist,
-                    _roundParams._tokenInLimit
-                )
-            );
-        knightingRoundsWithEth = address(knightinRoundWEth);
+        knightingRounds.push(address(currKnightingRound));
+        if (!_isNotEth) {
+            knightingRoundsWithEth = address(currKnightingRound);
+        }
     }
 
     /// getRoundData
     function getRoundData(address _roundAddress)
         public
         view
-        returns (RoundData memory roundData)
+        returns (KnightingRoundData.RoundData memory )
     {
-        KnightingRound targetRound = KnightingRound(_roundAddress);
-        roundData.roundAddress = _roundAddress;
-        roundData.tokenOut = address(targetRound.tokenOut());
-        roundData.tokenIn = address(targetRound.tokenIn());
-        roundData.saleStart = targetRound.saleStart();
-        roundData.saleDuration = targetRound.saleDuration();
-        roundData.saleRecipient = targetRound.saleRecipient();
-        roundData.finalized = targetRound.finalized();
-        roundData.tokenOutPerTokenIn = targetRound.tokenOutPerTokenIn();
-        roundData.totalTokenIn = targetRound.totalTokenIn();
-        roundData.totalTokenOutBought = targetRound.totalTokenOutBought();
-        roundData.totalTokenOutClaimed = targetRound.totalTokenOutClaimed();
-        roundData.tokenInLimit = targetRound.tokenInLimit();
-        roundData.tokenInNormalizationValue = targetRound
-            .tokenInNormalizationValue();
-        roundData.guestlist = address(targetRound.guestlist());
-        if (_roundAddress == knightingRoundsWithEth) {
-            roundData.isEth = true;
-        } else {
-            roundData.isEth = false;
-        }
+       return KnightingRoundData.getRoundData(_roundAddress, knightingRoundsWithEth);
     }
 
     /// @notice using to get all rounds
     function getAllRounds() public view returns (address[] memory) {
-        address[] memory knightingRoundsList = new address[](
-            knightingRounds.length() + 1
-        );
-        for (uint256 i = 0; i < knightingRounds.length(); i++) {
-            knightingRoundsList[i] = knightingRounds.at(i);
-        }
-        knightingRoundsList[knightingRounds.length()] = knightingRoundsWithEth;
-        return knightingRoundsList;
+        return knightingRounds;
     }
 
     /// @notice using to get all rounds
-    function getAllRoundsData() public view returns (RoundData[] memory) {
-        RoundData[] memory roundsData = new RoundData[](
-            knightingRounds.length() + 1
-        );
-        for (uint256 i = 0; i < knightingRounds.length(); i++) {
-            roundsData[i] = getRoundData(knightingRounds.at(i));
-        }
-        roundsData[knightingRounds.length()] = getRoundData(
-            knightingRoundsWithEth
-        );
-        return roundsData;
+    function getAllRoundsData()
+        public
+        view
+        returns (KnightingRoundData.RoundData[] memory)
+    {
+        return KnightingRoundData.getAllRoundsData(getAllRounds());
     }
 }

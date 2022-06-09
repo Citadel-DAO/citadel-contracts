@@ -7,8 +7,13 @@ import "ds-test/test.sol";
 import "forge-std/console.sol";
 
 import {KnightingRoundRegistry} from "../KnightingRoundRegistry.sol";
+import {KnightingRoundData} from "../lib/KnightingRoundData.sol";
+import {KnightingRound} from "../KnightingRound.sol";
+import {KnightingRoundWithEth} from "../KnightingRoundWithEth.sol";
 
 contract KnightingRoundRegistryTest is BaseFixture {
+    using KnightingRoundData for KnightingRoundData.RoundData;
+
     function setUp() public override {
         BaseFixture.setUp();
     }
@@ -17,6 +22,9 @@ contract KnightingRoundRegistryTest is BaseFixture {
 
     function testKnightingRoundRegistryInitialization() public {
         vm.prank(governance);
+
+        KnightingRound knightingRoundImplementation = new KnightingRound();
+        KnightingRoundWithEth knightingRoundWithEthImplementation = new KnightingRoundWithEth();
 
         knightinRoundRegistry = new KnightingRoundRegistry();
 
@@ -55,6 +63,9 @@ contract KnightingRoundRegistryTest is BaseFixture {
         );
 
         knightinRoundRegistry.initialize(
+            address(knightingRoundImplementation),
+            address(knightingRoundWithEthImplementation),
+            KnightingRound(address(0)).initialize.selector,
             address(gac),
             block.timestamp,
             3 days,
@@ -74,9 +85,10 @@ contract KnightingRoundRegistryTest is BaseFixture {
 
         address targetRoundAddress = knightinRoundRegistry.getAllRounds()[1];
 
-        KnightingRoundRegistry.RoundData
-            memory targetRound = knightinRoundRegistry.getRoundData(
-                targetRoundAddress
+        KnightingRoundData.RoundData memory targetRound = KnightingRoundData
+            .getRoundData(
+                targetRoundAddress,
+                knightinRoundRegistry.knightingRoundsWithEth()
             );
 
         assertEq(targetRound.roundAddress, address(targetRoundAddress));
@@ -97,10 +109,8 @@ contract KnightingRoundRegistryTest is BaseFixture {
         assertEq(targetRound.guestlist, address(guestList));
         assertTrue(targetRound.isEth == false);
 
-        KnightingRoundRegistry.RoundData
-            memory wethRound = knightinRoundRegistry.getRoundData(
-                knightinRoundRegistry.getAllRounds()[0]
-            );
+        KnightingRoundData.RoundData memory wethRound = knightinRoundRegistry
+            .getRoundData(knightinRoundRegistry.getAllRounds()[0]);
 
         assertEq(
             wethRound.roundAddress,
@@ -123,8 +133,11 @@ contract KnightingRoundRegistryTest is BaseFixture {
         assertEq(wethRound.guestlist, address(guestList));
         assertTrue(wethRound.isEth == false);
 
-        KnightingRoundRegistry.RoundData memory ethRound = knightinRoundRegistry
-            .getRoundData(knightinRoundRegistry.getAllRounds()[3]);
+        KnightingRoundData.RoundData memory ethRound = KnightingRoundData
+            .getRoundData(
+                knightinRoundRegistry.getAllRounds()[3],
+                knightinRoundRegistry.knightingRoundsWithEth()
+            );
 
         assertEq(
             ethRound.roundAddress,
@@ -147,8 +160,8 @@ contract KnightingRoundRegistryTest is BaseFixture {
         assertEq(ethRound.guestlist, address(guestList));
         assertTrue(ethRound.isEth == true);
 
-        KnightingRoundRegistry.RoundData[]
-            memory roundsData = knightinRoundRegistry.getAllRoundsData();
+        KnightingRoundData.RoundData[] memory roundsData = knightinRoundRegistry
+            .getAllRoundsData();
 
         for (uint256 i = 0; i < roundsData.length; i++) {
             assertEq(roundsData[i].tokenOut, address(citadel));
