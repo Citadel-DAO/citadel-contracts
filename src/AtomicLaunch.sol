@@ -15,16 +15,12 @@ import "./interfaces/erc20/IERC20.sol";
 import "./interfaces/curve/ICurvePoolFactory.sol";
 import "./interfaces/curve/ICurvePool.sol";
 import "./interfaces/chainlink/IAggregatorV3Interface.sol";
-import "./interfaces/citadel/IFunding.sol";
 
 contract AtomicLaunch is ChainlinkUtils {
     using EnumerableSet for EnumerableSet.AddressSet;
 
     address public citadel;
     address public wbtc;
-    address public gac;
-    address public xCTDL;
-    address public treasury;
 
     address public constant WBTC_BTC_PRICE_FEED =
         0xfdFD9C85aD200c506Cf9e21F1FD8dd01932FBB23;
@@ -68,8 +64,6 @@ contract AtomicLaunch is ChainlinkUtils {
     address public governance;
 
     EnumerableSet.AddressSet internal _oracles;
-    EnumerableSet.AddressSet internal _fundings;
-    EnumerableSet.AddressSet internal _assets;
 
     /* ========== EVENT ========== */
     event PoolCreated(address poolAddress);
@@ -78,24 +72,11 @@ contract AtomicLaunch is ChainlinkUtils {
     constructor(
         address _governance,
         address _citadel,
-        address _wbtc,
-        address _gac,
-        address _xCTDL,
-        address _treasury,
-        address[] memory _fundingContracts,
-        address[] memory _assetAddresses
+        address _wbtc
     ) {
         governance = _governance;
         citadel = _citadel;
         wbtc = _wbtc;
-        gac = _gac;
-        xCTDL = _xCTDL;
-        treasury = _treasury;
-
-        for (uint256 i = 0; i < _fundingContracts.length; i++) {
-            _fundings.add(_fundingContracts[i]);
-            _assets.add(_assetAddresses[i]);
-        }
     }
 
     /***************************************
@@ -167,8 +148,6 @@ contract AtomicLaunch is ChainlinkUtils {
         );
 
         _deployOracles(poolAddress);
-
-        _fundingContractsInitialize();
 
         // NOTE: mainly for clean event, so no needs for mega-detective work
         emit PoolCreated(poolAddress);
@@ -253,33 +232,11 @@ contract AtomicLaunch is ChainlinkUtils {
         }
     }
 
-    function _fundingContractsInitialize() internal {
-        for (uint256 i = 0; i < _oracles.length(); i++) {
-            IFunding(_fundings.at(i)).initialize(
-                gac,
-                citadel,
-                _assets.at(i),
-                xCTDL,
-                treasury,
-                _oracles.at(i),
-                type(uint256).max // NOTE: no caps involved in current plans
-            );
-        }
-    }
-
     /***************************************
                PUBLIC FUNCTION
     ****************************************/
 
     function getAllOracles() public view returns (address[] memory) {
         return _oracles.values();
-    }
-
-    function getAllAssets() public view returns (address[] memory) {
-        return _assets.values();
-    }
-
-    function getAllFundings() public view returns (address[] memory) {
-        return _fundings.values();
     }
 }
