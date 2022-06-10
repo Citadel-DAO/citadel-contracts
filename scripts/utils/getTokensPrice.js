@@ -3,8 +3,8 @@ const axios = require("axios");
 
 const calcTokenOutPerTokenIn = (desiredPriceInUsd, priceInUsd, decimals) => {
   return ethers.BigNumber.from(parseInt(desiredPriceInUsd * 10 ** 8))
-    .mul(ethers.BigNumber.from(10).pow(ethers.BigNumber.from(decimals)))
-    .div(ethers.BigNumber.from(parseInt(priceInUsd * 10 ** 8)));
+    .mul(ethers.BigNumber.from(10).pow(18))
+    .div(ethers.BigNumber.from(parseInt(priceInUsd)));
 };
 
 const getTokensPrices = (tokensList) => {
