@@ -6,7 +6,7 @@ const { address } = require("../utils/helpers");
 const { formatUnits, parseUnits } = ethers.utils;
 
 const mockMint = async ({ user, deployer }) => {
-  const { wBTC, CVX, USDC, MintableToken } = await getContractFactories();
+  const { wBTC, CVX, USDC, MintableToken } = await getContractFactories({});
 
   const { wbtc, cvx, usdc } = await deployContracts(deployer)([
     { factory: wBTC, instance: "wbtc" },

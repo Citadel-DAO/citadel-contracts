@@ -1,11 +1,13 @@
 const hre = require("hardhat");
 const ethers = hre.ethers;
+const { parseUnits } = ethers.utils;
 
 const pipeActions = require("../utils/pipeActions");
 const setupAndDeploy = require("./setupAndDeploy");
 const mintForknet = require("./mintForknet");
 const getRoleSigners = require("./getRoleSingers");
 const initializer = require("./initializer");
+const setupLibraries = require("./setupLibraries");
 const grantRoles = require("./grantRoles");
 const setXCitadelStrategy = require("./setXCitadelStrategy");
 const citadelMinterSetup = require("./citadelMinterSetup");
@@ -15,7 +17,7 @@ const setDiscount = require("./setDiscount");
 const bondTokenForXCTDL = require("./bondTokenForXCTDL");
 const xCTDLVesting = require("./xCTDLVesting");
 const setupKnightingRound = require("./setupKnightingRound");
-const setupSchedule = require('./setupSchedule')
+const setupSchedule = require("./setupSchedule");
 
 const deployLocal = async () => {
   const signers = await ethers.getSigners();
@@ -25,15 +27,31 @@ const deployLocal = async () => {
   const xCitadelFees = [0, 0, 0, 0];
   const multisig = signers[2];
 
-  const deployer =  new ethers.Wallet("58cebe9f79bba8b181fb81cd821c06f3fab64a8cf3631c3c7ed8c98183a2f035", ethers.provider)
-  
+  const deployer = new ethers.Wallet(
+    "58cebe9f79bba8b181fb81cd821c06f3fab64a8cf3631c3c7ed8c98183a2f035",
+    ethers.provider
+  );
+
   // Send 1 ether to an ens name.
-  await  signers[19].sendTransaction({
-      to: deployer.address,
-      value: ethers.utils.parseEther("1.0")
+  await signers[19].sendTransaction({
+    to: deployer.address,
+    value: ethers.utils.parseEther("1.0"),
   });
 
-  await pipeActions({ mintTo, xCitadelFees, user, multisig, deployer })(
+  const apeWbtcAmount = parseUnits("1", 8);
+  const apeCvxAmount = parseUnits("1000", 18);
+
+  await pipeActions({
+    mintTo,
+    xCitadelFees,
+    user,
+    multisig,
+    deployer,
+    apeWbtcAmount,
+    apeCvxAmount,
+  })(
+    setupLibraries,
+    () => console.log("Setting up libraries ..."),
     setupAndDeploy,
     () => console.log("Contracts setted up ..."),
     mintForknet,
