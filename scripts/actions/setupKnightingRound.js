@@ -41,7 +41,7 @@ const setupKnightingRound = async ({
   await knightingRoundGuestList.initialize(address(gac));
 
   const guestListRoot =
-    "0x8916c3fedd925241fcbba35af8d2380b5658ad8fa17e1b525bb1851107a36b35";
+    "0x4a4d830d693bff4c00aac422ecd2bf82610d6ccfad943807d1a9b72ff7f31f4e";
 
   await knightingRoundGuestList.connect(techOps).setGuestRoot(guestListRoot);
 
