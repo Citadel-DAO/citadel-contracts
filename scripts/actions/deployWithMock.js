@@ -2,6 +2,7 @@ const hre = require("hardhat");
 const ethers = hre.ethers;
 const fs = require("fs");
 const path = require("path");
+const { parseUnits } = ethers.utils;
 
 const pipeActions = require("../utils/pipeActions");
 const initializer = require("./initializer");
@@ -38,6 +39,9 @@ const deployWithMock = async () => {
     ethers.provider
   );
 
+  const apeWbtcAmount = parseUnits("1", 8);
+  const apeCvxAmount = parseUnits("10000", 18);
+
   // Send 1 ether to an ens name.
   await signers[19].sendTransaction({
     to: deployer.address,
@@ -52,6 +56,8 @@ const deployWithMock = async () => {
     user,
     multisig,
     deployer,
+    apeWbtcAmount,
+    apeCvxAmount,
   })(
     setupLibraries,
     () => console.log("Setting up libraries ..."),

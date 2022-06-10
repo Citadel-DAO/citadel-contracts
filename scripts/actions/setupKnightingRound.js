@@ -185,20 +185,19 @@ const setupKnightingRound = async ({
   const roundsData = await knightingRoundRegistry.getAllRoundsData();
 
   roundsData.forEach((roundData, i) => {
-    if(i === roundsData.length - 1) {
-      console.log(
-        `Knighting round with eth addres: `,
-        roundData.roundAddress
-      );
+    if (i === roundsData.length - 1) {
+      console.log(`Knighting round with eth addres: `, roundData.roundAddress);
     } else {
       console.log(
-        `${tokenIns.find(
-          (tok) => tok.address === roundData.tokenIn
-        ).name} knighting round addres: `,
+        `${
+          tokenIns.find(
+            (tok) =>
+              tok.address.toLowerCase() === roundData.tokenIn.toLowerCase()
+          ).name
+        } knighting round addres: `,
         roundData.roundAddress
       );
     }
- 
   });
 };
 
