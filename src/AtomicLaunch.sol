@@ -15,6 +15,7 @@ import "./interfaces/erc20/IERC20.sol";
 import "./interfaces/curve/ICurvePoolFactory.sol";
 import "./interfaces/curve/ICurvePool.sol";
 import "./interfaces/chainlink/IAggregatorV3Interface.sol";
+import "./interfaces/citadel/IFunding.sol";
 
 contract AtomicLaunch is ChainlinkUtils {
     using EnumerableSet for EnumerableSet.AddressSet;
@@ -29,6 +30,9 @@ contract AtomicLaunch is ChainlinkUtils {
         0xfdFD9C85aD200c506Cf9e21F1FD8dd01932FBB23;
     address public constant BTC_ETH_PRICE_FEED =
         0xdeb288F737066589598e9214E782fa5A8eD689e8;
+
+    address public constant ETH_USD_PRICE_FEED =
+        0x5f4eC3Df9cbd43714FE2740f5E3616155c5b8419;
 
     address public constant WIBBTC_LP_VAULT =
         0xaE96fF08771a109dc6650a1BdCa62F2d558E40af;
@@ -78,8 +82,8 @@ contract AtomicLaunch is ChainlinkUtils {
         address _gac,
         address _xCTDL,
         address _treasury,
-        address[] _fundingContracts,
-        address[] _assetAddresses
+        address[] memory _fundingContracts,
+        address[] memory _assetAddresses
     ) {
         governance = _governance;
         citadel = _citadel;
@@ -240,7 +244,7 @@ contract AtomicLaunch is ChainlinkUtils {
             _oracles.add(address(ctdlAssetProvider1));
 
             CtdlAssetChainlinkProvider ctdlAssetProvider2 = new CtdlAssetChainlinkProvider(
-                    CTDL_WBTC_CURVE_POOL,
+                    _ctdlWbtcCurvePool,
                     WBTC_BTC_PRICE_FEED,
                     address(wbtcUsdPriceFeed),
                     assetEthFeeds[i]
