@@ -28,7 +28,7 @@ const setupKnightingRound = async ({
   const blockBefore = await ethers.provider.getBlock(blockNumBefore);
 
   const { KnightingRoundGuestlist, KnightingRound } =
-    await getContractFactories();
+    await getContractFactories({});
 
   const additionalSeconds = 90;
 

@@ -64,7 +64,7 @@ async function main() {
     ERC20Upgradeable,
     KnightingRoundGuestlist,
     ProxyAdmin
-  } = await getContractFactories();
+  } = await getContractFactories({});
 
   /// === Deploying Contracts & loggin addresses
   const proxyAdmin = await ProxyAdmin.attach(testdeploy.proxyAdmin);

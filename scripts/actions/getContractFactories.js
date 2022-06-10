@@ -4,7 +4,7 @@ const StakedCitadelLockerArtifact = require("../../artifacts-external/StakedCita
 const MedianOracleArtifact = require("../../artifacts-external/MedianOracle.json");
 const ethers = hre.ethers;
 
-const getContractFactories = async () => {
+const getContractFactories = async ({ knightingRoundData }) => {
   const signers = await ethers.getSigners();
 
   const GlobalAccessControl = await ethers.getContractFactory(
@@ -45,6 +45,13 @@ const getContractFactories = async () => {
   const CitadelMinter = await ethers.getContractFactory("CitadelMinter");
 
   const KnightingRound = await ethers.getContractFactory("KnightingRound");
+  const KnightingRoundRegistry = knightingRoundData
+    ? await ethers.getContractFactory("KnightingRoundRegistry", {
+        libraries: {
+          KnightingRoundData: knightingRoundData.address,
+        },
+      })
+    : null;
 
   const Funding = await ethers.getContractFactory("Funding");
 
@@ -72,6 +79,7 @@ const getContractFactories = async () => {
     SupplySchedule,
     CitadelMinter,
     KnightingRound,
+    KnightingRoundRegistry,
     Funding,
     ERC20Upgradeable,
     KnightingRoundGuestlist,

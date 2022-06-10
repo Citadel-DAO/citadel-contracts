@@ -1,7 +1,7 @@
 const getContractFactories = require("./getContractFactories");
 const deployContracts = require("./deployContracts");
 
-const setupAndDeploy = async ({deployer}) => {
+const setupAndDeploy = async ({ deployer, knightingRoundData }) => {
   const {
     GlobalAccessControl,
     CitadelToken,
@@ -14,7 +14,8 @@ const setupAndDeploy = async ({deployer}) => {
     Funding,
     ERC20Upgradeable,
     MedianOracle,
-  } = await getContractFactories();
+    KnightingRoundRegistry,
+  } = await getContractFactories({ knightingRoundData });
 
   const {
     gac,
@@ -27,7 +28,7 @@ const setupAndDeploy = async ({deployer}) => {
     knightingRound,
     fundingWbtc,
     fundingCvx,
-    
+    knightingRoundRegistry,
   } = await deployContracts(deployer)([
     { factory: GlobalAccessControl, instance: "gac" },
     { factory: CitadelToken, instance: "citadel" },
@@ -39,10 +40,19 @@ const setupAndDeploy = async ({deployer}) => {
     { factory: KnightingRound, instance: "knightingRound" },
     { factory: Funding, instance: "fundingWbtc" },
     { factory: Funding, instance: "fundingCvx" },
+    { factory: KnightingRoundRegistry, instance: "knightingRoundRegistry" },
   ]);
 
-  const medianOracleWbtc = await MedianOracle.connect(deployer).deploy(10000, 0, 1);
-  const medianOracleCvx = await MedianOracle.connect(deployer).deploy(10000, 0, 1);
+  const medianOracleWbtc = await MedianOracle.connect(deployer).deploy(
+    10000,
+    0,
+    1
+  );
+  const medianOracleCvx = await MedianOracle.connect(deployer).deploy(
+    10000,
+    0,
+    1
+  );
 
   return {
     GlobalAccessControl,
@@ -68,6 +78,7 @@ const setupAndDeploy = async ({deployer}) => {
     MedianOracle,
     medianOracleWbtc,
     medianOracleCvx,
+    knightingRoundRegistry,
   };
 };
 

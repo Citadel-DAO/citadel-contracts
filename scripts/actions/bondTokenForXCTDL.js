@@ -16,7 +16,7 @@ const bondTokenForXCTDL = async ({
 }) => {
   // bond some WBTC and CVX to get xCTDL
   const apeWbtcAmount = parseUnits("1", 8);
-  const apeCvxAmount = parseUnits("1000", 18);
+  const apeCvxAmount = parseUnits("10000", 18);
 
   const fundingBonder = FundingBonder({ user, slippage: 0 });
 
