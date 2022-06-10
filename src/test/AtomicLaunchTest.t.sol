@@ -345,7 +345,7 @@ contract AtomicLaunchTest is BaseFixture {
         wbtc.transfer(address(atomicLaunch), wbtcToLiquidity);
 
         // poolAddress deployed
-        address poolAddress = atomicLaunch.launch(toLiquidity, wbtcToLiquidity);
+        atomicLaunch.launch(toLiquidity, wbtcToLiquidity);
 
         // Check tat CTDL amounts add up
         require(
