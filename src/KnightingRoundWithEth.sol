@@ -61,4 +61,12 @@ contract KnightingRoundWithEth is KnightingRound {
 
         emit Sale(msg.sender, _daoId, _tokenInAmount, tokenOutAmount_);
     }
+
+    function buy(
+        uint256 _tokenInAmount,
+        uint8 _daoId,
+        bytes32[] calldata _proof
+    ) public override gacPausable returns (uint256 tokenOutAmount_) {
+        require(false, "use buyEth() function");
+    }
 }
