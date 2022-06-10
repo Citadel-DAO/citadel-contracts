@@ -45,6 +45,9 @@ const getContractFactories = async ({ knightingRoundData }) => {
   const CitadelMinter = await ethers.getContractFactory("CitadelMinter");
 
   const KnightingRound = await ethers.getContractFactory("KnightingRound");
+  const KnightingRoundWithEth = await ethers.getContractFactory(
+    "KnightingRoundWithEth"
+  );
   const KnightingRoundRegistry = knightingRoundData
     ? await ethers.getContractFactory("KnightingRoundRegistry", {
         libraries: {
@@ -79,6 +82,7 @@ const getContractFactories = async ({ knightingRoundData }) => {
     SupplySchedule,
     CitadelMinter,
     KnightingRound,
+    KnightingRoundWithEth,
     KnightingRoundRegistry,
     Funding,
     ERC20Upgradeable,

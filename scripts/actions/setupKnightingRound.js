@@ -23,11 +23,12 @@ const setupKnightingRound = async ({
   badger,
   bveCVX,
   deployer,
+  knightingRoundRegistry,
 }) => {
   const blockNumBefore = await ethers.provider.getBlockNumber();
   const blockBefore = await ethers.provider.getBlock(blockNumBefore);
 
-  const { KnightingRoundGuestlist, KnightingRound } =
+  const { KnightingRoundGuestlist, KnightingRoundWithEth, KnightingRound } =
     await getContractFactories({});
 
   const additionalSeconds = 90;
@@ -148,7 +149,57 @@ const setupKnightingRound = async ({
     return await deployKnightinRounds(i + 1);
   };
 
-  await deployKnightinRounds();
+  //await deployKnightinRounds();
+
+  const knightingRoundImplementation = await KnightingRound.connect(
+    deployer
+  ).deploy();
+  const knightingRoundWithEthImplementation =
+    await KnightingRoundWithEth.connect(deployer).deploy();
+
+  const wethParams = readyTokensList
+    .filter((token) => token.name == "WETH")
+    .map((token) => [
+      token.address,
+      phase1UsdLimit,
+      token.tokenOutPerTokenIn,
+    ])[0];
+  const roundsParams = readyTokensList
+    .filter((token) => token.name !== "WETH")
+    .map((token) => [token.address, phase1UsdLimit, token.tokenOutPerTokenIn]);
+
+  await knightingRoundRegistry.initialize(
+    address(knightingRoundImplementation),
+    address(knightingRoundWithEthImplementation),
+    KnightingRound.interface.getSighash("initialize"),
+    address(gac),
+    startTime,
+    duration,
+    address(citadel),
+    address(multisig),
+    address(knightingRoundGuestList),
+    wethParams,
+    roundsParams
+  );
+
+  const roundsData = await knightingRoundRegistry.getAllRoundsData();
+
+  roundsData.forEach((roundData, i) => {
+    if(i === roundsData.length - 1) {
+      console.log(
+        `Knighting round with eth addres: `,
+        roundData.roundAddress
+      );
+    } else {
+      console.log(
+        `${tokenIns.find(
+          (tok) => tok.address === roundData.tokenIn
+        ).name} knighting round addres: `,
+        roundData.roundAddress
+      );
+    }
+ 
+  });
 };
 
 module.exports = setupKnightingRound;
