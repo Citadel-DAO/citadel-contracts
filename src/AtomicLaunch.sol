@@ -64,6 +64,8 @@ contract AtomicLaunch is ChainlinkUtils {
     address public governance;
 
     EnumerableSet.AddressSet internal _oracles;
+    EnumerableSet.AddressSet internal _fundings;
+    EnumerableSet.AddressSet internal _assets;
 
     /* ========== EVENT ========== */
     event PoolCreated(address poolAddress);
@@ -75,7 +77,9 @@ contract AtomicLaunch is ChainlinkUtils {
         address _wbtc,
         address _gac,
         address _xCTDL,
-        address _treasury
+        address _treasury,
+        address[] _fundingContracts,
+        address[] _assetAddresses
     ) {
         governance = _governance;
         citadel = _citadel;
@@ -83,6 +87,11 @@ contract AtomicLaunch is ChainlinkUtils {
         gac = _gac;
         xCTDL = _xCTDL;
         treasury = _treasury;
+
+        for (uint256 i = 0; i < _fundingContracts.length; i++) {
+            _fundings.add(_fundingContracts[i]);
+            _assets.add(_assetAddresses[i]);
+        }
     }
 
     /***************************************
@@ -155,7 +164,7 @@ contract AtomicLaunch is ChainlinkUtils {
 
         _deployOracles(poolAddress);
 
-        //_fundingInitialize();
+        _fundingContractsInitialize();
 
         // NOTE: mainly for clean event, so no needs for mega-detective work
         emit PoolCreated(poolAddress);
@@ -240,11 +249,33 @@ contract AtomicLaunch is ChainlinkUtils {
         }
     }
 
+    function _fundingContractsInitialize() internal {
+        for (uint256 i = 0; i < _oracles.length(); i++) {
+            IFunding(_fundings.at(i)).initialize(
+                gac,
+                citadel,
+                _assets.at(i),
+                xCTDL,
+                treasury,
+                _oracles.at(i),
+                type(uint256).max // NOTE: no caps involved in current plans
+            );
+        }
+    }
+
     /***************************************
                PUBLIC FUNCTION
     ****************************************/
 
     function getAllOracles() public view returns (address[] memory) {
         return _oracles.values();
+    }
+
+    function getAllAssets() public view returns (address[] memory) {
+        return _assets.values();
+    }
+
+    function getAllFundings() public view returns (address[] memory) {
+        return _fundings.values();
     }
 }
