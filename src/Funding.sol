@@ -160,6 +160,7 @@ contract Funding is GlobalAccessControlManaged, ReentrancyGuardUpgradeable {
      */
     function deposit(uint256 _assetAmountIn, uint256 _minCitadelOut)
         external
+        virtual
         onlyWhenPriceNotFlagged
         gacPausable
         nonReentrant
