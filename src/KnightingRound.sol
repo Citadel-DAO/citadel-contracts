@@ -168,7 +168,7 @@ contract KnightingRound is
         uint256 _tokenInAmount,
         uint8 _daoId,
         bytes32[] calldata _proof
-    ) public gacPausable returns (uint256 tokenOutAmount_) {
+    ) public virtual gacPausable returns (uint256 tokenOutAmount_) {
         require(saleStart <= block.timestamp, "KnightingRound: not started");
         require(
             block.timestamp < saleStart + saleDuration,
