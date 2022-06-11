@@ -47,6 +47,8 @@ contract FundingRegistry is Initializable, GlobalAccessControlManaged {
     EnumerableSet.AddressSet private fundings;
 
     function initialize(
+        address _fundingImplementation,
+        bytes4 _selector,
         address _gac,
         address _citadel,
         address _xCitadel,
@@ -63,15 +65,15 @@ contract FundingRegistry is Initializable, GlobalAccessControlManaged {
         gacProxyAdmin = new GACProxyAdmin();
         gacProxyAdmin.initialize(_gac);
 
-        fundingImplementation = address(new Funding());
+        fundingImplementation = address(_fundingImplementation);
 
         /// for other
         for (uint256 i = 0; i < _fundingAssets.length; i++) {
-            addRound(_fundingAssets[i]);
+            addRound(_fundingAssets[i], _selector);
         }
     }
 
-    function addRound(FundingAsset calldata _fundingAsset)
+    function addRound(FundingAsset calldata _fundingAsset, bytes4 _selector)
         public
         onlyRole(CONTRACT_GOVERNANCE_ROLE)
     {
@@ -79,7 +81,7 @@ contract FundingRegistry is Initializable, GlobalAccessControlManaged {
                 address(fundingImplementation),
                 address(gacProxyAdmin),
                 abi.encodeWithSelector(
-                    Funding(address(0)).initialize.selector,
+                    _selector,
                     gacAddress,
                     citadel,
                     _fundingAsset.asset,

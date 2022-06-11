@@ -27,6 +27,8 @@ contract FundingRegistryTest is BaseFixture {
     function setUp() public override {
         BaseFixture.setUp();
 
+        Funding fundingImplementation = new Funding();
+
         fundingRegistry = new FundingRegistry();
 
         assertEq(address(0), fundingRegistry.gacAddress());
@@ -46,6 +48,8 @@ contract FundingRegistryTest is BaseFixture {
         vm.prank(address(governance));
 
         fundingRegistry.initialize(
+            address(fundingImplementation),
+            Funding(address(0)).initialize.selector,
             address(gac),
             address(citadel),
             address(xCitadel),
