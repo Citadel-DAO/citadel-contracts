@@ -22,9 +22,51 @@ contract KnightingRoundWithEth is KnightingRound {
         gacPausable
         returns (uint256 tokenOutAmount_)
     {
-        WETH weth = WETH(address(tokenIn));
-        weth.deposit{value: msg.value}();
-        IERC20(address(tokenIn)).safeTransfer(msg.sender, msg.value);
-        tokenOutAmount_ = super.buy(msg.value, _daoId, _proof);
+        uint256 _tokenInAmount = msg.value;
+        require(saleStart <= block.timestamp, "KnightingRound: not started");
+        require(
+            block.timestamp < saleStart + saleDuration,
+            "KnightingRound: already ended"
+        );
+        require(_tokenInAmount > 0, "_tokenInAmount should be > 0");
+        require(
+            totalTokenIn + _tokenInAmount <= tokenInLimit,
+            "total amount exceeded"
+        );
+
+        if (address(guestlist) != address(0)) {
+            require(guestlist.authorized(msg.sender, _proof), "not authorized");
+        }
+
+        uint256 boughtAmountTillNow = boughtAmounts[msg.sender];
+
+        if (boughtAmountTillNow > 0) {
+            require(
+                _daoId == daoVotedFor[msg.sender],
+                "can't vote for multiple daos"
+            );
+        } else {
+            daoVotedFor[msg.sender] = _daoId;
+        }
+
+        tokenOutAmount_ = getAmountOut(_tokenInAmount);
+
+        boughtAmounts[msg.sender] = boughtAmountTillNow + tokenOutAmount_;
+        daoCommitments[_daoId] = daoCommitments[_daoId] + tokenOutAmount_;
+
+        totalTokenIn = totalTokenIn + _tokenInAmount;
+        totalTokenOutBought = totalTokenOutBought + tokenOutAmount_;
+
+        payable(saleRecipient).transfer(_tokenInAmount);
+
+        emit Sale(msg.sender, _daoId, _tokenInAmount, tokenOutAmount_);
+    }
+
+    function buy(
+        uint256 _tokenInAmount,
+        uint8 _daoId,
+        bytes32[] calldata _proof
+    ) public override gacPausable returns (uint256 tokenOutAmount_) {
+        require(false, "use buyEth() function");
     }
 }
