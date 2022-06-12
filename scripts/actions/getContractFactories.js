@@ -57,6 +57,7 @@ const getContractFactories = async ({ knightingRoundData }) => {
     : null;
 
   const Funding = await ethers.getContractFactory("Funding");
+  const FundingRegistry = await ethers.getContractFactory("FundingRegistry");
 
   const ERC20Upgradeable = await ethers.getContractFactory("ERC20Upgradeable");
 
@@ -85,6 +86,7 @@ const getContractFactories = async ({ knightingRoundData }) => {
     KnightingRoundWithEth,
     KnightingRoundRegistry,
     Funding,
+    FundingRegistry,
     ERC20Upgradeable,
     KnightingRoundGuestlist,
     ProxyAdmin,

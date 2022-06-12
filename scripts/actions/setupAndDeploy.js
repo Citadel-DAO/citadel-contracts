@@ -15,6 +15,7 @@ const setupAndDeploy = async ({ deployer, knightingRoundData }) => {
     ERC20Upgradeable,
     MedianOracle,
     KnightingRoundRegistry,
+    FundingRegistry,
   } = await getContractFactories({ knightingRoundData });
 
   const {
@@ -29,6 +30,8 @@ const setupAndDeploy = async ({ deployer, knightingRoundData }) => {
     fundingWbtc,
     fundingCvx,
     knightingRoundRegistry,
+    fundingRegistry,
+    fundingImplementation,
   } = await deployContracts(deployer)([
     { factory: GlobalAccessControl, instance: "gac" },
     { factory: CitadelToken, instance: "citadel" },
@@ -40,7 +43,9 @@ const setupAndDeploy = async ({ deployer, knightingRoundData }) => {
     { factory: KnightingRound, instance: "knightingRound" },
     { factory: Funding, instance: "fundingWbtc" },
     { factory: Funding, instance: "fundingCvx" },
+    { factory: Funding, instance: "fundingImplementation" },
     { factory: KnightingRoundRegistry, instance: "knightingRoundRegistry" },
+    { factory: FundingRegistry, instance: "fundingRegistry" },
   ]);
 
   const medianOracleWbtc = await MedianOracle.connect(deployer).deploy(
@@ -79,6 +84,8 @@ const setupAndDeploy = async ({ deployer, knightingRoundData }) => {
     medianOracleWbtc,
     medianOracleCvx,
     knightingRoundRegistry,
+    fundingRegistry,
+    fundingImplementation,
   };
 };
 

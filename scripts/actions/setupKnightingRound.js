@@ -1,6 +1,5 @@
 const hre = require("hardhat");
 const ethers = hre.ethers;
-const tokenIns = require("../utils/tokenIns");
 
 const getContractFactories = require("./getContractFactories");
 const {
@@ -14,16 +13,8 @@ const setupKnightingRound = async ({
   multisig,
   citadel,
   techOps,
-  wbtc,
-  cvx,
-  usdc,
-  renBTC,
-  ibBTC,
-  wETH,
-  frax,
-  badger,
-  bveCVX,
   deployer,
+  tokenIns,
   knightingRoundRegistry,
 }) => {
   const blockNumBefore = await ethers.provider.getBlockNumber();
