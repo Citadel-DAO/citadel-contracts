@@ -4,9 +4,9 @@ pragma solidity 0.8.12;
 import {Initializable} from "openzeppelin-contracts-upgradeable/proxy/utils/Initializable.sol";
 import "openzeppelin-contracts/utils/structs/EnumerableSet.sol";
 import {TransparentUpgradeableProxy} from "openzeppelin-contracts/proxy/transparent/TransparentUpgradeableProxy.sol";
+import {TransparentUpgradeableProxy} from "openzeppelin-contracts/proxy/transparent/TransparentUpgradeableProxy.sol";
 
 import "./Funding.sol";
-import "./GACProxyAdmin.sol";
 import "./lib/GlobalAccessControlManaged.sol";
 
 contract FundingRegistry is Initializable, GlobalAccessControlManaged {
@@ -16,7 +16,7 @@ contract FundingRegistry is Initializable, GlobalAccessControlManaged {
     bytes32 public constant CONTRACT_GOVERNANCE_ROLE =
         keccak256("CONTRACT_GOVERNANCE_ROLE");
 
-    GACProxyAdmin public gacProxyAdmin;
+    address public proxyAdmin;
 
     struct FundingAsset {
         address asset;
@@ -49,6 +49,7 @@ contract FundingRegistry is Initializable, GlobalAccessControlManaged {
     function initialize(
         address _fundingImplementation,
         bytes4 _selector,
+        address _proxyAdmin,
         address _gac,
         address _citadel,
         address _xCitadel,
@@ -62,8 +63,7 @@ contract FundingRegistry is Initializable, GlobalAccessControlManaged {
         xCitadel = _xCitadel;
         saleRecipient = _saleRecipient;
 
-        gacProxyAdmin = new GACProxyAdmin();
-        gacProxyAdmin.initialize(_gac);
+        proxyAdmin = _proxyAdmin;
 
         fundingImplementation = address(_fundingImplementation);
 
@@ -79,7 +79,7 @@ contract FundingRegistry is Initializable, GlobalAccessControlManaged {
     {
         TransparentUpgradeableProxy currFunding = new TransparentUpgradeableProxy(
                 address(fundingImplementation),
-                address(gacProxyAdmin),
+                address(proxyAdmin),
                 abi.encodeWithSelector(
                     _selector,
                     gacAddress,
