@@ -21,6 +21,7 @@ const setupSchedule = require("./setupSchedule");
 
 const tokenIns = require("./tokenIns");
 const initializeFundingRegistry = require("./initializeFundingRegistry");
+const oracleSetupMock = require("./oracleSetupMock");
 
 const deployLocal = async () => {
   const signers = await ethers.getSigners();
@@ -64,9 +65,11 @@ const deployLocal = async () => {
     initializer,
     () => console.log("Contracts initialized ..."),
     tokenIns,
-    () => console.log("tokenIns setted up"),
+    () => console.log("tokenIns setted up ..."),
     initializeFundingRegistry,
     () => console.log("Contracts initialized ..."),
+    oracleSetupMock,
+    () => console.log("Oracles setup mock ..."),
     setXCitadelStrategy,
     () => console.log("Setted xCitadel strategy  ..."),
     grantRoles,
