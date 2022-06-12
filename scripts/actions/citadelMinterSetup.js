@@ -12,6 +12,8 @@ const citadelMinterSetup = async ({
   fundingWbtc,
   fundingCvx,
   citadel,
+  fundingRegistry,
+  Funding,
 }) => {
   const blockNumBefore = await ethers.provider.getBlockNumber();
   const blockBefore = await ethers.provider.getBlock(blockNumBefore);
@@ -19,7 +21,7 @@ const citadelMinterSetup = async ({
   await schedule.connect(governance).setMintingStart(scheduleStartTime);
 
   // control the time to fast forward
-  const depositTokenTime = scheduleStartTime + 1 * 86400;
+  const depositTokenTime = scheduleStartTime + 1 * 20 * 86400;
   await changeBlockTimestamp(depositTokenTime);
 
   // set distribution split
@@ -28,6 +30,29 @@ const citadelMinterSetup = async ({
     .setCitadelDistributionSplit(4000, 3000, 2000, 1000);
 
   // set funding pool rate
+  const fundingsList = await fundingRegistry.getAllFundings();
+
+  const setAllPoolWieght = async (i = 0) => {
+    const currentFunding = fundingsList[i]
+      ? Funding.attach(fundingsList[i])
+      : undefined;
+    if (!currentFunding) return;
+
+    console.log(
+      "setting up minter funding pool weight: ",
+      currentFunding.address
+    );
+
+    await citadelMinter
+      .connect(policyOps)
+      .setFundingPoolWeight(address(currentFunding), 5000);
+
+    return await setAllPoolWieght(i + 1);
+  };
+
+
+  await setAllPoolWieght();
+
   await citadelMinter
     .connect(policyOps)
     .setFundingPoolWeight(address(fundingWbtc), 5000);
