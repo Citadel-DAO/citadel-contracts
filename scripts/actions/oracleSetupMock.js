@@ -4,7 +4,7 @@ const { parseUnits } = ethers.utils;
 const { getTokensPrices } = require("../utils/getTokensPrice");
 const { address } = require("../utils/helpers");
 
-const oracleSetupMock = async ({ initFunds, keeper, tokenIns }) => {
+const oracleSetupMock = async ({ initFunds, keeper, tokenIns, Funding }) => {
   const targetProvider = "0xA967Ba66Fb284EC18bbe59f65bcf42dD11BA8128";
 
   const addOraclesProvider = async (i = 0) => {
@@ -13,7 +13,6 @@ const oracleSetupMock = async ({ initFunds, keeper, tokenIns }) => {
       : undefined;
     if (!currentOracle) return;
 
-    await currentOracle.addProvider(address(keeper));
     await currentOracle.addProvider(targetProvider);
 
     return await addOraclesProvider(i + 1);
@@ -26,6 +25,18 @@ const oracleSetupMock = async ({ initFunds, keeper, tokenIns }) => {
   );
   const targetPrice = 21;
 
+  await hre.network.provider.request({
+    method: "hardhat_impersonateAccount",
+    params: [targetProvider],
+  });
+
+  await hre.network.provider.send("hardhat_setBalance", [
+    targetProvider,
+    "0x1000000000000000000",
+  ]);
+
+  const provider = await ethers.getSigner(targetProvider);
+
   const setPrice = async (i = 0) => {
     const currentOracle = initFunds[i]
       ? initFunds[i].citadelPerAssetOracle
@@ -36,19 +47,16 @@ const oracleSetupMock = async ({ initFunds, keeper, tokenIns }) => {
       (tI) => tI.address == initFunds[i].asset
     ).priceAddress;
 
-    console.log(
-      "Pushing Price: ",
-      parseUnits(String(tokensPrices[initFundPriceAsset].usd / targetPrice), 18)
+    const priceToReport = parseUnits(
+      String(tokensPrices[initFundPriceAsset].usd / targetPrice),
+      18
     );
 
-    //await currentOracle
-    //  .connect(keeper)
-    //  .pushReport(
-    //    parseUnits(
-    //      String(tokensPrices[initFunds[i].asset].usd / targetPrice),
-    //      18
-    //    )
-    //  );
+    await currentOracle.connect(provider).pushReport(priceToReport);
+    console.log("Oracle Address: ", currentOracle.address);
+    console.log(await currentOracle.callStatic.getData());
+
+    console.log("Pushing Price: ", priceToReport);
 
     return await setPrice(i + 1);
   };

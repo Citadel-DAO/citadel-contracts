@@ -42,6 +42,8 @@ const deployLocal = async () => {
     value: ethers.utils.parseEther("1.0"),
   });
 
+  const apeGeneral = parseUnits("1", 8);
+
   const apeWbtcAmount = parseUnits("1", 8);
   const apeCvxAmount = parseUnits("1000", 18);
 
@@ -53,6 +55,7 @@ const deployLocal = async () => {
     deployer,
     apeWbtcAmount,
     apeCvxAmount,
+    apeGeneral
   })(
     setupLibraries,
     () => console.log("Setting up libraries ..."),
