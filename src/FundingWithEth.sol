@@ -2,12 +2,12 @@
 pragma solidity 0.8.12;
 
 import "./Funding.sol";
+
 /**
  * @notice Sells a token at a predetermined price to whitelisted buyers.
  * TODO: Better revert strings
  */
 contract FundingWithEth is Funding {
-
     /// ==========================
     /// ===== Public actions =====
     /// ==========================
@@ -57,5 +57,4 @@ contract FundingWithEth is Funding {
     {
         revert("FundingWithEth: use depositEth");
     }
-
 }
