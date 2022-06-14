@@ -508,7 +508,7 @@ contract AtomicLaunchTest is BaseFixture {
             536986000000000000000000 / schedule_launch.epochLength()
         );
         // Set minting start
-        schedule_launch.setMintingStart(block.timestamp);
+        schedule_launch.setMintingStartNow();
 
         vm.stopPrank();
 

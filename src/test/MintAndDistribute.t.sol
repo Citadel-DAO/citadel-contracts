@@ -61,7 +61,7 @@ contract MintAndDistributeTest is BaseFixture {
 
         // policy ops should not be able to start minting schedule
         vm.expectRevert("GAC: invalid-caller-role");
-        schedule.setMintingStart(block.timestamp);
+        schedule.setMintingStartNow();
         assertTrue(schedule.globalStartTimestamp() == 0);
 
         vm.stopPrank();
@@ -71,7 +71,7 @@ contract MintAndDistributeTest is BaseFixture {
         vm.expectRevert("CitadelMinter: supply schedule start not initialized");
         citadelMinter.initializeLastMintTimestamp();
 
-        schedule.setMintingStart(block.timestamp);
+        schedule.setMintingStartNow();
 
         citadelMinter.initializeLastMintTimestamp();
         assertTrue(schedule.globalStartTimestamp() == block.timestamp);
