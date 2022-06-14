@@ -16,6 +16,11 @@ const setupAndDeploy = async ({ deployer, knightingRoundData }) => {
     MedianOracle,
     KnightingRoundRegistry,
     FundingRegistry,
+    CtdlWbtcCurveV2Provider,
+    CtdlBtcChainlinkProvider,
+    CtdlWibbtcLpVaultProvider,
+    CtdlEthChainlinkProvider,
+    CtdlAssetChainlinkProvider,
   } = await getContractFactories({ knightingRoundData });
 
   const {
@@ -86,6 +91,11 @@ const setupAndDeploy = async ({ deployer, knightingRoundData }) => {
     knightingRoundRegistry,
     fundingRegistry,
     fundingImplementation,
+    CtdlWbtcCurveV2Provider,
+    CtdlBtcChainlinkProvider,
+    CtdlWibbtcLpVaultProvider,
+    CtdlEthChainlinkProvider,
+    CtdlAssetChainlinkProvider,
   };
 };
 

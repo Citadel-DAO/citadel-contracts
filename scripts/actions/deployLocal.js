@@ -21,7 +21,8 @@ const setupSchedule = require("./setupSchedule");
 
 const tokenIns = require("./tokenIns");
 const initializeFundingRegistry = require("./initializeFundingRegistry");
-const oracleSetupMock = require("./oracleSetupMock");
+const oracleSetupForknet = require("./oracleSetupForknet");
+const addOracleProviders = require("./addOracleProviders");
 
 const deployLocal = async () => {
   const signers = await ethers.getSigners();
@@ -55,7 +56,7 @@ const deployLocal = async () => {
     deployer,
     apeWbtcAmount,
     apeCvxAmount,
-    apeGeneral
+    apeGeneral,
   })(
     setupLibraries,
     () => console.log("Setting up libraries ..."),
@@ -71,8 +72,8 @@ const deployLocal = async () => {
     () => console.log("tokenIns setted up ..."),
     initializeFundingRegistry,
     () => console.log("Contracts initialized ..."),
-    oracleSetupMock,
-    () => console.log("Oracles setup mock ..."),
+    oracleSetupForknet,
+    () => console.log("Oracles setup forknet ..."),
     setXCitadelStrategy,
     () => console.log("Setted xCitadel strategy  ..."),
     grantRoles,
@@ -87,6 +88,8 @@ const deployLocal = async () => {
     () => console.log("Discount setted ..."),
     bondTokenForXCTDL,
     () => console.log("bond some WBTC and CVX to get xCTDL ..."),
+    addOracleProviders,
+    () => console.log("Add oracle Provider"),
     xCTDLVesting,
     () => console.log("xCTDL vesting"),
     setupKnightingRound,
