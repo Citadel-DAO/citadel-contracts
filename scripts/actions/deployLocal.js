@@ -11,8 +11,6 @@ const setupLibraries = require("./setupLibraries");
 const grantRoles = require("./grantRoles");
 const setXCitadelStrategy = require("./setXCitadelStrategy");
 const citadelMinterSetup = require("./citadelMinterSetup");
-const approveFundingTokens = require("./approveFundingTokens");
-const medianOracleUpdatePrice = require("./medianOracleUpdatePrice");
 const setDiscount = require("./setDiscount");
 const bondTokenForXCTDL = require("./bondTokenForXCTDL");
 const xCTDLVesting = require("./xCTDLVesting");
@@ -82,8 +80,6 @@ const deployLocal = async () => {
     () => console.log("Schedule setted up ..."),
     citadelMinterSetup,
     () => console.log("Citadel minter setup ..."),
-    medianOracleUpdatePrice,
-    () => console.log("Median oracle update the price ..."),
     setDiscount,
     () => console.log("Discount setted ..."),
     bondTokenForXCTDL,

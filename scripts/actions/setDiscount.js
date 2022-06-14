@@ -1,19 +1,9 @@
 const setDiscount = async ({
-  fundingWbtc,
-  fundingCvx,
   governance,
   policyOps,
   fundingRegistry,
   Funding,
 }) => {
-  // set max discount
-  await fundingWbtc.connect(governance).setDiscountLimits(0, 1000);
-  await fundingCvx.connect(governance).setDiscountLimits(0, 1000);
-
-  // set a discount
-  await fundingWbtc.connect(policyOps).setDiscount(1000); // 10 percent discount
-  await fundingCvx.connect(policyOps).setDiscount(1000); // 10 percent discount
-
   const fundingsList = await fundingRegistry.getAllFundings();
 
   const discountAllFundings = async (i = 0) => {

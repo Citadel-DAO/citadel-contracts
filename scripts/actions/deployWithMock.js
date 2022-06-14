@@ -15,8 +15,6 @@ const getRoleSigners = require("./getRoleSingers");
 
 const setXCitadelStrategy = require("./setXCitadelStrategy");
 const citadelMinterSetup = require("./citadelMinterSetup");
-const approveFundingTokens = require("./approveFundingTokens");
-const medianOracleUpdatePrice = require("./medianOracleUpdatePrice");
 const setDiscount = require("./setDiscount");
 const bondTokenForXCTDL = require("./bondTokenForXCTDL");
 const xCTDLVesting = require("./xCTDLVesting");
@@ -45,7 +43,6 @@ const deployWithMock = async () => {
 
   const apeGeneral = parseUnits("1", 18);
 
-
   const apeWbtcAmount = parseUnits("1", 8);
   const apeCvxAmount = parseUnits("10000", 18);
 
@@ -65,7 +62,7 @@ const deployWithMock = async () => {
     deployer,
     apeWbtcAmount,
     apeCvxAmount,
-    apeGeneral
+    apeGeneral,
   })(
     setupLibraries,
     () => console.log("Setting up libraries ..."),
@@ -91,8 +88,6 @@ const deployWithMock = async () => {
     () => console.log("Schedule setted up ..."),
     citadelMinterSetup,
     () => console.log("Citadel minter setup ..."),
-    medianOracleUpdatePrice,
-    () => console.log("Median oracle update the price ..."),
     setDiscount,
     () => console.log("Discount setted ..."),
     bondTokenForXCTDL,

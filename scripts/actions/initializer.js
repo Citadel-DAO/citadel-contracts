@@ -10,8 +10,6 @@ const initializer = async ({
   xCitadelLocker,
   citadelMinter,
   schedule,
-  fundingWbtc,
-  fundingCvx,
   governance,
   xCitadelFees,
   keeper,
@@ -19,11 +17,6 @@ const initializer = async ({
   treasuryVault,
   techOps,
   citadelTree,
-  wbtc,
-  cvx,
-  eoaOracle,
-  medianOracleWbtc,
-  medianOracleCvx,
 }) => {
   /// ======= Global Access Control
   if (gac) {
@@ -100,32 +93,6 @@ const initializer = async ({
         address(schedule)
       );
     console.log("citadelMinter initialized.");
-  }
-
-  /// ========  Funding
-  if (fundingWbtc) {
-    await fundingWbtc.initialize(
-      address(gac),
-      address(citadel),
-      address(wbtc),
-      address(xCitadel),
-      address(treasuryVault),
-      address(medianOracleWbtc),
-      ethers.utils.parseUnits("100", 8)
-    );
-    console.log("fundingWbtc initialized.");
-  }
-  if (fundingCvx) {
-    await fundingCvx.initialize(
-      address(gac),
-      address(citadel),
-      address(cvx),
-      address(xCitadel),
-      address(treasuryVault),
-      address(medianOracleCvx),
-      ethers.utils.parseUnits("100000", 18)
-    );
-    console.log("fundingCvx initialized.");
   }
 };
 
