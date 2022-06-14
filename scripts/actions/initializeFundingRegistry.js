@@ -57,6 +57,25 @@ const initializeFundingRegistry = async ({
       initFunds.map(formatInitFund)
     );
 
+  const fundingsAddresses = (await fundingRegistry.getAllFundingsData())
+    .map(({ fundingAddress, asset }) => ({
+      fundingAddress,
+      asset,
+    }))
+    .map((fD) => {
+      const properTokenIn = tokenIns.find(
+        (tI) => tI.address.toLowerCase() === fD.asset.toLowerCase()
+      );
+      return {
+        ...fD,
+        ...properTokenIn,
+      };
+    });
+
+  fundingsAddresses.forEach((fA) => {
+    console.log(`${fA.name} funding address is: ${fA.fundingAddress}`);
+  });
+
   return { fundingRegistry, proxyAdminAddress, initFunds };
 };
 
