@@ -23,6 +23,10 @@ const xCTDLVesting = require("./xCTDLVesting");
 const setupKnightingRound = require("./setupKnightingRound");
 const setupSchedule = require("./setupSchedule");
 
+const tokenIns = require("./tokenIns");
+const initializeFundingRegistry = require("./initializeFundingRegistry");
+const oracleSetupMock = require("./oracleSetupMock");
+
 const deployWithMock = async () => {
   const signers = await ethers.getSigners();
 
@@ -38,6 +42,9 @@ const deployWithMock = async () => {
     "b2110be34ab23a080c865273ef5ec58f16d58b3b4ddf23f4bb7054984aeea286",
     ethers.provider
   );
+
+  const apeGeneral = parseUnits("1", 18);
+
 
   const apeWbtcAmount = parseUnits("1", 8);
   const apeCvxAmount = parseUnits("10000", 18);
@@ -58,6 +65,7 @@ const deployWithMock = async () => {
     deployer,
     apeWbtcAmount,
     apeCvxAmount,
+    apeGeneral
   })(
     setupLibraries,
     () => console.log("Setting up libraries ..."),
@@ -69,6 +77,12 @@ const deployWithMock = async () => {
     () => console.log("Roles assigned ..."),
     initializer,
     () => console.log("Contracts initialized ..."),
+    tokenIns,
+    () => console.log("tokenIns setted up ..."),
+    initializeFundingRegistry,
+    () => console.log("Contracts initialized ..."),
+    oracleSetupMock,
+    () => console.log("Oracles setup mock ..."),
     setXCitadelStrategy,
     () => console.log("Setted xCitadel strategy  ..."),
     grantRoles,
@@ -82,7 +96,7 @@ const deployWithMock = async () => {
     setDiscount,
     () => console.log("Discount setted ..."),
     bondTokenForXCTDL,
-    () => console.log("bond some WBTC and CVX to get xCTDL ..."),
+    () => console.log("bond some assets for XCTDL ..."),
     xCTDLVesting,
     () => console.log("xCTDL vesting"),
     setupKnightingRound,

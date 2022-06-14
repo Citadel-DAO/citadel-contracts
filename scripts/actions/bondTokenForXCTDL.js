@@ -41,12 +41,6 @@ const bondTokenForXCTDL = async ({
   keeper,
   MedianOracle,
   tokenIns,
-  CtdlWbtcCurveV2Provider,
-  CtdlBtcChainlinkProvider,
-  CtdlWibbtcLpVaultProvider,
-  CtdlEthChainlinkProvider,
-  CtdlAssetChainlinkProvider,
-  initFunds,
 }) => {
   // bond some WBTC and CVX to get xCTDL
 
@@ -88,8 +82,8 @@ const bondTokenForXCTDL = async ({
 
     await currentOracle.connect(provider).pushReport(priceToReport);
 
-  //  console.log("Oracle Address: ", currentOracle.address);
-  //  console.log(await currentOracle.callStatic.getData());
+    //  console.log("Oracle Address: ", currentOracle.address);
+    //  console.log(await currentOracle.callStatic.getData());
 
     await currentFunding.connect(keeper).updateCitadelPerAsset();
 
@@ -107,7 +101,7 @@ const bondTokenForXCTDL = async ({
   await allFundingsBonder();
 
   console.log(
-    `balance of xCTDL after two deposits: ${formatUnits(
+    `balance of xCTDL after  deposits: ${formatUnits(
       await xCitadel.balanceOf(address(user)),
       18
     )}`
