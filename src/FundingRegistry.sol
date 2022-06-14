@@ -29,6 +29,7 @@ contract FundingRegistry is Initializable, GlobalAccessControlManaged {
         uint256 citadelPerAsset;
         uint256 minCitadelPerAsset;
         uint256 maxCitadelPerAsset;
+        address asset;
         bool citadelPriceFlag;
         uint256 assetDecimalsNormalizationValue;
         address citadelPerAssetOracle;
@@ -105,6 +106,7 @@ contract FundingRegistry is Initializable, GlobalAccessControlManaged {
         fundingData.citadelPerAsset = funding.citadelPerAsset();
         fundingData.minCitadelPerAsset = funding.minCitadelPerAsset();
         fundingData.maxCitadelPerAsset = funding.maxCitadelPerAsset();
+        fundingData.asset = address(funding.asset());
         fundingData.citadelPriceFlag = funding.citadelPriceFlag();
         fundingData.assetDecimalsNormalizationValue = funding
             .assetDecimalsNormalizationValue();
