@@ -58,6 +58,7 @@ contract AtomicLaunch is ChainlinkUtils {
 
     /* ========== STATE VARIABLES ========== */
     address public immutable governance;
+    address public immutable treasury;
 
     address[] public oracles;
 
@@ -67,10 +68,12 @@ contract AtomicLaunch is ChainlinkUtils {
     /// @param _governance Governance allowed to add oracles addresses and trigger launch (governance msig)
     constructor(
         address _governance,
+        address _treasury,
         address _citadel,
         address _wbtc
     ) {
         governance = _governance;
+        treasury = _treasury;
         citadel = _citadel;
         wbtc = _wbtc;
     }
@@ -132,7 +135,7 @@ contract AtomicLaunch is ChainlinkUtils {
         amounts[0] = citadelToLiquidity;
         amounts[1] = wbtcToLiquidity;
 
-        pool.add_liquidity(amounts, 0);
+        uint256 lpAmount = pool.add_liquidity(amounts, 0, false, treasury);
 
         require(
             pool.balances(0) >= citadelToLiquidity,
@@ -141,6 +144,10 @@ contract AtomicLaunch is ChainlinkUtils {
         require(
             pool.balances(1) >= wbtcToLiquidity,
             "<pool-curve-wbtcToLiquidity!"
+        );
+        require(
+            IERC20(pool.token()).balanceOf(treasury) == lpAmount,
+            "<lpAmount!"
         );
 
         _deployOracles(poolAddress);

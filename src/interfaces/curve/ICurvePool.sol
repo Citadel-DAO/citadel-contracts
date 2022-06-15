@@ -6,8 +6,12 @@ interface ICurvePool {
 
     function token() external view returns (address);
 
-    function add_liquidity(uint256[2] memory amounts, uint256 min_mint_amount)
-        external;
+    function add_liquidity(
+        uint256[2] memory amounts,
+        uint256 min_mint_amount,
+        bool use_eth,
+        address receiver
+    ) external returns (uint256);
 
     function balances(uint256 arg0) external view returns (uint256);
 }
