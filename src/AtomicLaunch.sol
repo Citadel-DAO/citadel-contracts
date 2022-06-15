@@ -57,7 +57,7 @@ contract AtomicLaunch is ChainlinkUtils {
         0xF18056Bbd320E96A48e3Fbf8bC061322531aac99;
     uint256 public constant CITADEL_PRICE = 21;
 
-    IAggregatorV3Interface public wbtcUsdPriceFeed =
+    IAggregatorV3Interface public constant wbtcUsdPriceFeed =
         IAggregatorV3Interface(0xF4030086522a5bEEa4988F8cA5B36dbC97BeE88c);
 
     /* ========== STATE VARIABLES ========== */
