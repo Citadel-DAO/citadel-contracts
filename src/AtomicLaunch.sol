@@ -61,7 +61,7 @@ contract AtomicLaunch is ChainlinkUtils {
         IAggregatorV3Interface(0xF4030086522a5bEEa4988F8cA5B36dbC97BeE88c);
 
     /* ========== STATE VARIABLES ========== */
-    address public governance;
+    address public immutable governance;
 
     EnumerableSet.AddressSet internal _oracles;
 
