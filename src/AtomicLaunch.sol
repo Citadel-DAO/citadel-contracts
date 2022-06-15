@@ -2,8 +2,6 @@
 
 pragma solidity 0.8.12;
 
-import "openzeppelin-contracts/utils/structs/EnumerableSet.sol";
-
 import {ChainlinkUtils} from "./oracles/ChainlinkUtils.sol";
 import {CtdlWbtcCurveV2Provider} from "./oracles/CtdlWbtcCurveV2Provider.sol";
 import {CtdlAssetChainlinkProvider} from "./oracles/CtdlAssetChainlinkProvider.sol";
@@ -17,8 +15,6 @@ import "./interfaces/curve/ICurvePool.sol";
 import "./interfaces/chainlink/IAggregatorV3Interface.sol";
 
 contract AtomicLaunch is ChainlinkUtils {
-    using EnumerableSet for EnumerableSet.AddressSet;
-
     address public citadel;
     address public wbtc;
 
@@ -63,7 +59,7 @@ contract AtomicLaunch is ChainlinkUtils {
     /* ========== STATE VARIABLES ========== */
     address public immutable governance;
 
-    EnumerableSet.AddressSet internal _oracles;
+    address[] public oracles;
 
     /* ========== EVENT ========== */
     event PoolCreated(address poolAddress);
@@ -167,27 +163,27 @@ contract AtomicLaunch is ChainlinkUtils {
         CtdlWbtcCurveV2Provider ctdlWbtcProviderLoc = new CtdlWbtcCurveV2Provider(
                 _ctdlWbtcCurvePool
             );
-        _oracles.add(address(ctdlWbtcProviderLoc));
+        oracles.push(address(ctdlWbtcProviderLoc));
 
         CtdlBtcChainlinkProvider ctdlBtcProvider = new CtdlBtcChainlinkProvider(
             _ctdlWbtcCurvePool,
             WBTC_BTC_PRICE_FEED
         );
-        _oracles.add(address(ctdlBtcProvider));
+        oracles.push(address(ctdlBtcProvider));
 
         CtdlWibbtcLpVaultProvider ctdlWibbtcProvider = new CtdlWibbtcLpVaultProvider(
                 _ctdlWbtcCurvePool,
                 WBTC_BTC_PRICE_FEED,
                 WIBBTC_LP_VAULT
             );
-        _oracles.add(address(ctdlWibbtcProvider));
+        oracles.push(address(ctdlWibbtcProvider));
 
         CtdlEthChainlinkProvider ctdlEthProvider1 = new CtdlEthChainlinkProvider(
                 _ctdlWbtcCurvePool,
                 WBTC_BTC_PRICE_FEED,
                 BTC_ETH_PRICE_FEED
             );
-        _oracles.add(address(ctdlEthProvider1));
+        oracles.push(address(ctdlEthProvider1));
 
         CtdlAssetChainlinkProvider ctdlEthProvider2 = new CtdlAssetChainlinkProvider(
                 _ctdlWbtcCurvePool,
@@ -195,7 +191,7 @@ contract AtomicLaunch is ChainlinkUtils {
                 address(wbtcUsdPriceFeed),
                 ETH_USD_PRICE_FEED
             );
-        _oracles.add(address(ctdlEthProvider2));
+        oracles.push(address(ctdlEthProvider2));
 
         address[4] memory assetEthFeeds = [
             FRAX_ETH_PRICE_FEED,
@@ -218,7 +214,7 @@ contract AtomicLaunch is ChainlinkUtils {
                     BTC_ETH_PRICE_FEED,
                     assetUsdFeeds[i]
                 );
-            _oracles.add(address(ctdlAssetProvider1));
+            oracles.push(address(ctdlAssetProvider1));
 
             CtdlAssetChainlinkProvider ctdlAssetProvider2 = new CtdlAssetChainlinkProvider(
                     _ctdlWbtcCurvePool,
@@ -226,7 +222,7 @@ contract AtomicLaunch is ChainlinkUtils {
                     address(wbtcUsdPriceFeed),
                     assetEthFeeds[i]
                 );
-            _oracles.add(address(ctdlAssetProvider2));
+            oracles.push(address(ctdlAssetProvider2));
         }
     }
 
@@ -235,6 +231,6 @@ contract AtomicLaunch is ChainlinkUtils {
     ****************************************/
 
     function getAllOracles() public view returns (address[] memory) {
-        return _oracles.values();
+        return oracles;
     }
 }
