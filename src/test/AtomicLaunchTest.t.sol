@@ -6,8 +6,11 @@ import {KnightingRoundWithEth} from "../KnightingRoundWithEth.sol";
 import {FixedPointMathLib} from "solmate/utils/FixedPointMathLib.sol";
 import {Funding} from "../Funding.sol";
 import {SupplySchedule} from "../SupplySchedule.sol";
+import {AtomicLaunch} from "../AtomicLaunch.sol";
 
 import "../interfaces/erc20/IERC20.sol";
+import "../interfaces/curve/ICurvePoolFactory.sol";
+import "../interfaces/curve/ICurvePool.sol";
 
 // General interfaces for special non-ERC20 tokens' mint function
 interface ISpecialMinter {
@@ -16,34 +19,6 @@ interface ISpecialMinter {
 
 interface IUSDCMasterMinter {
     function incrementMinterAllowance(uint256 _allowanceIncrement) external;
-}
-
-// Curve Pool Factory
-interface ICurvePoolFactory {
-    function deploy_pool(
-        string memory _name,
-        string memory _symbol,
-        address[2] memory _coins,
-        uint256 A,
-        uint256 gamma,
-        uint256 mid_fee,
-        uint256 out_fee,
-        uint256 allowed_extra_profit,
-        uint256 fee_gamma,
-        uint256 adjustment_step,
-        uint256 admin_fee,
-        uint256 ma_half_time,
-        uint256 initial_price
-    ) external returns (address);
-}
-
-interface ICurvePool {
-    function token() external view returns (address);
-
-    function add_liquidity(uint256[2] memory amounts, uint256 min_mint_amount)
-        external;
-
-    function balances(uint256 arg0) external view returns (uint256);
 }
 
 contract AtomicLaunchTest is BaseFixture {
@@ -86,6 +61,8 @@ contract AtomicLaunchTest is BaseFixture {
     KnightingRound knightingRound_bveCVX = new KnightingRound();
 
     KnightingRound[] roundsArray;
+
+    // Atomic Launch contract
 
     // Re-deploying Funding contracts for the sake of maintianing actions atomically
     Funding fundingWbtc_launch = new Funding();
@@ -258,6 +235,13 @@ contract AtomicLaunchTest is BaseFixture {
     }
 
     function testAtomicLaunch() public {
+        AtomicLaunch atomicLaunch = new AtomicLaunch(
+            governance,
+            address(treasuryVault),
+            address(citadel),
+            address(wbtc)
+        );
+
         _simulateeKnightingRound();
 
         // BEGINNING OF ATOMIC LAUNCH
@@ -340,46 +324,29 @@ contract AtomicLaunchTest is BaseFixture {
         assertEq(weth.balanceOf(treasuryVault), govWethBalance);
 
         // Use 15% of total CTDL to deploy and seed liquidity pool on Curve
-        address[2] memory coins;
-        coins[0] = address(citadel);
-        coins[1] = address(wbtc);
-
-        // NOTE: Parameters acquired from test deployment:
-        // https://etherscan.io/tx/0x20a9182e7644e216d7a26785223fb2947a3ba70998eac4da98a63ec4652b1821
-        address poolAddress = ICurvePoolFactory(curvePoolFactory).deploy_pool(
-            "CTDL/wBTC",
-            "CTDL",
-            coins,
-            400000,
-            145000000000000,
-            26000000,
-            45000000,
-            2000000000000,
-            230000000000000,
-            146000000000000,
-            5000000000,
-            600,
-            1428571428570000000000 // ~$30k/$21 = 1428.57142857 (Current external rate for WBTC/CTDL)
-        );
-
-        ICurvePool pool = ICurvePool(poolAddress);
-
         // Calculate wBTC amount as: $21/~$30k = 0.0007 (Divide by 1e10 to normalize to wBTC decimals)
         uint256 wbtcToLiquidity = ((toLiquidity * 7e14) / 1e18) / 1e10;
         emit log_named_uint("CTDL Liquidity", toLiquidity);
         emit log_named_uint("wBTC Liquidity", wbtcToLiquidity);
+
         erc20utils.forceMintTo(governance, wbtc_address, wbtcToLiquidity);
 
-        citadel.approve(poolAddress, toLiquidity);
-        wbtc.approve(poolAddress, wbtcToLiquidity);
+        // should revert as citadel is not transferred to atomic launch contract
+        vm.expectRevert("<citadelToLiquidity!");
+        atomicLaunch.launch(toLiquidity, wbtcToLiquidity);
 
-        uint256[2] memory amounts;
-        amounts[0] = toLiquidity;
-        amounts[1] = wbtcToLiquidity;
-        pool.add_liquidity(amounts, 0);
+        // transfer citadel into atomic launch contract
+        citadel.transfer(address(atomicLaunch), toLiquidity);
 
-        assertEq(pool.balances(0), toLiquidity);
-        assertEq(pool.balances(1), wbtcToLiquidity);
+        // should revert as wbtc is not transferred to atomic launch contract
+        vm.expectRevert("<wbtcToLiquidity!");
+        atomicLaunch.launch(toLiquidity, wbtcToLiquidity);
+
+        // transfer wbtc into atomic launch contract
+        wbtc.transfer(address(atomicLaunch), wbtcToLiquidity);
+
+        // poolAddress deployed
+        atomicLaunch.launch(toLiquidity, wbtcToLiquidity);
 
         // Check tat CTDL amounts add up
         require(
