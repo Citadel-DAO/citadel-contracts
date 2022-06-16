@@ -237,6 +237,7 @@ contract AtomicLaunchTest is BaseFixture {
     function testAtomicLaunch() public {
         AtomicLaunch atomicLaunch = new AtomicLaunch(
             governance,
+            address(treasuryVault),
             address(citadel),
             address(wbtc)
         );

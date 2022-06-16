@@ -163,7 +163,10 @@ contract AtomicLaunch is ChainlinkUtils {
 
         require(valid, "not-valid!");
 
-        _poolPrice = (wbtcOraclePricing * 1e18) / 10**wbtcUsdPriceFeed.decimals() / CITADEL_PRICE;
+        _poolPrice =
+            (wbtcOraclePricing * 1e18) /
+            10**wbtcUsdPriceFeed.decimals() /
+            CITADEL_PRICE;
     }
 
     function _deployOracles(address _ctdlWbtcCurvePool) internal {
