@@ -63,9 +63,12 @@ contract FundingEthTest is BaseFixture {
         uint256 fundingEthCitadelBefore = citadel.balanceOf(
             address(fundingEth)
         );
-        uint256 treasuryVaultBalanceBefore = treasuryVault.balance;
+        uint256 treasuryVaultBalanceBefore = treasuryVault.balance; // saleRecipient is treasuryVault
         uint256 userBalanceBefore = shrimp.balance;
         uint256 userxCitadelBefore = xCitadel.balanceOf(shrimp);
+
+        vm.expectRevert("FundingWithEth: use depositEth");
+        fundingEth.deposit(assetAmountIn, 0);
 
         vm.expectEmit(true, true, true, true);
         emit Deposit(shrimp, assetAmountIn, citadelAmountOutExpected);
