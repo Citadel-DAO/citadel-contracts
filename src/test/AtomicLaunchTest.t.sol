@@ -597,9 +597,10 @@ contract AtomicLaunchTest is BaseFixture {
         assertEq(round.daoCommitments(0), tokenOutAmount); // daoCommitments should be tokenOutAmount
 
         require(user.balance == 0, "ETH in not deposited");
+
         require(
-            weth.balanceOf(round.saleRecipient()) == amountIn,
-            "wETH in not received"
+            round.saleRecipient().balance == amountIn,
+            "ETH in not received"
         );
 
         vm.stopPrank();

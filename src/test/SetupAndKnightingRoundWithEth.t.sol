@@ -31,6 +31,10 @@ contract KnightingRoundWithEthTest is BaseFixture {
         // Attempt to deposit before knighting round start
         vm.startPrank(shark);
         weth.approve(address(knightingRoundWithEth), address(shark).balance);
+
+        vm.expectRevert("use buyEth() function");
+        knightingRoundWithEth.buy(1e18, 0, emptyProof);
+
         vm.expectRevert("KnightingRound: not started");
         knightingRoundWithEth.buyEth{value: 1e18}(0, emptyProof);
         vm.stopPrank();
@@ -69,6 +73,10 @@ contract KnightingRoundWithEthTest is BaseFixture {
             comparator.diff("knightingRoundWithEth.boughtAmounts(shrimp)"),
             21e18
         );
+        require(
+            knightingRoundWithEth.saleRecipient().balance == 1e18,
+            "ETH in not received"
+        );
 
         // tokenInLimit = 100e8 so transaction should revert
         vm.expectRevert("total amount exceeded");
@@ -92,6 +100,10 @@ contract KnightingRoundWithEthTest is BaseFixture {
         assertEq(
             knightingRoundWithEth.totalTokenOutBought(),
             tokenOutAmount + tokenOutAmount2
+        );
+        require(
+            knightingRoundWithEth.saleRecipient().balance == 2e18,
+            "ETH in not received"
         );
 
         // giving a different doa ID
@@ -120,6 +132,10 @@ contract KnightingRoundWithEthTest is BaseFixture {
         vm.stopPrank();
 
         assertEq(newTokenAmountOut, newTokenAmountOutExpected);
+        require(
+            knightingRoundWithEth.saleRecipient().balance == 3e18,
+            "ETH in not received"
+        );
         // Knighting round concludes...
         vm.warp(
             knightingRoundWithEthParams.start +

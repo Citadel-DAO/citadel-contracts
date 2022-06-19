@@ -105,9 +105,13 @@ contract KnightingRoundRegistry is Initializable {
     function getRoundData(address _roundAddress)
         public
         view
-        returns (KnightingRoundData.RoundData memory )
+        returns (KnightingRoundData.RoundData memory)
     {
-       return KnightingRoundData.getRoundData(_roundAddress, knightingRoundsWithEth);
+        return
+            KnightingRoundData.getRoundData(
+                _roundAddress,
+                knightingRoundsWithEth
+            );
     }
 
     /// @notice using to get all rounds
