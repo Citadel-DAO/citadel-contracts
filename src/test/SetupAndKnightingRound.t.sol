@@ -501,4 +501,64 @@ contract KnightingRoundTest is BaseFixture {
         ); // daoCommitment should increment
         vm.stopPrank();
     }
+
+    function prepareKnightingRoundBuy(
+        address tokenIn,
+        string memory tokenName,
+        uint8 daoId
+    ) public {
+        comparator.addCall(
+            string.concat(tokenName, ".balanceOf(saleRecipient)"),
+            tokenIn,
+            abi.encodeWithSignature(
+                "balanceOf(address)",
+                knightingRound.saleRecipient()
+            )
+        );
+        comparator.addCall(
+            "knightingRound.daoCommitments(daoId)",
+            address(knightingRound),
+            abi.encodeWithSignature("daoCommitments(uint8)", daoId)
+        );
+        comparator.addCall(
+            "knightingRound.totalTokenIn()",
+            address(knightingRound),
+            abi.encodeWithSignature("totalTokenIn()")
+        );
+    }
+
+    function postKnightingRoundBuy(uint256 amountIn, string memory tokenIn)
+        public
+    {
+        uint256 tokenOutAmountExpected = (amountIn *
+            knightingRound.tokenOutPerTokenIn()) /
+            knightingRound.tokenInNormalizationValue();
+
+        assertEq(
+            comparator.diff(
+                string.concat(tokenIn, ".balanceOf(saleRecipient)")
+            ),
+            amountIn
+        );
+        assertEq(
+            comparator.diff("knightingRound.daoCommitments(daoId)"),
+            tokenOutAmountExpected
+        );
+        assertEq(comparator.diff("knightingRound.totalTokenIn()"), amountIn);
+    }
+
+    function testBuy() public {
+        // Move to knighting round start
+        vm.warp(block.timestamp + 100);
+        // add accounts to track
+        prepareKnightingRoundBuy(address(wbtc), "wbtc", 0);
+        comparator.snapPrev();
+        bytes32[] memory emptyProof = new bytes32[](0);
+        vm.startPrank(shrimp);
+        wbtc.approve(address(knightingRound), wbtc.balanceOf(shrimp));
+        knightingRound.buy(1e8, 0, emptyProof);
+        comparator.snapCurr();
+        // run checks after buy
+        postKnightingRoundBuy(1e8, "wbtc");
+    }
 }

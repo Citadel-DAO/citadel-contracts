@@ -3,6 +3,9 @@ pragma solidity >=0.6.0 <0.9.0;
 
 import {Vm} from "forge-std/Vm.sol";
 import {Multicall3} from "multicall/Multicall3.sol";
+import {Strings} from "./libraries/Strings.sol";
+import {Tabulate} from "./libraries/Tabulate.sol";
+import {console as console} from "forge-std/console.sol";
 
 import {IntervalUint256, IntervalUint256Utils} from "./IntervalUint256.sol";
 import {DSTest2} from "./DSTest2.sol";
@@ -10,6 +13,8 @@ import {DSTest2} from "./DSTest2.sol";
 contract Snapshot {
     mapping(string => uint256) private values;
     mapping(string => bool) public exists;
+
+    error InvalidKey(string key);
 
     constructor(string[] memory _keys, uint256[] memory _vals) {
         uint256 length = _keys.length;
@@ -21,8 +26,11 @@ contract Snapshot {
     }
 
     function valOf(string calldata _key) public view returns (uint256 val_) {
-        require(exists[_key], "Invalid key");
-        val_ = values[_key];
+        if (exists[_key]) {
+            val_ = values[_key];
+        } else {
+            revert InvalidKey(_key);
+        }
     }
 }
 
@@ -80,7 +88,7 @@ contract SnapshotComparator is SnapshotManager {
     function diff(
         Snapshot _snap1,
         Snapshot _snap2,
-        string calldata _key
+        string memory _key
     ) private view returns (uint256 val_) {
         val_ = _snap1.valOf(_key) - _snap2.valOf(_key);
     }
@@ -93,28 +101,60 @@ contract SnapshotComparator is SnapshotManager {
         sCurr = snap();
     }
 
-    function curr(string calldata _key) public view returns (uint256 val_) {
+    function curr(string memory _key) public view returns (uint256 val_) {
         val_ = sCurr.valOf(_key);
     }
 
-    function prev(string calldata _key) public view returns (uint256 val_) {
+    function prev(string memory _key) public view returns (uint256 val_) {
         val_ = sPrev.valOf(_key);
     }
 
-    function diff(string calldata _key) public view returns (uint256 val_) {
+    function diff(string memory _key) public view returns (uint256 val_) {
         val_ = diff(sCurr, sPrev, _key);
     }
 
-    function negDiff(string calldata _key) public view returns (uint256 val_) {
+    function negDiff(string memory _key) public view returns (uint256 val_) {
         val_ = diff(sPrev, sCurr, _key);
     }
-}
 
-/*
-TODO:
-- Ideally some of this can be a library
-- Errors instead of revert string
-- log table function
-- DSTestSnapshot from git history? - logs named key on assert fail
-- Maybe merge comparator and manager?
-*/
+    uint256 constant NUM_LOG_COLS = 4;
+
+    function log() external view {
+        uint256 maxRows = keys.length;
+
+        string[][] memory table = new string[][](maxRows + 1);
+        table[0] = new string[](NUM_LOG_COLS);
+
+        string[] memory cols = table[0];
+        cols[0] = "Key";
+        cols[1] = "Previous Value";
+        cols[2] = "Current Value";
+        cols[3] = "Difference";
+        uint256 numRows = 1;
+        for (uint256 i; i < maxRows; ++i) {
+            string memory key = keys[i];
+            uint256 numVal1 = prev(key);
+            uint256 numVal2 = curr(key);
+            console.log(key);
+            if (numVal1 != numVal2) {
+                table[numRows] = new string[](NUM_LOG_COLS);
+                cols = table[numRows];
+
+                cols[0] = key;
+                cols[1] = Strings.toString(numVal1);
+                cols[2] = Strings.toString(numVal2);
+                cols[3] = numVal1 > numVal2
+                    ? Strings.toString(negDiff(key), true)
+                    : Strings.toString(diff(key));
+
+                ++numRows;
+            }
+        }
+
+        assembly {
+            mstore(table, numRows)
+        }
+
+        Tabulate.log(table);
+    }
+}
