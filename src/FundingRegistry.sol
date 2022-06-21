@@ -18,6 +18,8 @@ contract FundingRegistry is Initializable, GlobalAccessControlManaged {
 
     address public proxyAdmin;
 
+    event FundingAdded(address fundingAddress);
+
     struct FundingAsset {
         address asset;
         address citadelPerAssetOracle;
@@ -92,7 +94,7 @@ contract FundingRegistry is Initializable, GlobalAccessControlManaged {
                     _fundingAsset.assetCap
                 )
             );
-
+        emit FundingAdded(address(currFunding));
         fundings.add(address(currFunding));
     }
 
