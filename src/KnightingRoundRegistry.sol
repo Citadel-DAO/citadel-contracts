@@ -16,6 +16,8 @@ contract KnightingRoundRegistry is Initializable {
 
     GACProxyAdmin public gacProxyAdmin;
 
+    event KnightingRoundAdded(address knightingRoundAddress, bool isEthRound);
+
     address public globalAccessControl;
     address public tokenOut;
     address public saleRecipient;
@@ -96,6 +98,7 @@ contract KnightingRoundRegistry is Initializable {
                 )
             );
         knightingRounds.push(address(currKnightingRound));
+        emit KnightingRoundAdded(address(currKnightingRound), !_isNotEth);
         if (!_isNotEth) {
             knightingRoundsWithEth = address(currKnightingRound);
         }
@@ -105,9 +108,13 @@ contract KnightingRoundRegistry is Initializable {
     function getRoundData(address _roundAddress)
         public
         view
-        returns (KnightingRoundData.RoundData memory )
+        returns (KnightingRoundData.RoundData memory)
     {
-       return KnightingRoundData.getRoundData(_roundAddress, knightingRoundsWithEth);
+        return
+            KnightingRoundData.getRoundData(
+                _roundAddress,
+                knightingRoundsWithEth
+            );
     }
 
     /// @notice using to get all rounds

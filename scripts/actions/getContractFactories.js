@@ -57,6 +57,7 @@ const getContractFactories = async ({ knightingRoundData }) => {
     : null;
 
   const Funding = await ethers.getContractFactory("Funding");
+  const FundingRegistry = await ethers.getContractFactory("FundingRegistry");
 
   const ERC20Upgradeable = await ethers.getContractFactory("ERC20Upgradeable");
 
@@ -73,6 +74,22 @@ const getContractFactories = async ({ knightingRoundData }) => {
     "TransparentUpgradeableProxy"
   );
 
+  const CtdlWbtcCurveV2Provider = await ethers.getContractFactory(
+    "CtdlWbtcCurveV2Provider"
+  );
+  const CtdlBtcChainlinkProvider = await ethers.getContractFactory(
+    "CtdlBtcChainlinkProvider"
+  );
+  const CtdlWibbtcLpVaultProvider = await ethers.getContractFactory(
+    "CtdlWibbtcLpVaultProvider"
+  );
+  const CtdlEthChainlinkProvider = await ethers.getContractFactory(
+    "CtdlEthChainlinkProvider"
+  );
+  const CtdlAssetChainlinkProvider = await ethers.getContractFactory(
+    "CtdlAssetChainlinkProvider"
+  );
+
   return {
     GlobalAccessControl,
     CitadelToken,
@@ -85,6 +102,7 @@ const getContractFactories = async ({ knightingRoundData }) => {
     KnightingRoundWithEth,
     KnightingRoundRegistry,
     Funding,
+    FundingRegistry,
     ERC20Upgradeable,
     KnightingRoundGuestlist,
     ProxyAdmin,
@@ -94,6 +112,11 @@ const getContractFactories = async ({ knightingRoundData }) => {
     MintableToken,
     TransparentUpgradeableProxy,
     MedianOracle,
+    CtdlWbtcCurveV2Provider,
+    CtdlBtcChainlinkProvider,
+    CtdlWibbtcLpVaultProvider,
+    CtdlEthChainlinkProvider,
+    CtdlAssetChainlinkProvider,
   };
 };
 

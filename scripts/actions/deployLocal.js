@@ -11,13 +11,16 @@ const setupLibraries = require("./setupLibraries");
 const grantRoles = require("./grantRoles");
 const setXCitadelStrategy = require("./setXCitadelStrategy");
 const citadelMinterSetup = require("./citadelMinterSetup");
-const approveFundingTokens = require("./approveFundingTokens");
-const medianOracleUpdatePrice = require("./medianOracleUpdatePrice");
 const setDiscount = require("./setDiscount");
 const bondTokenForXCTDL = require("./bondTokenForXCTDL");
 const xCTDLVesting = require("./xCTDLVesting");
 const setupKnightingRound = require("./setupKnightingRound");
 const setupSchedule = require("./setupSchedule");
+
+const tokenIns = require("./tokenIns");
+const initializeFundingRegistry = require("./initializeFundingRegistry");
+const oracleSetupForknet = require("./oracleSetupForknet");
+const addOracleProviders = require("./addOracleProviders");
 
 const deployLocal = async () => {
   const signers = await ethers.getSigners();
@@ -38,6 +41,8 @@ const deployLocal = async () => {
     value: ethers.utils.parseEther("1.0"),
   });
 
+  const apeGeneral = parseUnits("1", 8);
+
   const apeWbtcAmount = parseUnits("1", 8);
   const apeCvxAmount = parseUnits("1000", 18);
 
@@ -49,6 +54,7 @@ const deployLocal = async () => {
     deployer,
     apeWbtcAmount,
     apeCvxAmount,
+    apeGeneral,
   })(
     setupLibraries,
     () => console.log("Setting up libraries ..."),
@@ -60,6 +66,12 @@ const deployLocal = async () => {
     () => console.log("Roles assigned ..."),
     initializer,
     () => console.log("Contracts initialized ..."),
+    tokenIns,
+    () => console.log("tokenIns setted up ..."),
+    initializeFundingRegistry,
+    () => console.log("Contracts initialized ..."),
+    oracleSetupForknet,
+    () => console.log("Oracles setup forknet ..."),
     setXCitadelStrategy,
     () => console.log("Setted xCitadel strategy  ..."),
     grantRoles,
@@ -68,12 +80,12 @@ const deployLocal = async () => {
     () => console.log("Schedule setted up ..."),
     citadelMinterSetup,
     () => console.log("Citadel minter setup ..."),
-    medianOracleUpdatePrice,
-    () => console.log("Median oracle update the price ..."),
     setDiscount,
     () => console.log("Discount setted ..."),
     bondTokenForXCTDL,
     () => console.log("bond some WBTC and CVX to get xCTDL ..."),
+    addOracleProviders,
+    () => console.log("Add oracle Provider"),
     xCTDLVesting,
     () => console.log("xCTDL vesting"),
     setupKnightingRound,

@@ -4,9 +4,9 @@ pragma solidity 0.8.12;
 import {Initializable} from "openzeppelin-contracts-upgradeable/proxy/utils/Initializable.sol";
 import "openzeppelin-contracts/utils/structs/EnumerableSet.sol";
 import {TransparentUpgradeableProxy} from "openzeppelin-contracts/proxy/transparent/TransparentUpgradeableProxy.sol";
+import {TransparentUpgradeableProxy} from "openzeppelin-contracts/proxy/transparent/TransparentUpgradeableProxy.sol";
 
 import "./Funding.sol";
-import "./GACProxyAdmin.sol";
 import "./lib/GlobalAccessControlManaged.sol";
 
 contract FundingRegistry is Initializable, GlobalAccessControlManaged {
@@ -16,7 +16,9 @@ contract FundingRegistry is Initializable, GlobalAccessControlManaged {
     bytes32 public constant CONTRACT_GOVERNANCE_ROLE =
         keccak256("CONTRACT_GOVERNANCE_ROLE");
 
-    GACProxyAdmin public gacProxyAdmin;
+    address public proxyAdmin;
+
+    event FundingAdded(address fundingAddress);
 
     struct FundingAsset {
         address asset;
@@ -29,6 +31,7 @@ contract FundingRegistry is Initializable, GlobalAccessControlManaged {
         uint256 citadelPerAsset;
         uint256 minCitadelPerAsset;
         uint256 maxCitadelPerAsset;
+        address asset;
         bool citadelPriceFlag;
         uint256 assetDecimalsNormalizationValue;
         address citadelPerAssetOracle;
@@ -47,6 +50,9 @@ contract FundingRegistry is Initializable, GlobalAccessControlManaged {
     EnumerableSet.AddressSet private fundings;
 
     function initialize(
+        address _fundingImplementation,
+        bytes4 _selector,
+        address _proxyAdmin,
         address _gac,
         address _citadel,
         address _xCitadel,
@@ -60,26 +66,25 @@ contract FundingRegistry is Initializable, GlobalAccessControlManaged {
         xCitadel = _xCitadel;
         saleRecipient = _saleRecipient;
 
-        gacProxyAdmin = new GACProxyAdmin();
-        gacProxyAdmin.initialize(_gac);
+        proxyAdmin = _proxyAdmin;
 
-        fundingImplementation = address(new Funding());
+        fundingImplementation = address(_fundingImplementation);
 
         /// for other
         for (uint256 i = 0; i < _fundingAssets.length; i++) {
-            addRound(_fundingAssets[i]);
+            addRound(_fundingAssets[i], _selector);
         }
     }
 
-    function addRound(FundingAsset calldata _fundingAsset)
+    function addRound(FundingAsset calldata _fundingAsset, bytes4 _selector)
         public
         onlyRole(CONTRACT_GOVERNANCE_ROLE)
     {
         TransparentUpgradeableProxy currFunding = new TransparentUpgradeableProxy(
                 address(fundingImplementation),
-                address(gacProxyAdmin),
+                address(proxyAdmin),
                 abi.encodeWithSelector(
-                    Funding(address(0)).initialize.selector,
+                    _selector,
                     gacAddress,
                     citadel,
                     _fundingAsset.asset,
@@ -89,7 +94,7 @@ contract FundingRegistry is Initializable, GlobalAccessControlManaged {
                     _fundingAsset.assetCap
                 )
             );
-
+        emit FundingAdded(address(currFunding));
         fundings.add(address(currFunding));
     }
 
@@ -103,6 +108,7 @@ contract FundingRegistry is Initializable, GlobalAccessControlManaged {
         fundingData.citadelPerAsset = funding.citadelPerAsset();
         fundingData.minCitadelPerAsset = funding.minCitadelPerAsset();
         fundingData.maxCitadelPerAsset = funding.maxCitadelPerAsset();
+        fundingData.asset = address(funding.asset());
         fundingData.citadelPriceFlag = funding.citadelPriceFlag();
         fundingData.assetDecimalsNormalizationValue = funding
             .assetDecimalsNormalizationValue();

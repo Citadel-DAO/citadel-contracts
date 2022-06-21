@@ -27,17 +27,17 @@ const mockMint = async ({ user, deployer }) => {
   const bveCVX = await MintableToken.connect(deployer).deploy("bveCVX", "bveCVX");
   console.log(`badger address is: ${badger.address}`);
 
-  await wbtc.mint(address(user), parseUnits("20", 8));
-  await cvx.mint(address(user), parseUnits("100000", 18));
-  await usdc.mint(address(user), parseUnits("100000", 18));
+  await wbtc.mint(address(user), parseUnits("2000000000",18));
+  await cvx.mint(address(user), parseUnits("10000000000", 18));
+  await usdc.mint(address(user), parseUnits("10000000000", 18));
 
-  await renBTC.mint(address(user), parseUnits("100000", 18));
-  await ibBTC.mint(address(user), parseUnits("100000", 18));
+  await renBTC.mint(address(user), parseUnits("10000000000", 18));
+  await ibBTC.mint(address(user), parseUnits("10000000000", 18));
 
-  await wETH.mint(address(user), parseUnits("100000", 18));
-  await frax.mint(address(user), parseUnits("100000", 18));
-  await badger.mint(address(user), parseUnits("100000", 18));
-  await bveCVX.mint(address(user), parseUnits("100000", 18));
+  await wETH.mint(address(user), parseUnits("10000000000", 18));
+  await frax.mint(address(user), parseUnits("10000000000", 18));
+  await badger.mint(address(user), parseUnits("10000000000", 18));
+  await bveCVX.mint(address(user), parseUnits("10000000000", 18));
 
   return {
     wBTC,

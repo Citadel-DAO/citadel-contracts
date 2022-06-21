@@ -9,9 +9,9 @@ const citadelMinterSetup = async ({
   schedule,
   citadelMinter,
   policyOps,
-  fundingWbtc,
-  fundingCvx,
   citadel,
+  fundingRegistry,
+  Funding,
 }) => {
   const blockNumBefore = await ethers.provider.getBlockNumber();
   const blockBefore = await ethers.provider.getBlock(blockNumBefore);
@@ -19,7 +19,7 @@ const citadelMinterSetup = async ({
   await schedule.connect(governance).setMintingStart(scheduleStartTime);
 
   // control the time to fast forward
-  const depositTokenTime = scheduleStartTime + 1 * 86400;
+  const depositTokenTime = scheduleStartTime + 1 * 20 * 86400;
   await changeBlockTimestamp(depositTokenTime);
 
   // set distribution split
@@ -28,24 +28,34 @@ const citadelMinterSetup = async ({
     .setCitadelDistributionSplit(4000, 3000, 2000, 1000);
 
   // set funding pool rate
-  await citadelMinter
-    .connect(policyOps)
-    .setFundingPoolWeight(address(fundingWbtc), 5000);
-  await citadelMinter
-    .connect(policyOps)
-    .setFundingPoolWeight(address(fundingCvx), 5000);
+  const fundingsList = await fundingRegistry.getAllFundings();
+
+  const setAllPoolWieght = async (i = 0) => {
+    const currentFunding = fundingsList[i]
+      ? Funding.attach(fundingsList[i])
+      : undefined;
+    if (!currentFunding) return;
+
+    console.log(
+      "setting up minter funding pool weight: ",
+      currentFunding.address
+    );
+
+    await citadelMinter
+      .connect(policyOps)
+      .setFundingPoolWeight(address(currentFunding), 5000);
+
+    return await setAllPoolWieght(i + 1);
+  };
+
+  await setAllPoolWieght();
 
   // mint and distribute xCTDL to the staking contract
   await citadelMinter.connect(policyOps).mintAndDistribute();
+
   console.log(
-    `supply of CTDL in WBTC Funding pool: ${formatUnits(
-      await citadel.balanceOf(address(fundingWbtc)),
-      18
-    )}`
-  );
-  console.log(
-    `supply of CTDL in CVX Funding pool: ${formatUnits(
-      await citadel.balanceOf(address(fundingCvx)),
+    `supply of CTDL in each funding pool: ${formatUnits(
+      await citadel.balanceOf(fundingsList[0]),
       18
     )}`
   );
