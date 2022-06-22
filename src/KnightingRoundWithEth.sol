@@ -13,9 +13,13 @@ interface WETH {
     function approve(address guy, uint256 wad) external returns (bool);
 }
 
+/// @notice Knighting Round Contract to buy citadel with eth
 contract KnightingRoundWithEth is KnightingRound {
     using SafeERC20 for IERC20;
 
+    /// @notice function to buy citadel with eth
+    /// @param _daoId the dao id user wants to vote
+    /// @return tokenOutAmount_ the amount of citadel user will get
     function buyEth(uint8 _daoId, bytes32[] calldata _proof)
         external
         payable

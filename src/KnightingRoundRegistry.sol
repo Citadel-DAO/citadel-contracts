@@ -7,9 +7,7 @@ import {TransparentUpgradeableProxy} from "openzeppelin-contracts/proxy/transpar
 import "./GACProxyAdmin.sol";
 import "./lib/KnightingRoundData.sol";
 
-/**
-A simple registry contract that help to register different knighting round
-*/
+/// @notice A simple registry contract that help to register different knighting round
 contract KnightingRoundRegistry is Initializable {
     // ===== Libraries  ====
     using KnightingRoundData for KnightingRoundData.RoundData;
@@ -101,13 +99,18 @@ contract KnightingRoundRegistry is Initializable {
         }
     }
 
-    /// getRoundData
+    /// @notice function to get round data for a particular address
+    /// @param _roundAddress the round address for which the data is returned
     function getRoundData(address _roundAddress)
         public
         view
-        returns (KnightingRoundData.RoundData memory )
+        returns (KnightingRoundData.RoundData memory)
     {
-       return KnightingRoundData.getRoundData(_roundAddress, knightingRoundsWithEth);
+        return
+            KnightingRoundData.getRoundData(
+                _roundAddress,
+                knightingRoundsWithEth
+            );
     }
 
     /// @notice using to get all rounds
@@ -115,7 +118,7 @@ contract KnightingRoundRegistry is Initializable {
         return knightingRounds;
     }
 
-    /// @notice using to get all rounds
+    /// @notice using to get all rounds data
     function getAllRoundsData()
         public
         view
