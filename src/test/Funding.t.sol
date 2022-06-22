@@ -23,14 +23,14 @@ contract FundingTest is BaseFixture {
         BaseFixture.setUp();
     }
 
-    function testDiscountRateBasics() public {
-        /*
-        @fatima: confirm the discount rate is functional
-        - access control for setting discount rate (i.e. the proper accounts can call the function and it works. improper accounts revert when attempting to call)
-        - access control for setting discount rate limits
-        - pausing freezes these functions appropriately
+    /* 
+    Unit tests for setting discount rates
+    - setDiscountLimits function sets discount limits
+    - checks the maximum discount can not be more than 10000 
+    - setDiscountRate function sets discount
+    - checks discount can only be set between limits
     */
-
+    function testDiscountRateBasics() public {
         // calling from correct account
         vm.prank(address(governance));
         fundingCvx.setDiscountLimits(10, 50);
@@ -85,6 +85,9 @@ contract FundingTest is BaseFixture {
         fundingCvx.setDiscountLimits(0, 20);
     }
 
+    /*
+    Test to check deposit works properly for CVX
+    */
     function testDiscountRateBuysCvx(
         uint256 assetAmountIn,
         uint32 discount,
@@ -100,6 +103,9 @@ contract FundingTest is BaseFixture {
         );
     }
 
+    /*
+    Test to check deposit works properly for WBTC
+    */
     function testDiscountRateBuysWbtc(
         uint256 assetAmountIn,
         uint32 discount,
@@ -116,6 +122,14 @@ contract FundingTest is BaseFixture {
             citadelPrice
         );
     }
+
+    /*
+    Unit tests for setting asset cap
+        -setAssetCap function sets asset cap.
+        -checks assetCap can not be less than accumulated funds.
+        -checks deposit can not be over the cap.
+        -checks increasing cap allows for deposit.
+    */
 
     function testSetAssetCap() public {
         vm.prank(address(1));
@@ -163,6 +177,10 @@ contract FundingTest is BaseFixture {
         assertEq(citadelAmount, citadelAmountOutExpected);
     }
 
+    /*
+    Unit tests for claimAssetToTreasury function
+        - check saleRecipient received the claimed amount
+    */
     function testClaimAssetToTreasury() public {
         vm.prank(address(1));
         vm.expectRevert("GAC: invalid-caller-role");
@@ -198,6 +216,11 @@ contract FundingTest is BaseFixture {
         assertEq(balanceAfter - balanceBefore, amount);
     }
 
+    /*
+    Unit tests for sweep
+        - checks funding assets can not be swept
+        - checks saleRecipient receives after asset after sweep
+    */
     function testSweep() public {
         vm.stopPrank();
         vm.prank(address(1));
@@ -234,7 +257,14 @@ contract FundingTest is BaseFixture {
         vm.stopPrank();
     }
 
-    function testAccessControl() public {
+    /*
+    Unit tests for some set functions-
+        - setDiscountManager sets discount manager
+        - updateCitadelPerAsset sets citadelPerAsset 
+        - setSaleRecipient sets saleRecipient
+        - unit tests for all above functions
+    */
+    function testBasicSetFunctions() public {
         // tests to check access controls of various set functions
         vm.prank(address(1));
         vm.expectRevert("GAC: invalid-caller-role");
@@ -295,6 +325,11 @@ contract FundingTest is BaseFixture {
         fundingCvx.deposit(10e18, 0);
     }
 
+    /*
+    Tests to check user gets expected citadel amount after deposit based on discount 
+        - checks Deposited event is emitted after deposit
+        - checks asset goes into treasuryVault after deposit
+    */
     function _testDiscountRateBuys(
         Funding fundingContract,
         MedianOracle medianOracleContract,
