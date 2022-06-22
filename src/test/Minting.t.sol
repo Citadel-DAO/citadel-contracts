@@ -44,6 +44,11 @@ contract MintingTest is BaseFixture {
         BaseFixture.setUp();
     }
 
+    /*
+    Unit Tests for setting citadel distribution split
+        - setCitadelDistributionSplit sets fundingBps, stakingBps etc.
+        - checks the sum should not exceeds 10000. 
+    */
     function testSetCitadelDistributionSplit() public {
         vm.expectRevert("GAC: invalid-caller-role");
         citadelMinter.setCitadelDistributionSplit(5000, 3000, 1000, 1000);
@@ -71,6 +76,11 @@ contract MintingTest is BaseFixture {
         citadelMinter.setCitadelDistributionSplit(5000, 2500, 1000, 1500);
     }
 
+    /*
+    Unit tests for setting funding pool weight
+        - set funding pool's weight
+        - totalFundingPoolWeight should get updated 
+    */
     function testSetFundingPoolWeight() public {
         _testSetFundingPoolWeight(address(fundingCvx), 8000);
         _testSetFundingPoolWeight(address(fundingWbtc), 2000);
@@ -85,6 +95,12 @@ contract MintingTest is BaseFixture {
         _testSetFundingPoolWeight(address(fundingCvx), 11000);
     }
 
+    /*
+    Integration test to check -
+        - funding pools received expected citadel after minting
+        - funding pools should receive citadel based on their weights
+        - removing pool should not get any citadel in the next minting
+    */
     function testFundingPoolsMintingDistribution(
         uint256 _x,
         uint256 _y,
@@ -221,6 +237,13 @@ contract MintingTest is BaseFixture {
         _testMintAndDistribute(1, 1, 1, 9997);
     }
 
+    /*
+    Unit Tests for minting 
+    - funding pools receives as expected
+    - staking contract receives as expected
+    - lockers receive as expected
+    - dao received as expected
+    */
     function _testMintAndDistribute(
         uint256 _bps_A,
         uint256 _bps_B,
@@ -319,6 +342,11 @@ contract MintingTest is BaseFixture {
         return expectedMint;
     }
 
+    /* Unit tests for setFundingPoolWeight -
+        -setFundingPoolWeight set funding pool's weight
+        -giving weight as zero removes pool
+        -weight can not be more than 10000
+    */
     function _testSetFundingPoolWeight(address fundingPool, uint256 weight)
         public
     {

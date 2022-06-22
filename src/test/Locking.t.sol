@@ -9,6 +9,14 @@ contract LockingTest is BaseFixture {
         BaseFixture.setUp();
     }
 
+    /*
+    Integration test to lock and unlock-
+        - user locks amount
+        - user can not withdraw before locking period ends
+        - user withdraws after locking period ends and recievs locked amount
+        - unit tests of lockedBalanceOf function
+    */
+
     function testLockAndUnlock() public {
         address user = address(1);
 
@@ -38,6 +46,12 @@ contract LockingTest is BaseFixture {
         vm.stopPrank();
     }
 
+    /*
+    Integration test to test getReward -
+        - user locks amount, minting happens
+        - after some time from locking user can receive by calling getReward
+        - getCumulativeClaimedRewards returns expected
+    */
     function testGetReward() public {
         address user = address(1);
 
@@ -110,6 +124,13 @@ contract LockingTest is BaseFixture {
         );
     }
 
+    /*
+    Integration test to test relock-
+        - user locks amount
+        - After locking period user relocks
+        - user can not unlock the relocked amount without 2nd locking period
+        - after 2nd locking period ends user can unlock or relock
+    */
     function testRelocking() public {
         address user = address(1);
 
@@ -140,6 +161,13 @@ contract LockingTest is BaseFixture {
         vm.stopPrank();
     }
 
+    /*
+    Integration test to test kick rewards
+        - user1 locks amount
+        - kickExpiredLocks should revert if locked period is not over
+        - kickExpiredLocks should reward expected amount
+        - kickExpiredLocks should unlock and user1 received expected
+    */
     function testKickRewards() public {
         address user = address(1);
 
@@ -184,6 +212,11 @@ contract LockingTest is BaseFixture {
         vm.stopPrank();
     }
 
+    /*
+    Unit tests for notifyRewardAmount function
+        - checks only approved reward distributors can reward
+        - checks cumulativeDistributed returns as expected after each notifyreward
+    */
     function testNotifyReward() public {
         // to add wbtc rewards
         treasuryReward();
@@ -222,6 +255,12 @@ contract LockingTest is BaseFixture {
         vm.stopPrank();
     }
 
+    /*
+    Unit tests for recoverERC20
+        - check recoverERC20 can not withdraw staking token
+        - check recoverERC20 can not withdraw reward token
+        - check recoverERC20 sends assets to treasuryVault
+    */
     function testRecoverERC20() public {
         vm.startPrank(rando);
         vm.expectRevert("GAC: invalid-caller-role");
@@ -252,6 +291,11 @@ contract LockingTest is BaseFixture {
         vm.stopPrank();
     }
 
+    /*
+    Unit tests for shutDown-
+        - shutdown doesn't allow locking
+        - lock function reverts as expected
+    */
     function testShutDown() public {
         vm.startPrank(rando);
         vm.expectRevert("GAC: invalid-caller-role");
@@ -279,12 +323,12 @@ contract LockingTest is BaseFixture {
         assertEq(xCitadelUserBalanceAfter, xCitadelUserBalanceBefore);
     }
 
-    function testLockedBalances() public {
-        // address user = address(1);
-        // uint256 xCitadelLocked = lockAmount();
-        // (uint locked, uint unlockable, xCitadelLocker.lockedBalances(user);
-    }
-
+    /*
+    Unit tests for view functions- 
+        - getRewardTokens
+        - lastTimeRewardApplicable
+        - getRewardForDuration
+    */
     function testViewFunctions() public {
         address user = address(1);
         lockAmount();
@@ -322,6 +366,7 @@ contract LockingTest is BaseFixture {
         emit log_named_uint("boosted Supply", xCitadelLocker.boostedSupply());
     }
 
+    // helper function to lock amount in locker
     function lockAmount() public returns (uint256) {
         address user = address(1);
 
@@ -346,6 +391,7 @@ contract LockingTest is BaseFixture {
         return xCitadelUserBalanceBefore - xCitadelUserBalanceAfter;
     }
 
+    // helper function for minting
     function mintAndDistribute() public {
         // mint and distribute , lockers will receive xCTDL as rewards
         vm.startPrank(governance);
@@ -360,6 +406,9 @@ contract LockingTest is BaseFixture {
         vm.stopPrank();
     }
 
+    /*
+    helper function to distribute treasury reward 
+    */
     function treasuryReward() public {
         vm.startPrank(governance);
         erc20utils.forceMintTo(treasuryVault, wbtc_address, 100e8); // so that treasury can reward lockers

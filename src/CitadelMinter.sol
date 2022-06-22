@@ -430,7 +430,7 @@ contract CitadelMinter is
     }
 
     /// @notice add new pool in the fundingPools list
-    /// @note pool weights is not assigned here, use setFundingPoolWeight to assign weight
+    /// Note- pool weights is not assigned here, use setFundingPoolWeight to assign weight
     /// @param _pool the pool address to add
     function _addFundingPool(address _pool) internal {
         require(

@@ -6,6 +6,7 @@ import {GlobalAccessControl} from "../GlobalAccessControl.sol";
 import {Funding} from "../Funding.sol";
 import {FixedPointMathLib} from "solmate/utils/FixedPointMathLib.sol";
 
+/// @notice Staking user flow tests
 contract StakingTest is BaseFixture {
     using FixedPointMathLib for uint256;
 
@@ -32,6 +33,15 @@ contract StakingTest is BaseFixture {
         BaseFixture.setUp();
     }
 
+    /* 
+    Integration test to check that
+        - A user stakes amount
+        - mintAndDistribute function distributes citadel to staking users
+        - withdraw sends users citadel in vesting contract
+        - vesting period starts
+        - user's claimable balance updates with time
+        - After vesting period user received more citadel because of minting happened
+    */
     function testUserStakingFlow() public {
         address user = address(1);
 
@@ -125,6 +135,14 @@ contract StakingTest is BaseFixture {
         );
         vm.stopPrank();
     }
+
+    /*
+    Integration test for multiple users staking at the same time
+        - 3 users perform different actions staking/deposit
+        - minting happens everyone gets expected
+        - users again perform different actions partial withdrawl/ full withdraw / more staking
+        - again minting happens everyone gets as expected
+    */
 
     function testMultipleUserFlow() public {
         address user1 = address(1);
@@ -280,6 +298,11 @@ contract StakingTest is BaseFixture {
         assertEq(userBalanceAfter, userBalanceBefore);
     }
 
+    /*
+    Tests checks - 
+        - Total Supply of xCTDL increases as citadel is deposited in locker
+        - ppfs will increase as citadel is deposited into staking contract
+    */
     function mintAndDistribute() public {
         uint256 pricePerShareBefore = xCitadel.getPricePerFullShare();
         vm.startPrank(policyOps);
@@ -328,6 +351,10 @@ contract StakingTest is BaseFixture {
             (expectedToStakers * 1e18) / xCitadelTotalSupplyAfter
         );
     }
+
+    /*
+    Tests for bricked strategy
+    */
 
     function testBrickedStrategy() public {
         address user = address(1);
