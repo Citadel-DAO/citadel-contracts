@@ -5,6 +5,7 @@ import {ERC20Upgradeable} from "openzeppelin-contracts-upgradeable/token/ERC20/E
 
 import "./lib/GlobalAccessControlManaged.sol";
 
+/// @notice citadel token
 contract CitadelToken is GlobalAccessControlManaged, ERC20Upgradeable {
     bytes32 public constant CITADEL_MINTER_ROLE =
         keccak256("CITADEL_MINTER_ROLE");

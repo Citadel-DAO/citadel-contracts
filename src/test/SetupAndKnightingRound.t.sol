@@ -23,6 +23,16 @@ contract KnightingRoundTest is BaseFixture {
         BaseFixture.setUp();
     }
 
+    /*
+    Integration test of knighting round-
+        - user can not buy before the knighting round starts
+        - user can buy citadel using knighting round's buy function
+        - user can vote any dao 
+        - user can not vote multiple dao
+        - changing token price works correctly during round
+        - All the read function returns as expected
+        - user can not buy once knighting round ends
+    */
     function testKnightingRoundIntegration() public {
         bytes32[] memory emptyProof = new bytes32[](0);
 
@@ -178,6 +188,13 @@ contract KnightingRoundTest is BaseFixture {
         buy(knightingRound2, cvx, whale, 0, 2e18); // whale is voting dao 0 in 2nd contract
     }
 
+    /*
+    Unit tests for claiming-
+        - user can not claim before the knighting round ends
+        - finalize() works expected
+        - user can only claim once
+        - All the read functions returns as expected
+    */
     function testFinalizeAndClaim() public {
         bytes32[] memory emptyProof = new bytes32[](0);
 
@@ -370,6 +387,12 @@ contract KnightingRoundTest is BaseFixture {
         knightingRound.setTokenInLimit(20e18);
     }
 
+    /*
+    Unit tests for some setting function
+        - setTokenOutPerTokenIn works as expected
+        - setSaleRecipient works as expected
+        - setGuestList works as expected
+    */
     function testBasicSetFunctions() public {
         // tests for setTokenOutPerTokenIn
         vm.prank(address(1));
@@ -424,6 +447,9 @@ contract KnightingRoundTest is BaseFixture {
         assertEq(address(knightingRound.guestlist()), address(3));
     }
 
+    /*
+    Unit tests for sweep function
+    */
     function testSweep() public {
         vm.expectRevert("GAC: invalid-caller-role");
         knightingRound.sweep(address(xCitadel));

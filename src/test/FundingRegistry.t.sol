@@ -117,6 +117,10 @@ contract FundingRegistryTest is BaseFixture {
         fundingTest.setDiscountLimits(0, 20);
     }
 
+    /*
+    Testing funding data function
+    */
+
     function testFundingData() public {
         FundingRegistry.FundingData[] memory fundingsData = fundingRegistry
             .getAllFundingsData();

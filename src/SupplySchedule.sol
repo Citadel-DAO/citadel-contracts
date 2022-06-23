@@ -14,10 +14,9 @@ import {ReentrancyGuardUpgradeable} from "openzeppelin-contracts-upgradeable/sec
 import {IVault} from "./interfaces/badger/IVault.sol";
 import "./lib/GlobalAccessControlManaged.sol";
 
-/**
-Supply schedules are defined in terms of Epochs
+/// @notice Handles supply schedules for citadel token.
+/// @dev Supply schedules are defined in terms of Epochs.
 
-*/
 contract SupplySchedule is GlobalAccessControlManaged, DSTest {
     bytes32 public constant CONTRACT_GOVERNANCE_ROLE =
         keccak256("CONTRACT_GOVERNANCE_ROLE");
@@ -49,9 +48,8 @@ contract SupplySchedule is GlobalAccessControlManaged, DSTest {
     /// ===== Public view =====
     /// =======================
 
-    // @dev duplicate of getMintable() with debug print added
-    // @dev this function is out of scope for reviews and audits
-
+    /// @notice finds epoch at a particular timestamp
+    /// @param _timestamp at which the epoch needs to be calculated
     function getEpochAtTimestamp(uint256 _timestamp)
         public
         view
@@ -64,10 +62,13 @@ contract SupplySchedule is GlobalAccessControlManaged, DSTest {
         return (_timestamp - globalStartTimestamp) / epochLength;
     }
 
+    /// @notice finds epoch number at current timestamp
     function getCurrentEpoch() public view returns (uint256) {
         return getEpochAtTimestamp(block.timestamp);
     }
 
+    /// @notice calculates the amount of mintable citadel for a particular epoch
+    /// @param _epoch the epoch for which the mintable amount is calculated
     function getEmissionsForEpoch(uint256 _epoch)
         public
         view
@@ -76,11 +77,15 @@ contract SupplySchedule is GlobalAccessControlManaged, DSTest {
         return epochRate[_epoch] * epochLength;
     }
 
+    /// @notice calculates the amount of mintable citadel for current epoch
     function getEmissionsForCurrentEpoch() public view returns (uint256) {
         uint256 epoch = getCurrentEpoch();
         return getEmissionsForEpoch(epoch);
     }
 
+    /// @notice calculates the citadel amount to mint since last mint time stamp
+    /// @param lastMintTimestamp is the last timestamp when citadel was minted.
+    /// @return mintable citadel amount
     function getMintable(uint256 lastMintTimestamp)
         external
         view
@@ -139,6 +144,8 @@ contract SupplySchedule is GlobalAccessControlManaged, DSTest {
     /// ===== Governance actions =====
     /// ==============================
 
+    /// @notice sets the minting start time.
+    /// @param _globalStartTimestamp start time will be set to this.
     function setMintingStart(uint256 _globalStartTimestamp)
         external
         onlyRole(CONTRACT_GOVERNANCE_ROLE)
@@ -157,6 +164,9 @@ contract SupplySchedule is GlobalAccessControlManaged, DSTest {
         emit MintingStartTimeSet(_globalStartTimestamp);
     }
 
+    /// @notice sets epoch rate for a particular epoch
+    /// @param _epoch is the epoch number
+    /// @param _rate is the rate to set for epoch number _epoch
     function setEpochRate(uint256 _epoch, uint256 _rate)
         external
         onlyRole(CONTRACT_GOVERNANCE_ROLE)

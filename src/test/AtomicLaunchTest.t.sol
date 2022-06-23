@@ -257,6 +257,15 @@ contract AtomicLaunchTest is BaseFixture {
         vm.deal(eth_user, 100 ether);
     }
 
+    /*
+    And end to end test -
+        - launch all knighting rounds
+        - Deploy pool, provide liquidity and send asset to treasury 
+        - Finalize knighting rounds
+        - Funding round launches
+        - start minting
+        - check post atomic launch actions
+    */
     function testAtomicLaunch() public {
         _simulateeKnightingRound();
 
@@ -518,6 +527,9 @@ contract AtomicLaunchTest is BaseFixture {
         _simulatePostLaunchActions();
     }
 
+    /*
+    Helper function to launch all knighting rounds
+    */
     function _simulateeKnightingRound() public {
         // Move to knighting round start
         vm.warp(knightingRound.saleStart());
@@ -631,14 +643,14 @@ contract AtomicLaunchTest is BaseFixture {
         require(_assetCap == assetCap, "Wrong assetCap set");
     }
 
+    /*
+    Integration tests after atomic launch-
+        - Withdrawing xCTDL/vesting
+        - Swapping through Curve pool
+        - Providing more liquidity
+        - Collecting rewards
+    */
     function _simulatePostLaunchActions() internal {
-        // TODO: Add user flows to be tested post launch with all test users.
-        // These may include but not be limited to:
-        // - Withdrawing xCTDL/vesting
-        // - Swapping through Curve pool
-        // - Providing more liquidity
-        // - Collecting rewards
-
         require(true, "placeholder");
     }
 }

@@ -5,18 +5,25 @@ import {BaseFixture} from "./BaseFixture.sol";
 import {SupplySchedule} from "../SupplySchedule.sol";
 import {GlobalAccessControl} from "../GlobalAccessControl.sol";
 
+/// @notice Tests for SupplySchedule Contract
 contract SupplyScheduleTest is BaseFixture {
     function setUp() public override {
         BaseFixture.setUp();
     }
 
+    /*
+     Unit tests for setMintingStart function
+    */
     function testSetMintingStart() public {
+        // should revert as not called from correct caller
         vm.prank(address(1));
         vm.expectRevert("GAC: invalid-caller-role");
         schedule.setMintingStart(1000);
 
+        // Now governance will call
         vm.startPrank(governance);
 
+        // should revert as the input time is in past
         vm.expectRevert(
             "SupplySchedule: minting must start at or after current time"
         );
@@ -26,10 +33,15 @@ contract SupplyScheduleTest is BaseFixture {
         schedule.setMintingStart(timestamp);
         assertEq(schedule.globalStartTimestamp(), timestamp); // check if globalStartTimeStamp is set.
 
+        // should revert as minting already started
         vm.expectRevert("SupplySchedule: minting already started");
         schedule.setMintingStart(block.timestamp + 1000);
         vm.stopPrank();
     }
+
+    /*
+    Unit tests for setEpochRate function
+    */
 
     function testSetEpochRate() public {
         uint256 epochLength = schedule.epochLength();
@@ -50,6 +62,10 @@ contract SupplyScheduleTest is BaseFixture {
         vm.stopPrank();
     }
 
+    /*
+    Unit tests for getMintable Function
+    Checks if getMintable returns the correct mintable amount for every epochs
+    */
     function testGetMintable() public {
         uint256 epochLength = schedule.epochLength();
 
@@ -66,7 +82,7 @@ contract SupplyScheduleTest is BaseFixture {
             citadelMinter.lastMintTimestamp()
         );
 
-        assertEq(expectedMintable, mintable);
+        assertEq(expectedMintable, mintable); // check
 
         vm.warp(block.timestamp + 2 * epochLength); // 2 more epoch passed
 
@@ -89,17 +105,5 @@ contract SupplyScheduleTest is BaseFixture {
         mintable = schedule.getMintable(citadelMinter.lastMintTimestamp());
 
         assertEq(expectedMintable, mintable);
-    }
-
-    function testExampleEpochRates() public {
-        assertTrue(true);
-        emit log("Epoch Rates");
-        emit log_uint(schedule.epochRate(0));
-        emit log_uint(schedule.epochRate(1));
-        emit log_uint(schedule.epochRate(2));
-        emit log_uint(schedule.epochRate(3));
-        emit log_uint(schedule.epochRate(4));
-        emit log_uint(schedule.epochRate(5));
-        emit log_uint(schedule.epochRate(6));
     }
 }

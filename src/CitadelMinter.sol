@@ -17,9 +17,8 @@ import "./interfaces/citadel/ICitadelToken.sol";
 import "./interfaces/badger/IVault.sol";
 import "./interfaces/citadel/IStakedCitadelLocker.sol";
 
-/**
-Supply schedules are defined in terms of Epochs
-*/
+/// @notice citadel minter to mint citadel
+/// @dev Supply schedules are defined in terms of Epochs
 contract CitadelMinter is
     GlobalAccessControlManaged,
     ReentrancyGuardUpgradeable
@@ -154,6 +153,9 @@ contract CitadelMinter is
     /// ===== Public view =====
     /// =======================
 
+    /// @notice function to get funding weights for each funding pool
+    /// @return pools list of pool addresses
+    /// @return weights list of weights of pool addresses
     function getFundingPoolWeights()
         external
         view
@@ -387,6 +389,8 @@ contract CitadelMinter is
     /// ==============================
 
     // === Funding Pool Management ===
+    /// @notice distribute citadel amount to funding pools based on weights
+    /// @param _citadelAmount the citadel amount which will be distributed
     function _transferToFundingPools(uint256 _citadelAmount) internal {
         uint256 length = fundingPools.length();
         // Use cached to save 96 gas per loop read
@@ -411,6 +415,8 @@ contract CitadelMinter is
         }
     }
 
+    /// @notice remove funding pool
+    /// @param _pool pool address which will be removed
     function _removeFundingPool(address _pool) internal {
         uint256 currentPoolWeight = fundingPoolWeights[_pool];
         totalFundingPoolWeight = totalFundingPoolWeight - currentPoolWeight;
@@ -423,6 +429,9 @@ contract CitadelMinter is
         );
     }
 
+    /// @notice add new pool in the fundingPools list
+    /// Note- pool weights is not assigned here, use setFundingPoolWeight to assign weight
+    /// @param _pool the pool address to add
     function _addFundingPool(address _pool) internal {
         require(
             fundingPools.add(_pool),

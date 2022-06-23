@@ -25,6 +25,16 @@ contract KnightingRoundWithEthTest is BaseFixture {
         BaseFixture.setUp();
     }
 
+    /*
+    Integration test of knighting round with Eth-
+        - user can not buy before the knighting round starts
+        - user can buy citadel using knighting round's buy function
+        - user can vote any dao 
+        - user can not vote multiple dao
+        - changing token price works correctly during round
+        - All the read function returns as expected
+        - user can not buy once knighting round ends
+    */
     function testKnightingRoundWithEthIntegration() public {
         bytes32[] memory emptyProof = new bytes32[](0);
 

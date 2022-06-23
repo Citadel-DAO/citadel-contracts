@@ -14,6 +14,14 @@ contract GACProxyAdminTest is BaseFixture {
         BaseFixture.setUp();
     }
 
+    /* Unit tests for gacProxyAdmin contract
+        - intializing proxy admin
+        - test getProxyImplementation returns knighting round's address
+        - test upgrade changes knighting round
+        - check that getProxyImplementaion returns as expected
+        - changeProxyAdmin works as expected
+    */
+
     function testGacProxyAdmin() public {
         vm.startPrank(governance);
 

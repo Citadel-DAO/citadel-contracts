@@ -112,6 +112,9 @@ contract KnightingRoundGuestlist is GlobalAccessControlManaged {
         }
     }
 
+    /// @notice sets guests
+    /// @param _guests list of guest addresses
+    /// @param _invited list of bool indication if guests are invited or not
     function _setGuests(address[] memory _guests, bool[] memory _invited)
         internal
     {
@@ -124,6 +127,7 @@ contract KnightingRoundGuestlist is GlobalAccessControlManaged {
         }
     }
 
+    /// @notice varifying invitation proof
     function _verifyInvitationProof(
         address account,
         bytes32[] calldata merkleProof

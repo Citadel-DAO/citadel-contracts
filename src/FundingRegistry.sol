@@ -9,6 +9,7 @@ import "./Funding.sol";
 import "./GACProxyAdmin.sol";
 import "./lib/GlobalAccessControlManaged.sol";
 
+/// @notice A simple registry contract that help to register different funding rounds
 contract FundingRegistry is Initializable, GlobalAccessControlManaged {
     // ===== Libraries  ====
     using EnumerableSet for EnumerableSet.AddressSet;
@@ -71,6 +72,7 @@ contract FundingRegistry is Initializable, GlobalAccessControlManaged {
         }
     }
 
+    /// @notice adds new funding round
     function addRound(FundingAsset calldata _fundingAsset)
         public
         onlyRole(CONTRACT_GOVERNANCE_ROLE)
@@ -93,6 +95,9 @@ contract FundingRegistry is Initializable, GlobalAccessControlManaged {
         fundings.add(address(currFunding));
     }
 
+    /// @notice function to get funding data for a particular funding Address
+    /// @param _fundingAddress the address for which funding data will be returned
+    /// @return fundingData
     function getFundingData(address _fundingAddress)
         public
         view
@@ -119,6 +124,8 @@ contract FundingRegistry is Initializable, GlobalAccessControlManaged {
         fundingData.remainingFundable = funding.getRemainingFundable();
     }
 
+    /// @notice function to get all funding rounds
+    /// @return fundingsList returns list of funding addresses
     function getAllFundings() public view returns (address[] memory) {
         address[] memory fundingsList = new address[](fundings.length());
         for (uint256 i = 0; i < fundings.length(); i++) {
@@ -127,6 +134,7 @@ contract FundingRegistry is Initializable, GlobalAccessControlManaged {
         return fundingsList;
     }
 
+    /// @notice function to get all funding round's data
     function getAllFundingsData() public view returns (FundingData[] memory) {
         FundingData[] memory fundingsData = new FundingData[](
             fundings.length()
