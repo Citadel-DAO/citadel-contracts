@@ -20,6 +20,12 @@ contract KnightingRoundRegistryTest is BaseFixture {
 
     KnightingRoundRegistry public knightinRoundRegistry;
 
+    /*
+    Unit tests to check-
+        - check knightingRoundRegistry initializes all KR's 
+        - getRoundData returns correct data
+        - check registry can initialize knighting round with eth as well
+    */
     function testKnightingRoundRegistryInitialization() public {
         vm.prank(governance);
 

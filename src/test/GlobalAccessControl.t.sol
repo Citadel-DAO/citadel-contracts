@@ -10,6 +10,9 @@ contract GlobalAccessControlTest is BaseFixture {
         BaseFixture.setUp();
     }
 
+    /*
+    Test that gac's paused and unpause working properly
+    */
     function testPauseAndUnPausing() public {
         vm.prank(address(1));
         vm.expectRevert("PAUSER_ROLE");
@@ -33,6 +36,10 @@ contract GlobalAccessControlTest is BaseFixture {
         // check if it unpaused
         assertTrue(!gac.paused());
     }
+
+    /*
+    Test local and global pausing works as expected for all funding's function
+    */
 
     function testFundingPausing() public {
         // pausing locally
@@ -110,6 +117,9 @@ contract GlobalAccessControlTest is BaseFixture {
         fundingCvx.updateCitadelPerAsset();
     }
 
+    /*
+    Test local and global pausing works as expected for all minter's function
+    */
     function testMintingPausing() public {
         // pausing locally
         vm.prank(guardian);
@@ -152,6 +162,9 @@ contract GlobalAccessControlTest is BaseFixture {
         citadelMinter.initializeLastMintTimestamp();
     }
 
+    /*
+    Test local and global pausing works as expected for all knighting round's function
+    */
     function testKnightingRoundPausing() public {
         // pausing locally
         vm.prank(guardian);
@@ -181,6 +194,9 @@ contract GlobalAccessControlTest is BaseFixture {
         knightingRound.sweep(address(cvx));
     }
 
+    /*
+    Test local and global pausing works as expected for all knighting round with eth's function
+    */
     function testKnightingRoundEthPausing() public {
         // pausing locally
         vm.prank(guardian);
@@ -225,6 +241,9 @@ contract GlobalAccessControlTest is BaseFixture {
         vm.stopPrank();
     }
 
+    /*
+    Test local and global pausing works as expected for all xCTDL's function
+    */
     function testStakedCitadelPausing() public {
         vm.prank(guardian);
         xCitadel.pause();
@@ -277,6 +296,9 @@ contract GlobalAccessControlTest is BaseFixture {
         xCitadel.setManagementFee(1000);
     }
 
+    /*
+    Test local and global pausing works as expected for all xCTDLVester's function
+    */
     function testStakedCitadelVesterPausing() public {
         vm.prank(guardian);
         xCitadelVester.pause();
@@ -310,6 +332,9 @@ contract GlobalAccessControlTest is BaseFixture {
         vm.stopPrank();
     }
 
+    /*
+    Test local and global pausing works as expected for all Supply schedule's function
+    */
     function testSchedulePausing() public {
         vm.prank(guardian);
         schedule.pause();
@@ -335,6 +360,9 @@ contract GlobalAccessControlTest is BaseFixture {
         vm.stopPrank();
     }
 
+    /*
+    Test access control works as expected for all funding's function
+    */
     function testFundingCallerRoles() public {
         // calling with wrong address
         vm.expectRevert(bytes("GAC: invalid-caller-role"));
@@ -400,6 +428,9 @@ contract GlobalAccessControlTest is BaseFixture {
         fundingCvx.clearCitadelPriceFlag();
     }
 
+    /*
+    Test access control works as expected for all minter and supply schedule's function
+    */
     function testMintingAndScheduleCallerRoles() public {
         vm.expectRevert("GAC: invalid-caller-role");
         citadelMinter.setCitadelDistributionSplit(5000, 3000, 1000, 1000);
@@ -433,6 +464,9 @@ contract GlobalAccessControlTest is BaseFixture {
         citadelMinter.mintAndDistribute();
     }
 
+    /*
+    Test access control works as expected for all knighting round's function
+    */
     function testKnightingRoundCallerRoles() public {
         vm.expectRevert("GAC: invalid-caller-role");
         knightingRound.setSaleStart(block.timestamp);
@@ -485,6 +519,9 @@ contract GlobalAccessControlTest is BaseFixture {
         knightingRound.finalize();
     }
 
+    /*
+    Test access control works as expected for all xCTDL Vester's function
+    */
     function testVestingCallerRoles() public {
         vm.expectRevert("GAC: invalid-caller-role");
         xCitadelVester.setVestingDuration(8 days);
@@ -492,6 +529,9 @@ contract GlobalAccessControlTest is BaseFixture {
         xCitadelVester.setVestingDuration(8 days);
     }
 
+    /*
+    Test access control works as expected for all xCTDL's function
+    */
     function testStakingCallerRoles() public {
         vm.expectRevert("onlyPausers"); // nly guardian and governance can pause
         xCitadel.pauseDeposits();
